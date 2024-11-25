@@ -25,4 +25,30 @@ export const conversationRouter = createTRPCRouter({
 
       return messages;
     }),
+
+  addMessage: publicProcedure
+    .input(
+      z.object({
+        conversationId: z.string().uuid(),
+        text: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [message] = await ctx.db
+        .insert(messageTable)
+        .values({
+          conversationId: input.conversationId,
+          text: input.text,
+          role: "user",
+        })
+        .returning();
+
+      if (!message) {
+        throw new Error("Failed to add message");
+      }
+
+      return {
+        messageId: message.id,
+      };
+    }),
 });

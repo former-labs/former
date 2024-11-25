@@ -1,5 +1,5 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
-import { conversationRouter } from "./routers/conversationRouter";
+import { conversationRouter } from "./routers/conversation/conversationRouter";
 import { postRouter } from "./routers/postRouter";
 
 /**
