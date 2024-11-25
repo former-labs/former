@@ -29,14 +29,14 @@ export const userTable = pgTable("user", {
   TODO: Make this reference a workspace
 */
 export const conversationTable = pgTable("conversation", {
-  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
   name: text("name").notNull(),
 });
 
 export const messageTable = pgTable("message", {
-  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
   conversationId: uuid("conversation_id")
