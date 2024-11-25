@@ -2,6 +2,7 @@
 
 import { api } from "@/trpc/react";
 import { use } from "react";
+import { SearchBar } from "./components/SearchBar";
 
 export default function Page({
   params,
@@ -44,6 +45,14 @@ export default function Page({
           <h2 className="font-bold">Messages:</h2>
           <pre>{JSON.stringify(messages, null, 2)}</pre>
         </div>
+      </div>
+
+      <div>
+        <SearchBar
+          value=""
+          onChangeValue={() => {}}
+          onSearch={async () => {}}
+        />
       </div>
     </div>
   );

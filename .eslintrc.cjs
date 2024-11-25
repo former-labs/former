@@ -56,6 +56,11 @@ const config = {
       I don't think it's super useful anyway?
     */
     "@typescript-eslint/no-unsafe-call": "off",
+
+    /*
+      Matty has disable this bc kinda unnecessary.
+    */
+    "@typescript-eslint/no-empty-function": "off",
   },
 };
 module.exports = config;
