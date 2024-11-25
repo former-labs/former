@@ -29,14 +29,14 @@ export const userTable = pgTable("user", {
   TODO: Make this reference a workspace
 */
 export const conversationTable = pgTable("conversation", {
-  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
   name: text("name").notNull(),
 });
 
 export const messageTable = pgTable("message", {
-  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
   conversationId: uuid("conversation_id")
@@ -45,3 +45,6 @@ export const messageTable = pgTable("message", {
   role: text("role", { enum: ["user", "assistant"] }).notNull(),
   text: text("text"),
 });
+
+export type ConversationSelect = typeof conversationTable.$inferSelect;
+export type MessageSelect = typeof messageTable.$inferSelect;
