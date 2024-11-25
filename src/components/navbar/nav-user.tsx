@@ -1,6 +1,6 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
+import { SignOutButton, useClerk } from "@clerk/nextjs";
 import { ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,7 +21,7 @@ import {
 
 export function NavUser() {
   const { isMobile } = useSidebar();
-  const { signOut, user: authUser } = useClerk();
+  const { user: authUser } = useClerk();
 
   return (
     <SidebarMenu>
@@ -81,14 +81,9 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={async () => {
-                console.log("SIGN OUT");
-                await signOut();
-              }}
-            >
+            <DropdownMenuItem>
               <LogOut />
-              Log out
+              <SignOutButton />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

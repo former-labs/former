@@ -104,3 +104,26 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * This is the base piece you use to build new queries and mutations on your tRPC API that require
+ * authentication. It guarantees that a user must be logged in to access the procedure.
+ *
+ * @see https://clerk.com/docs/nextjs/middleware
+ */
+export const protectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.auth?.userId) {
+      throw new Error("You must be logged in to access this resource");
+    }
+    return next({
+      ctx: {
+        auth: ctx.auth,
+      },
+    });
+  });
+
+

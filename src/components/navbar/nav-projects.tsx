@@ -19,12 +19,17 @@ export function NavPages({
     icon: LucideIcon;
   }[];
 }) {
+  const pathname = window.location.pathname;
+
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Features</SidebarGroupLabel>
       <SidebarMenu>
         {pages.map((item) => (
-          <SidebarMenuItem key={item.name}>
+          <SidebarMenuItem
+            key={item.name}
+            className={pathname === item.url ? "bg-accent" : ""}
+          >
             <SidebarMenuButton asChild>
               <a href={item.url}>
                 <item.icon />
