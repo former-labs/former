@@ -2,19 +2,17 @@
 
 import {
   AudioWaveform,
+  BarChart,
   BookOpen,
   Bot,
   Command,
-  Frame,
   GalleryVerticalEnd,
-  Map,
-  PieChart,
+  MessageSquare,
   Settings2,
   SquareTerminal,
 } from "lucide-react";
 import * as React from "react";
 
-import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -139,19 +137,14 @@ const data = {
   ],
   projects: [
     {
-      name: "Design Engineering",
+      name: "Chat",
       url: "#",
-      icon: Frame,
+      icon: MessageSquare,
     },
     {
-      name: "Sales & Marketing",
+      name: "Dashboards",
       url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
+      icon: BarChart,
     },
   ],
 };
@@ -163,11 +156,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <WorkspaceSwitcher workspaces={data.workspaces} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        {/* <NavMain items={data.navMain} /> */}
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
