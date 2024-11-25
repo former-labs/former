@@ -58,9 +58,18 @@ const config = {
     "@typescript-eslint/no-unsafe-call": "off",
 
     /*
-      Matty has disable this bc kinda unnecessary.
+      Matty has disabled this bc kinda unnecessary.
     */
     "@typescript-eslint/no-empty-function": "off",
+
+    /*
+      Matty has disabled these bc of a skill issue.
+    */
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+
+    "@typescript-eslint/restrict-template-expressions": "off",
   },
 };
 module.exports = config;
