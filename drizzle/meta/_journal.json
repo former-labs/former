@@ -15,6 +15,13 @@
       "when": 1732511791590,
       "tag": "0001_organic_wraith",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1732513055802,
+      "tag": "0002_clever_ink",
+      "breakpoints": true
     }
   ]
 }

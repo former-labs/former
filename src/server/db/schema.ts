@@ -1,8 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
-import { pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // /**
 //  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -12,16 +11,37 @@ import { pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
 //  */
 // export const createTable = pgTableCreator((name) => `werve_${name}`);
 
+const createdAtField = timestamp("created_at", { withTimezone: true })
+  .defaultNow()
+  .notNull();
+
+const updatedAtField = timestamp("updated_at", {
+  withTimezone: true,
+}).$onUpdate(() => new Date());
+
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-    () => new Date(),
-  ),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
 });
 
-// (example) => ({
-//   nameIndex: index("name_idx").on(example.name),
-// }),
+/*
+  TODO: Make this reference a workspace
+*/
+export const conversationTable = pgTable("conversation", {
+  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  name: text("name").notNull(),
+});
+
+export const messageTable = pgTable("message", {
+  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  conversationId: uuid("conversation_id")
+    .notNull()
+    .references(() => conversationTable.id),
+  role: text("role", { enum: ["user", "assistant"] }).notNull(),
+  text: text("text"),
+});
