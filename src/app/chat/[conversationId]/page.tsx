@@ -51,7 +51,9 @@ export default function Page({
         <SearchBar
           value=""
           onChangeValue={() => {}}
-          onSearch={async () => {}}
+          onSearch={async () => {
+            console.log("search");
+          }}
         />
       </div>
     </div>
