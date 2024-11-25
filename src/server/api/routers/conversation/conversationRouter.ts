@@ -5,6 +5,37 @@ import { z } from "zod";
 import { createGoogleAnalyticsResponse } from "./createGoogleAnalyticsResponse";
 
 export const conversationRouter = createTRPCRouter({
+  createConversation: publicProcedure
+    .input(z.object({ initialUserMessage: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [conversation] = await ctx.db
+        .insert(conversationTable)
+        .values({
+          name: "Untitled Conversation",
+        })
+        .returning();
+
+      if (!conversation) {
+        throw new Error("Failed to create conversation");
+      }
+
+      const {
+        newUserMessage,
+        newAssistantMessage,
+        suggestedUserResponses,
+      } = await createGoogleAnalyticsResponse({
+        conversationId: conversation.id,
+        userMessage: input.initialUserMessage,
+      });
+
+      return {
+        conversationId: conversation.id,
+        userMessageId: newUserMessage.id,
+        assistantMessageId: newAssistantMessage.id,
+        suggestedUserResponses,
+      };
+    }),
+
   getConversation: publicProcedure
     .input(z.object({ conversationId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
