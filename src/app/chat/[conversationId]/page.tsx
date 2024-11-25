@@ -4,7 +4,7 @@ import { api } from "@/trpc/react";
 import { use, useState } from "react";
 import { SearchBar } from "./components/SearchBar";
 
-export default function Page({
+export default function ChatPage({
   params,
 }: {
   params: Promise<{ conversationId: string }>;

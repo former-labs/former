@@ -4,6 +4,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
+import { LeftSidebar } from "@/components/navbar/left-sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
@@ -16,12 +18,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${GeistSans.variable}`}>
-        <body>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${GeistSans.variable}`}>
+      <body>
+        <ClerkProvider>
+          <TRPCReactProvider>
+            <SidebarProvider>
+              <LeftSidebar>{children}</LeftSidebar>
+            </SidebarProvider>
+          </TRPCReactProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

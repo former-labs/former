@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-import { NavProjects } from "@/components/nav-projects";
-import { NavUser } from "@/components/nav-user";
+import { NavPages } from "@/components/navbar/nav-projects";
+import { NavUser } from "@/components/navbar/nav-user";
+import { WorkspaceSwitcher } from "@/components/navbar/workspace-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +23,6 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 
 // This is sample data.
 const data = {
@@ -135,15 +135,15 @@ const data = {
       ],
     },
   ],
-  projects: [
+  sections: [
     {
       name: "Chat",
-      url: "#",
+      url: "/chat",
       icon: MessageSquare,
     },
     {
       name: "Dashboards",
-      url: "#",
+      url: "/dashboard",
       icon: BarChart,
     },
   ],
@@ -157,7 +157,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         {/* <NavMain items={data.navMain} /> */}
-        <NavProjects projects={data.projects} />
+        <NavPages pages={data.sections} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
