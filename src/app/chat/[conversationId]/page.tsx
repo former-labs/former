@@ -45,34 +45,41 @@ export default function Page({
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
-      <h1 className="text-2xl font-bold">Conversation {conversationId}</h1>
-      <div className="mt-4 space-y-4">
-        <div className="rounded bg-gray-100 p-4">
-          <h2 className="font-bold">Conversation Details:</h2>
-          <pre>{JSON.stringify(conversation, null, 2)}</pre>
-        </div>
-        <div className="space-y-4">
-          <h2 className="font-bold">Messages:</h2>
-          {messages.map((message) => (
-            <ConversationMessage key={message.id} message={message} />
-          ))}
+    <div className="flex h-full w-full flex-col">
+      <div className="mx-auto max-w-screen-lg flex-1 overflow-y-auto p-4">
+        <h1 className="text-2xl font-bold">Conversation {conversationId}</h1>
+        <div className="mt-4 space-y-4">
+          <div className="rounded bg-gray-100 p-4">
+            <h2 className="font-bold">Conversation Details:</h2>
+            <pre>{JSON.stringify(conversation, null, 2)}</pre>
+          </div>
+          <div className="space-y-4">
+            <h2 className="font-bold">Messages:</h2>
+            {messages.map((message) => (
+              <ConversationMessage key={message.id} message={message} />
+            ))}
+          </div>
         </div>
       </div>
 
-      <div>
-        <SearchBar
-          value={searchValue}
-          onChangeValue={setSearchValue}
-          onSearch={async () => {
-            await addMessageMutation.mutateAsync({
-              conversationId,
-              text: searchValue,
-            });
-            setSearchValue("");
-          }}
-          isLoading={addMessageMutation.isPending}
-        />
+      <div className="sticky bottom-0 w-full">
+        <div className="flex w-full justify-center pb-8">
+          <div className="w-[50rem]">
+            <SearchBar
+              placeholder="Ask a question..."
+              value={searchValue}
+              onChangeValue={setSearchValue}
+              onSearch={async () => {
+                await addMessageMutation.mutateAsync({
+                  conversationId,
+                  text: searchValue,
+                });
+                setSearchValue("");
+              }}
+              isLoading={addMessageMutation.isPending}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

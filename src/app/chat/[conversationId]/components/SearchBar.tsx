@@ -1,29 +1,16 @@
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Stars } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { useOnClickOutside } from "usehooks-ts";
 
-type SearchTypeOption<T extends string> = {
-  label: string;
-  value: T;
-};
-
-export const SearchBar = <T extends string>({
+export const SearchBar = ({
   onSearch,
   placeholder = "Search...",
   className,
   value,
   onChangeValue,
-  searchType,
-  searchTypeOptions,
-  onSearchTypeChange,
   suggestedBoxComponent,
   suggestedBoxOrientation = "below",
   isLoading = false,
@@ -31,9 +18,6 @@ export const SearchBar = <T extends string>({
   onSearch: () => Promise<void>;
   value: string;
   onChangeValue: (value: string) => void;
-  searchType?: T;
-  searchTypeOptions?: SearchTypeOption<T>[];
-  onSearchTypeChange?: (value: T) => void;
   placeholder?: string;
   className?: string;
   suggestedBoxComponent?: React.ReactNode;
@@ -61,45 +45,20 @@ export const SearchBar = <T extends string>({
   return (
     <div
       className={cn(
-        "flex w-full flex-grow items-center gap-x-2 self-center py-2",
+        "flex w-full items-center gap-2 rounded-lg bg-gray-100 p-2",
         className,
       )}
       ref={containerRef}
     >
       <div className="relative flex flex-grow">
-        <div className="flex flex-grow">
-          {searchTypeOptions && searchTypeOptions.length > 0 && (
-            <Select value={searchType} onValueChange={onSearchTypeChange}>
-              <SelectTrigger className="bg-primary-600 hover:bg-primary-500 h-full w-[180px] rounded-none rounded-l-lg border-0 text-white shadow-none focus:ring-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {searchTypeOptions.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="hover:bg-primary-500"
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <input
-            type="text"
+        <div className="relative flex-grow">
+          <Input
             value={value}
             onChange={(e) => onChangeValue(e.target.value)}
-            className={cn(
-              "focus:shadow-primary-200 shadow-xs font-md focus:border-primary-300 h-auto w-full resize-none gap-2 rounded border border-gray-300 bg-white px-2.5 py-2 text-gray-900 placeholder:text-gray-500 focus:shadow-[0px_0px_0px_4px] focus:outline-none",
-              {
-                "rounded-none rounded-r-lg":
-                  searchTypeOptions && searchTypeOptions.length > 0,
-              },
-            )}
             placeholder={placeholder}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
+            className="bg-white focus:outline-none"
           />
           {suggestedBoxComponent && isFocused && (
             <div
@@ -115,15 +74,10 @@ export const SearchBar = <T extends string>({
           )}
         </div>
       </div>
-      <div className="flex h-full min-w-14 items-center justify-center">
-        {isLoading ? (
-          <div>LOADSPIN</div>
-        ) : (
-          <Button className="h-full w-full" onClick={handleSearchSubmit}>
-            Search
-          </Button>
-        )}
-      </div>
+      <Button onClick={handleSearchSubmit} disabled={isLoading}>
+        <Stars className="mr-2 h-4 w-4" />
+        Search
+      </Button>
     </div>
   );
 };
