@@ -8,6 +8,13 @@
       "when": 1732509691310,
       "tag": "0000_smart_namor",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1732511791590,
+      "tag": "0001_organic_wraith",
+      "breakpoints": true
     }
   ]
 }
