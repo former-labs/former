@@ -10,25 +10,41 @@ export default function Page({
 }) {
   const { conversationId } = use(params);
 
-  const { data: conversation, error } =
+  const { data: conversation, error: conversationError } =
     api.conversation.getConversation.useQuery({
       conversationId,
     });
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
+  const { data: messages, error: messagesError } =
+    api.conversation.listConversationMessages.useQuery({
+      conversationId,
+    });
+
+  if (conversationError) {
+    return <div>Error loading conversation: {conversationError.message}</div>;
   }
 
-  if (!conversation) {
+  if (messagesError) {
+    return <div>Error loading messages: {messagesError.message}</div>;
+  }
+
+  if (!conversation || !messages) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="text-2xl font-bold">Conversation {conversationId}</h1>
-      <pre className="mt-4 rounded bg-gray-100 p-4">
-        {JSON.stringify(conversation, null, 2)}
-      </pre>
+      <div className="mt-4 space-y-4">
+        <div className="rounded bg-gray-100 p-4">
+          <h2 className="font-bold">Conversation Details:</h2>
+          <pre>{JSON.stringify(conversation, null, 2)}</pre>
+        </div>
+        <div className="rounded bg-gray-100 p-4">
+          <h2 className="font-bold">Messages:</h2>
+          <pre>{JSON.stringify(messages, null, 2)}</pre>
+        </div>
+      </div>
     </div>
   );
 }

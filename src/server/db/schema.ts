@@ -45,3 +45,6 @@ export const messageTable = pgTable("message", {
   role: text("role", { enum: ["user", "assistant"] }).notNull(),
   text: text("text"),
 });
+
+export type ConversationSelect = typeof conversationTable.$inferSelect;
+export type MessageSelect = typeof messageTable.$inferSelect;
