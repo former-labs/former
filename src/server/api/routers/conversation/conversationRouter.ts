@@ -1,12 +1,12 @@
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
-import { conversationTable, messageTable } from "@/server/db/schema";
+import { conversationTable, googleAnalyticsReportTable, messageTable } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { createGoogleAnalyticsResponse } from "./createGoogleAnalyticsResponse";
 
 export const conversationRouter = createTRPCRouter({
   getConversation: publicProcedure
-    .input(z.object({ conversationId: z.string() }))
+    .input(z.object({ conversationId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const conversations = await ctx.db
         .select()
@@ -17,7 +17,7 @@ export const conversationRouter = createTRPCRouter({
     }),
 
   listConversationMessages: publicProcedure
-    .input(z.object({ conversationId: z.string() }))
+    .input(z.object({ conversationId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const messages = await ctx.db
         .select()
@@ -26,6 +26,17 @@ export const conversationRouter = createTRPCRouter({
         .orderBy(messageTable.createdAt);
 
       return messages;
+    }),
+
+  getGoogleAnalyticsReport: publicProcedure
+    .input(z.object({ googleAnalyticsReportId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const reports = await ctx.db
+        .select()
+        .from(googleAnalyticsReportTable)
+        .where(eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId));
+
+      return reports[0] ?? null;
     }),
 
   addMessage: publicProcedure
