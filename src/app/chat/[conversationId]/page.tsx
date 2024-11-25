@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/trpc/react";
-import { use } from "react";
+import { use, useState } from "react";
 import { SearchBar } from "./components/SearchBar";
 
 export default function Page({
@@ -10,6 +10,8 @@ export default function Page({
   params: Promise<{ conversationId: string }>;
 }) {
   const { conversationId } = use(params);
+  const [searchValue, setSearchValue] = useState("");
+  const utils = api.useUtils();
 
   const { data: conversation, error: conversationError } =
     api.conversation.getConversation.useQuery({
@@ -20,6 +22,14 @@ export default function Page({
     api.conversation.listConversationMessages.useQuery({
       conversationId,
     });
+
+  const addMessageMutation = api.conversation.addMessage.useMutation({
+    onSuccess: () => {
+      void utils.conversation.listConversationMessages.invalidate({
+        conversationId,
+      });
+    },
+  });
 
   if (conversationError) {
     return <div>Error loading conversation: {conversationError.message}</div>;
@@ -49,11 +59,16 @@ export default function Page({
 
       <div>
         <SearchBar
-          value=""
-          onChangeValue={() => {}}
+          value={searchValue}
+          onChangeValue={setSearchValue}
           onSearch={async () => {
-            console.log("search");
+            await addMessageMutation.mutateAsync({
+              conversationId,
+              text: searchValue,
+            });
+            setSearchValue("");
           }}
+          isLoading={addMessageMutation.isPending}
         />
       </div>
     </div>
