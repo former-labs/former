@@ -1,10 +1,11 @@
 "use client";
 
+import { type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { use, useState } from "react";
 import { SearchBar } from "./components/SearchBar";
 
-export default function ChatPage({
+export default function Page({
   params,
 }: {
   params: Promise<{ conversationId: string }>;
@@ -51,9 +52,11 @@ export default function ChatPage({
           <h2 className="font-bold">Conversation Details:</h2>
           <pre>{JSON.stringify(conversation, null, 2)}</pre>
         </div>
-        <div className="rounded bg-gray-100 p-4">
+        <div className="space-y-4">
           <h2 className="font-bold">Messages:</h2>
-          <pre>{JSON.stringify(messages, null, 2)}</pre>
+          {messages.map((message) => (
+            <ConversationMessage key={message.id} message={message} />
+          ))}
         </div>
       </div>
 
@@ -74,3 +77,49 @@ export default function ChatPage({
     </div>
   );
 }
+
+const ConversationMessage = ({ message }: { message: MessageSelect }) => {
+  if (message.role === "user") {
+    return <ConversationMessageUser message={message} />;
+  }
+  return <ConversationMessageGoogleAnalyticsReport message={message} />;
+};
+
+const ConversationMessageUser = ({ message }: { message: MessageSelect }) => {
+  return (
+    <div className="rounded bg-blue-50 p-4">
+      <pre>{JSON.stringify(message, null, 2)}</pre>
+    </div>
+  );
+};
+
+const ConversationMessageGoogleAnalyticsReport = ({
+  message,
+}: {
+  message: MessageSelect;
+}) => {
+  const { data: report } = api.conversation.getGoogleAnalyticsReport.useQuery(
+    {
+      googleAnalyticsReportId: message.googleAnalyticsReportId!,
+    },
+    {
+      enabled: !!message.googleAnalyticsReportId,
+    },
+  );
+
+  return (
+    <div className="space-y-4 rounded bg-red-50 p-4">
+      <pre>{JSON.stringify(message, null, 2)}</pre>
+      {report && (
+        <>
+          <div className="border-t border-red-200 pt-4">
+            <h3 className="mb-2 font-bold">
+              Associated Google Analytics Report:
+            </h3>
+            <pre>{JSON.stringify(report, null, 2)}</pre>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};

@@ -23,6 +23,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { PATH_CHAT, PATH_DASHBOARD } from "@/lib/paths";
 
 // This is sample data.
 const data = {
@@ -138,12 +139,12 @@ const data = {
   sections: [
     {
       name: "Chat",
-      url: "/chat",
+      url: PATH_CHAT,
       icon: MessageSquare,
     },
     {
       name: "Dashboards",
-      url: "/dashboard",
+      url: PATH_DASHBOARD,
       icon: BarChart,
     },
   ],
