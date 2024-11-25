@@ -1,11 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { type AppRouter } from "@/server/api/root";
 import { type EvalApiTest } from "@/server/api/routers/eval/evalTestListAndFilter";
 import { type GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
-import { api } from "@/trpc/react";
-import { type inferProcedureOutput } from "@trpc/server";
+import { api, RouterOutputs } from "@/trpc/react";
 import { useState } from "react";
 import { MetadataDetails } from "./MetadataDetails";
 
@@ -289,9 +287,8 @@ const EvalTestComponent = ({
   );
 };
 
-type GoogleAnalyticsReportResultType = inferProcedureOutput<
-  AppRouter["eval"]["getGoogleAnalyticsReport"]
->;
+type GoogleAnalyticsReportResultType =
+  RouterOutputs["eval"]["getGoogleAnalyticsReport"];
 
 const GoogleAnalyticsReportRunner = ({
   workspaceUid,
