@@ -1,7 +1,9 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { env } from "@/env";
+import CryptoJS from "crypto-js";
+import { customType, json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportParametersSchema";
 
 // /**
@@ -11,6 +13,38 @@ import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportP
 //  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
 //  */
 // export const createTable = pgTableCreator((name) => `werve_${name}`);
+
+const encryptedJson = customType<{ data: Record<string, unknown> }>({
+  dataType() {
+    return "jsonb"
+  },
+  fromDriver(value: unknown) {
+    try {
+      if (typeof value !== 'string') {
+        throw new Error('Expected string value from database')
+      }
+      const decrypted = CryptoJS.AES.decrypt(value, env.CRYPTO_SECRET).toString(
+        CryptoJS.enc.Utf8
+      )
+      if (!decrypted) {
+        throw new Error('Decryption failed')
+      }
+      return { data: JSON.parse(decrypted) }
+    } catch (error) {
+      console.error('Error decrypting/parsing JSON:', error)
+      throw error
+    }
+  },
+  toDriver(value: Record<string, unknown>) {
+    try {
+      const jsonString = JSON.stringify(value)
+      return CryptoJS.AES.encrypt(jsonString, env.CRYPTO_SECRET).toString()
+    } catch (error) {
+      console.error('Error encrypting JSON:', error)
+      throw error
+    }
+  },
+})
 
 const createdAtField = timestamp("created_at", { withTimezone: true })
   .defaultNow()
@@ -22,7 +56,7 @@ const updatedAtField = timestamp("updated_at", {
 
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
-  authId: text("auth_id").notNull(),
+  clerkAuthId: text("clerk_auth_id").notNull(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
 });
@@ -61,6 +95,39 @@ export const googleAnalyticsReportTable = pgTable("google_analytics_report", {
 	description: text("description").notNull(),
 	reportParameters: json("report_parameters").$type<GoogleAnalyticsReportParameters>().notNull(),
 });
+
+export const workspaceTable = pgTable("workspace", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  name: text("name").notNull(),
+});
+
+export const roleTable = pgTable("role", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  roleType: text("role_type", { enum: ["owner", "viewer"] }).notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => userTable.id),
+  workspaceId: uuid("workspace_id")
+    .notNull() 
+    .references(() => workspaceTable.id),
+});
+
+export const integrationTable = pgTable("integration", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaceTable.id),
+  type: text("type", { enum: ["google_analytics"] }).notNull(),
+  credentials: encryptedJson("credentials").notNull(),
+  metadata: json("metadata").notNull(),
+});
+
 
 
 export type ConversationSelect = typeof conversationTable.$inferSelect;

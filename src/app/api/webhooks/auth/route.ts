@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       const authUser = data as UserJSON
 
       await db.insert(userTable).values({
-        authId: authUser.id,
+        clerkAuthId: authUser.id,
       });
       break;
     default:

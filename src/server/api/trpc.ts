@@ -124,7 +124,7 @@ export const protectedProcedure = t.procedure
     }
     
     const user = await ctx.db.query.userTable.findFirst({
-      where: (user, { eq }) => eq(user.authId, ctx.auth?.id ?? "")
+      where: (user, { eq }) => eq(user.clerkAuthId, ctx.auth?.id ?? "")
     });
 
     if (!user) {
