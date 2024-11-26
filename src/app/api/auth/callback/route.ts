@@ -1,5 +1,6 @@
 import { env } from "@/env";
 import { getGoogleTokens } from "@/lib/googleAnalytics/helper";
+import { PATH_ONBOARDING } from "@/lib/paths";
 import { db } from "@/server/db";
 import { integrationTable } from "@/server/db/schema";
 import jwt from "jsonwebtoken";
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get("error");
 
   const redirectWithError = (errorType: string) => 
-    Response.redirect(`${env.DASHBOARD_URI}/onboarding?error=${encodeURIComponent(errorType)}`);
+    Response.redirect(`${env.DASHBOARD_URI}${PATH_ONBOARDING}?error=${encodeURIComponent(errorType)}`);
 
   if (error) {
     console.error("OAuth error:", error);

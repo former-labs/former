@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { PATH_ONBOARDING } from './lib/paths';
 
 const isProtectedRoute = createRouteMatcher([
   "/",
@@ -7,7 +8,7 @@ const isProtectedRoute = createRouteMatcher([
   "/chat(.*)",
 ]);
 
-const isOnboardingRoute = createRouteMatcher(['/onboarding'])
+const isOnboardingRoute = createRouteMatcher([PATH_ONBOARDING])
 
 
 export default clerkMiddleware(async (auth, request) => {
@@ -26,7 +27,7 @@ export default clerkMiddleware(async (auth, request) => {
   // Catch users who do not have `onboardingComplete: true` in their publicMetadata
   // Redirect them to the /onboading route to complete onboarding
   // if (userId && !sessionClaims?.metadata?.onboardingComplete) {
-  //   const onboardingUrl = new URL('/onboarding', request.url)
+  //   const onboardingUrl = new URL(PATH_ONBOARDING, request.url)
   //   return NextResponse.redirect(onboardingUrl)
   // }
 

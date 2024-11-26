@@ -10,3 +10,5 @@ export const PATH_CONVERSATION_SINGLE = (conversationId: string) =>
   `/chat/${conversationId}`;
 
 export const PATH_DASHBOARD = "/dashboard";
+
+export const PATH_ONBOARDING = "/onboarding";
