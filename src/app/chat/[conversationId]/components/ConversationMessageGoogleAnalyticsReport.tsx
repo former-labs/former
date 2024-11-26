@@ -194,19 +194,21 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
 
         {error && <div className="mb-4 text-red-500">Error: {error}</div>}
 
-        {activeTab === "resultTable" && reportResult && (
-          <TableDataView data={reportResult.rows} />
-        )}
+        <div className="h-[500px] overflow-y-auto">
+          {activeTab === "resultTable" && reportResult && (
+            <TableDataView data={reportResult.rows} className="h-full" />
+          )}
 
-        {activeTab === "resultJson" && (
-          <pre className="overflow-auto rounded-md bg-white p-4">
-            {JSON.stringify(reportResult ?? { error }, null, 2)}
-          </pre>
-        )}
+          {activeTab === "resultJson" && (
+            <pre className="overflow-auto rounded-md bg-white p-4">
+              {JSON.stringify(reportResult ?? { error }, null, 2)}
+            </pre>
+          )}
 
-        {activeTab === "visualisation" && (
-          <div className="p-4">INSERT VISUALISATION</div>
-        )}
+          {activeTab === "visualisation" && (
+            <div className="p-4">INSERT VISUALISATION</div>
+          )}
+        </div>
       </div>
     </div>
   );
