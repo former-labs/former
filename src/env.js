@@ -17,6 +17,12 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string(),
     CLERK_SECRET_KEY: z.string(),
     CLERK_SIGNING_SECRET: z.string(),
+    DB_COLUMN_ENCRYPTION_SECRET: z.string(),
+    GOOGLE_OAUTH_REDIRECT_URI: z.string(),
+    GOOGLE_OAUTH_CLIENT_ID: z.string(),
+    GOOGLE_OAUTH_CLIENT_SECRET: z.string(),
+    OAUTH_CALLBACK_SECRET: z.string(),
+    DASHBOARD_URI: z.string(),
   },
 
   /**
@@ -27,6 +33,8 @@ export const env = createEnv({
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
+    NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL: z.string(),
+    NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: z.string(),
   },
 
   /**
@@ -44,8 +52,18 @@ export const env = createEnv({
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     CLERK_SIGNING_SECRET: process.env.CLERK_SIGNING_SECRET,
+    DB_COLUMN_ENCRYPTION_SECRET: process.env.DB_COLUMN_ENCRYPTION_SECRET,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    GOOGLE_OAUTH_REDIRECT_URI: process.env.GOOGLE_OAUTH_REDIRECT_URI,
+    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
+    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+    OAUTH_CALLBACK_SECRET: process.env.OAUTH_CALLBACK_SECRET,
+    DASHBOARD_URI: process.env.DASHBOARD_URI,
+    NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL:
+      process.env.NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL,
+    NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL:
+      process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
