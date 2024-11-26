@@ -1,0 +1,95 @@
+.LoadingContainer {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+.ImageContainer {
+  position: relative;
+  scale: 1.5;
+  width: 40px;
+  height: 45px;
+  margin: 10px;
+}
+
+.LoadingDark {
+  position: absolute;
+  z-index: 2;
+  left: 0px;
+  top: 0px;
+  animation-name: dark;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+}
+
+.LoadingLight {
+  position: absolute;
+  left: 7px;
+  top: 5px;
+  z-index: 1;
+  animation-name: light;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes dark {
+  0% {
+    left: 0px;
+    top: 10px;
+    z-index: 2;
+  }
+  10% {
+    left: 7px;
+    top: -2px;
+    z-index: 2;
+  }
+  20% {
+    left: 7px;
+    top: 15px;
+    z-index: 1;
+  }
+  90% {
+    left: 7px;
+    top: 15px;
+    z-index: 2;
+  }
+  100% {
+    left: 0px;
+    top: 10px;
+    z-index: 2;
+  }
+}
+
+@keyframes light {
+  0% {
+    left: 7px;
+    top: 15px;
+    z-index: 1;
+  }
+  30% {
+    left: 7px;
+    top: 15px;
+    z-index: 1;
+  }
+  40% {
+    left: 0px;
+    top: 10px;
+    z-index: 2;
+  }
+  50% {
+    left: 7px;
+    top: -2px;
+    z-index: 2;
+  }
+  60% {
+    left: 7px;
+    top: 15px;
+    z-index: 1;
+  }
+  100% {
+    left: 7px;
+    top: 15px;
+    z-index: 1;
+  }
+}

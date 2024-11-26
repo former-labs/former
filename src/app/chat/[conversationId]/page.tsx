@@ -1,5 +1,6 @@
 "use client";
 
+import { Loading } from "@/components/utils/Loading";
 import { LogoVerve } from "@/components/utils/LogoVerve";
 import { type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
@@ -111,14 +112,15 @@ const ConversationMessageGoogleAnalyticsReport = ({
 }: {
   message: MessageSelect;
 }) => {
-  const { data: report } = api.conversation.getGoogleAnalyticsReport.useQuery(
-    {
-      googleAnalyticsReportId: message.googleAnalyticsReportId!,
-    },
-    {
-      enabled: !!message.googleAnalyticsReportId,
-    },
-  );
+  const { data: report, isLoading } =
+    api.conversation.getGoogleAnalyticsReport.useQuery(
+      {
+        googleAnalyticsReportId: message.googleAnalyticsReportId!,
+      },
+      {
+        enabled: !!message.googleAnalyticsReportId,
+      },
+    );
 
   return (
     <div className="flex flex-col gap-y-2">
@@ -129,15 +131,19 @@ const ConversationMessageGoogleAnalyticsReport = ({
       </div>
       <div className="space-y-4 rounded bg-red-50 p-4">
         <pre>{JSON.stringify(message, null, 2)}</pre>
-        {report && (
-          <>
-            <div className="border-t border-red-200 pt-4">
-              <h3 className="mb-2 font-bold">
-                Associated Google Analytics Report:
-              </h3>
-              <pre>{JSON.stringify(report, null, 2)}</pre>
-            </div>
-          </>
+        {isLoading ? (
+          <Loading />
+        ) : (
+          report && (
+            <>
+              <div className="border-t border-red-200 pt-4">
+                <h3 className="mb-2 font-bold">
+                  Associated Google Analytics Report:
+                </h3>
+                <pre>{JSON.stringify(report, null, 2)}</pre>
+              </div>
+            </>
+          )
         )}
       </div>
     </div>
