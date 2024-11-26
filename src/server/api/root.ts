@@ -2,6 +2,8 @@ import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conversationRouter } from "./routers/conversation/conversationRouter";
 
 import { evalRouter } from "./routers/eval/evalRouter";
+import { onboardingRouter } from "./routers/conversation/onboardingRouter";
+import { integrationRouter } from "./routers/conversation/integrationRouter";
 
 /**
  * This is the primary router for your server.
@@ -10,6 +12,8 @@ import { evalRouter } from "./routers/eval/evalRouter";
  */
 export const appRouter = createTRPCRouter({
   conversation: conversationRouter,
+  onboarding: onboardingRouter,
+  integration: integrationRouter,
   eval: evalRouter,
 });
 

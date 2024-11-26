@@ -1,6 +1,7 @@
 import { env } from '@/env'
 import { db } from '@/server/db'
 import { userTable } from '@/server/db/schema'
+import { clerk } from '@/server/utils/clerk'
 import type { UserJSON, WebhookEvent } from '@clerk/nextjs/server'
 import { headers } from 'next/headers'
 import { Webhook } from 'svix'
@@ -53,10 +54,23 @@ export async function POST(req: Request) {
     case 'user.created':
       const authUser = data as UserJSON
 
+      // Create user
       await db.insert(userTable).values({
         clerkAuthId: authUser.id,
+        firstName: authUser.first_name ?? '',
+        lastName: authUser.last_name ?? '',
+        email: authUser.email_addresses[0]?.email_address ?? '',
+      }).returning();
+
+      // Set public metadata to indicate not onboarded yet
+      await clerk.users.updateUserMetadata(authUser.id, {
+        publicMetadata: {
+          onboardingComplete: false
+        }
       });
+      
       break;
+      
     default:
       console.log(`Unhandled event type: ${evt.type}`)
       return new Response('Unhandled event type', { status: 200 })

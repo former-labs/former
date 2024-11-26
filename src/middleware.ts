@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 const isProtectedRoute = createRouteMatcher([
   "/",
@@ -6,10 +7,30 @@ const isProtectedRoute = createRouteMatcher([
   "/chat(.*)",
 ]);
 
+const isOnboardingRoute = createRouteMatcher(['/onboarding'])
+
 
 export default clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) {
-    await auth.protect()
+  const { userId, sessionClaims, redirectToSignIn } = await auth()
+  
+  // User isn't signed in and the route is protected
+  if (!userId && isProtectedRoute(request)) {
+    return redirectToSignIn();
+  }
+
+  // If the user is logged in and the route is protected, let them view.
+  if (userId && isProtectedRoute(request)) return NextResponse.next()
+
+  // Catch users who do not have `onboardingComplete: true` in their publicMetadata
+  // Redirect them to the /onboading route to complete onboarding
+  if (userId && !sessionClaims?.metadata?.onboardingComplete) {
+    const onboardingUrl = new URL('/onboarding', request.url)
+    return NextResponse.redirect(onboardingUrl)
+  }
+
+  // User is logged in and on the /onboarding route
+  if (userId && isOnboardingRoute(request)) {
+    return NextResponse.next();
   }
 },
 { debug: process.env.NODE_ENV === 'development' }

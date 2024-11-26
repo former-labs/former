@@ -7,7 +7,7 @@
  * need to use are documented accordingly near the end.
  */
 import { currentUser } from "@clerk/nextjs/server";
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
@@ -118,24 +118,58 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  */
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(async ({ ctx, next }) => {
+  .use(async ({ ctx, next, input }) => {
     if (!ctx.auth?.id) {
       throw new Error("You must be logged in to access this resource");
     }
     
-    const user = await ctx.db.query.userTable.findFirst({
-      where: (user, { eq }) => eq(user.clerkAuthId, ctx.auth?.id ?? "")
+    const user = await db.query.userTable.findFirst({
+      where: (user, { eq }) => eq(user.clerkAuthId, ctx.auth?.id ?? ""),
+      with: {
+        roles: true
+      }
     });
 
     if (!user) {
       throw new Error("User not found");
     }
+    const workspaceId = typeof input === 'object' && input !== null && 'workspaceId' in input
+      ? (input as { workspaceId: string }).workspaceId 
+      : undefined;
 
+    // Add workspace validation if workspaceId is provided in input
+    if (workspaceId) {      
+      const hasAccess = user?.roles?.some((role) => role.workspaceId === workspaceId);
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'User does not have access to this workspace',
+        });
+      }
+    }
 
     return next({
       ctx: {
         auth: ctx.auth,
         user,
+        workspaceId,
+        // Add workspaceUid if it exists in input
+      },
+    });
+  });
+
+
+export const authProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    if (!ctx.auth?.id) {
+      throw new Error("You must be logged in to access this resource");
+    }
+
+    return next({
+      ctx: {
+        auth: ctx.auth,
       },
     });
   });

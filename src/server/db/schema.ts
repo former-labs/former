@@ -3,6 +3,7 @@
 
 import { env } from "@/env";
 import CryptoJS from "crypto-js";
+import { relations } from "drizzle-orm";
 import { customType, json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportParametersSchema";
 
@@ -14,7 +15,7 @@ import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportP
 //  */
 // export const createTable = pgTableCreator((name) => `werve_${name}`);
 
-const encryptedJson = customType<{ data: Record<string, unknown> }>({
+const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
   dataType() {
     return "jsonb"
   },
@@ -23,22 +24,23 @@ const encryptedJson = customType<{ data: Record<string, unknown> }>({
       if (typeof value !== 'string') {
         throw new Error('Expected string value from database')
       }
-      const decrypted = CryptoJS.AES.decrypt(value, env.CRYPTO_SECRET).toString(
+      const decrypted = CryptoJS.AES.decrypt(value, env.DB_COLUMN_ENCRYPTION_SECRET).toString(
         CryptoJS.enc.Utf8
       )
       if (!decrypted) {
         throw new Error('Decryption failed')
       }
-      return { data: JSON.parse(decrypted) }
+      const parsed = JSON.parse(decrypted)
+      return parsed.data
     } catch (error) {
       console.error('Error decrypting/parsing JSON:', error)
       throw error
     }
   },
-  toDriver(value: Record<string, unknown>) {
+  toDriver(value: GoogleAnalyticsCredentials) {
     try {
-      const jsonString = JSON.stringify(value)
-      return CryptoJS.AES.encrypt(jsonString, env.CRYPTO_SECRET).toString()
+      const jsonString = JSON.stringify({ data: value })
+      return CryptoJS.AES.encrypt(jsonString, env.DB_COLUMN_ENCRYPTION_SECRET).toString()
     } catch (error) {
       console.error('Error encrypting JSON:', error)
       throw error
@@ -56,10 +58,17 @@ const updatedAtField = timestamp("updated_at", {
 
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
   clerkAuthId: text("clerk_auth_id").notNull(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
 });
+
+export const userRelations = relations(userTable, ({ many }) => ({
+	roles: many(roleTable)
+}));
 
 /*
   TODO: Make this reference a workspace
@@ -116,6 +125,7 @@ export const roleTable = pgTable("role", {
     .references(() => workspaceTable.id),
 });
 
+
 export const integrationTable = pgTable("integration", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
@@ -133,3 +143,15 @@ export const integrationTable = pgTable("integration", {
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type GoogleAnalyticsReportSelect = typeof googleAnalyticsReportTable.$inferSelect;
+export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
+export type RoleSelect = typeof roleTable.$inferSelect;
+export type UserSelect = typeof userTable.$inferSelect;
+
+
+
+// Types
+export type GoogleAnalyticsCredentials = {
+  scopes: string[];
+  accessToken: string;
+  refreshToken: string;
+};
