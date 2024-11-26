@@ -58,9 +58,9 @@ const updatedAtField = timestamp("updated_at", {
 
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  firstName: text("first_name").default(""),
+  lastName: text("last_name").default(""),
+  email: text("email").default(""),
   clerkAuthId: text("clerk_auth_id").notNull(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
