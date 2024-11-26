@@ -1,7 +1,7 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conversationRouter } from "./routers/conversation/conversationRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
-import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsReport";
+import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsRouter";
 
 /**
  * This is the primary router for your server.

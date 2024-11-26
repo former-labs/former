@@ -1,6 +1,7 @@
 "use client";
 
 import { TableDataView } from "@/components/charting/TableDataView";
+import { useRightSidebar } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
@@ -68,6 +69,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     GoogleAnalyticsReportResultType["data"] | null
   >(null);
   const [error, setError] = useState<string | null>(null);
+  const { openGoogleAnalyticsReport } = useRightSidebar();
 
   const executeReportMutation =
     api.googleAnalytics.executeGoogleAnalyticsReport.useMutation();
@@ -100,7 +102,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   };
 
   const handleEditReport = () => {
-    console.log("Edit report clicked");
+    openGoogleAnalyticsReport(report.id);
   };
 
   const handleRunReport = async () => {

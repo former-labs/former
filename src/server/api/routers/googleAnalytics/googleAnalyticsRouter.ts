@@ -1,6 +1,7 @@
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { googleAnalyticsReportTable } from "@/server/db/schema";
 import { executeGoogleAnalyticsReport, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
+import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -17,6 +18,27 @@ export const googleAnalyticsRouter = createTRPCRouter({
       }
 
       return report;
+    }),
+
+  updateGoogleAnalyticsReportParameters: publicProcedure
+    .input(z.object({
+      googleAnalyticsReportId: z.string().uuid(),
+      reportParameters: googleAnalyticsReportParametersSchema,
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [updatedReport] = await ctx.db
+        .update(googleAnalyticsReportTable)
+        .set({
+          reportParameters: input.reportParameters,
+        })
+        .where(eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId))
+        .returning();
+
+      if (!updatedReport) {
+        throw new Error(`Failed to update report with id: ${input.googleAnalyticsReportId}`);
+      }
+
+      return updatedReport;
     }),
 
   executeGoogleAnalyticsReport: publicProcedure
