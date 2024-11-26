@@ -5,6 +5,7 @@ import { useRightSidebar } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
+import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
 import {
   type GoogleAnalyticsReportSelect,
   type MessageSelect,
@@ -98,7 +99,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   }, [report]); // Reactively listen for entire report to change, not just ID
 
   const handleExportCsv = () => {
-    console.log("Export CSV clicked");
+    exportGoogleAnalyticsToCsv(reportResult);
   };
 
   const handleEditReport = () => {
