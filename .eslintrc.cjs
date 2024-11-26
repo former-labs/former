@@ -73,6 +73,7 @@ const config = {
     "@typescript-eslint/no-unsafe-return": "off",
 
     "@typescript-eslint/restrict-template-expressions": "off",
+    "@typescript-eslint/no-redundant-type-constituents": "off",
   },
 };
 module.exports = config;
