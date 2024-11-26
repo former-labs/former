@@ -95,7 +95,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     };
 
     void executeReport();
-  }, [report.id]);
+  }, [report]); // Reactively listen for entire report to change, not just ID
 
   const handleExportCsv = () => {
     console.log("Export CSV clicked");
