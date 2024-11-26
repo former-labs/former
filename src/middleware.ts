@@ -11,7 +11,7 @@ const isOnboardingRoute = createRouteMatcher(['/onboarding'])
 
 
 export default clerkMiddleware(async (auth, request) => {
-  const { userId, sessionClaims, redirectToSignIn } = await auth()
+  const { userId, redirectToSignIn } = await auth()
 
   // User is logged in and on the /onboarding route
   if (userId && isOnboardingRoute(request)) {
