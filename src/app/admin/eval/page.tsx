@@ -1,5 +1,6 @@
 "use client";
 
+import { TableDataView } from "@/components/charting/TableDataView";
 import { Button } from "@/components/ui/button";
 import { type EvalApiTest } from "@/server/api/routers/eval/evalTestListAndFilter";
 import { type GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
@@ -111,7 +112,7 @@ export default function Page() {
   const isAnyTestRunning = Object.values(evalTestLoading).some(Boolean);
 
   return (
-    <div className="mx-auto flex w-full flex-col">
+    <div className="mx-auto flex w-full max-w-screen-lg flex-col">
       {error && <div className="text-red-500">Error: {error.message}</div>}
 
       <div className="mb-8 flex flex-col gap-y-2">
@@ -342,11 +343,11 @@ const GoogleAnalyticsReportRunner = ({
             Report Result
           </summary>
           {error && <div className="mb-4 text-red-500">Error: {error}</div>}
-          {/* {reportResult && (
-            <div className="my-4 border bg-gray-50">
-              <TableDataView data={reportResult.rows} />
+          {reportResult && (
+            <div className="my-4 bg-gray-50">
+              <TableDataView className="h-[300px]" data={reportResult.rows} />
             </div>
-          )} */}
+          )}
           <details className="ml-8 mt-4">
             <summary className="mb-2 cursor-pointer font-medium">
               Full Report
