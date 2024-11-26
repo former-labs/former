@@ -43,7 +43,9 @@ export const integrationRouter = createTRPCRouter({
       );
       authUrl.searchParams.append("state", state);
 
-        return Response.redirect(authUrl.toString());
+        return {
+          redirectUrl: authUrl.toString()
+        };
       } catch (error) {
         console.error("Failed to connect Google Analytics:", error);
         throw new TRPCError({

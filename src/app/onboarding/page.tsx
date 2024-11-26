@@ -98,9 +98,16 @@ export default function OnboardingPage() {
     }
 
     // Send them to Google Analytics
-    await connectGoogleAnalytics.mutateAsync({
+    const { redirectUrl } = await connectGoogleAnalytics.mutateAsync({
       workspaceId,
     });
+
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    } else {
+      setError("Failed to connect Google Analytics");
+      setIsLoading(false);
+    }
   };
 
   return (

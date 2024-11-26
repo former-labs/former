@@ -50,6 +50,13 @@
       "when": 1732606297844,
       "tag": "0006_eager_deathbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1732617308067,
+      "tag": "0007_chubby_tusk",
+      "breakpoints": true
     }
   ]
 }

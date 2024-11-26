@@ -9,27 +9,27 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 const isOnboardingRoute = createRouteMatcher([PATH_ONBOARDING])
-
+const isApiRoute = createRouteMatcher(['/api(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth()
 
   // User is logged in and on the /onboarding route
-  if (userId && isOnboardingRoute(request)) {
+  if (userId && (isOnboardingRoute(request) || isApiRoute(request))) {
     return NextResponse.next();
   }
   
   // User isn't signed in and the route is protected
-  if (!userId && isProtectedRoute(request)) {
+  if (!userId && (isProtectedRoute(request) || isOnboardingRoute(request))) {
     return redirectToSignIn();
   }
 
   // Catch users who do not have `onboardingComplete: true` in their publicMetadata
   // Redirect them to the /onboading route to complete onboarding
-  // if (userId && !sessionClaims?.metadata?.onboardingComplete) {
-  //   const onboardingUrl = new URL(PATH_ONBOARDING, request.url)
-  //   return NextResponse.redirect(onboardingUrl)
-  // }
+  if (userId && !sessionClaims?.metadata?.onboardingComplete) {
+    const onboardingUrl = new URL(PATH_ONBOARDING, request.url)
+    return NextResponse.redirect(onboardingUrl)
+  }
 
   // If the user is logged in and the route is protected, let them view.
   if (userId && isProtectedRoute(request)) return NextResponse.next()

@@ -17,7 +17,7 @@ import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportP
 
 const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
   dataType() {
-    return "jsonb"
+    return "text"
   },
   fromDriver(value: unknown) {
     try {
@@ -30,8 +30,7 @@ const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
       if (!decrypted) {
         throw new Error('Decryption failed')
       }
-      const parsed = JSON.parse(decrypted)
-      return parsed.data
+      return JSON.parse(decrypted)
     } catch (error) {
       console.error('Error decrypting/parsing JSON:', error)
       throw error
@@ -39,7 +38,7 @@ const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
   },
   toDriver(value: GoogleAnalyticsCredentials) {
     try {
-      const jsonString = JSON.stringify({ data: value })
+      const jsonString = JSON.stringify(value)
       return CryptoJS.AES.encrypt(jsonString, env.DB_COLUMN_ENCRYPTION_SECRET).toString()
     } catch (error) {
       console.error('Error encrypting JSON:', error)
@@ -69,6 +68,36 @@ export const userTable = pgTable("user", {
 export const userRelations = relations(userTable, ({ many }) => ({
 	roles: many(roleTable)
 }));
+
+
+
+
+export const roleTable = pgTable("role", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  roleType: text("role_type", { enum: ["owner", "viewer"] }).notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => userTable.id),
+  workspaceId: uuid("workspace_id")
+    .notNull() 
+    .references(() => workspaceTable.id),
+});
+
+export const roleRelations = relations(roleTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [roleTable.userId],
+    references: [userTable.id],
+  }),
+}));
+
+export const workspaceTable = pgTable("workspace", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  name: text("name").notNull(),
+});
 
 /*
   TODO: Make this reference a workspace
@@ -103,26 +132,6 @@ export const googleAnalyticsReportTable = pgTable("google_analytics_report", {
 	title: text("title").notNull(),
 	description: text("description").notNull(),
 	reportParameters: json("report_parameters").$type<GoogleAnalyticsReportParameters>().notNull(),
-});
-
-export const workspaceTable = pgTable("workspace", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  name: text("name").notNull(),
-});
-
-export const roleTable = pgTable("role", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  roleType: text("role_type", { enum: ["owner", "viewer"] }).notNull(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => userTable.id),
-  workspaceId: uuid("workspace_id")
-    .notNull() 
-    .references(() => workspaceTable.id),
 });
 
 

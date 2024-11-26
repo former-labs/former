@@ -1,0 +1,1 @@
+ALTER TABLE "integration" ALTER COLUMN "credentials" SET DATA TYPE text;
