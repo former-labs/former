@@ -10,7 +10,6 @@ import {
 } from "../ui/breadcrumb";
 import { Separator } from "../ui/separator";
 import { SidebarInset, SidebarTrigger } from "../ui/sidebar";
-import { SidebarRightTrigger } from "../ui/sidebar-right";
 import { LeftSidebar } from "./left-sidebar";
 import { RightAppSidebar } from "./right-sidebar";
 
@@ -37,9 +36,9 @@ export function LayoutSidebar({ children }: { children: React.ReactNode }) {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-          <div className="px-4">
+          {/* <div className="px-4">
             <SidebarRightTrigger />
-          </div>
+          </div> */}
         </header>
         {children}
       </SidebarInset>

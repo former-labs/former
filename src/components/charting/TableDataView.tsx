@@ -44,10 +44,6 @@ export const TableDataView = ({
             params.api.sizeColumnsToFit();
           });
         }}
-        onSelectionChanged={(event) => console.log("Row Selected!")}
-        onCellValueChanged={(event) =>
-          console.log(`New Cell Value: ${event.value}`)
-        }
       />
     </div>
   );

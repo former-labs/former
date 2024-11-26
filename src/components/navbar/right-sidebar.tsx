@@ -2,7 +2,6 @@
 
 import {
   SidebarContent,
-  SidebarRail,
   SidebarRight,
   useSidebar,
 } from "@/components/ui/sidebar-right";
@@ -28,7 +27,6 @@ export function RightAppSidebar({
           <div>Nothing to see here...</div>
         )}
       </SidebarContent>
-      <SidebarRail />
     </SidebarRight>
   );
 }
