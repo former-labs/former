@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import AnimatedGridPattern from "@/components/ui/animated-grid-pattern";
 import { Button } from "@/components/ui/button";
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
@@ -17,7 +18,7 @@ import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import { Form, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const getErrorDetails = (error: string) => {
@@ -104,7 +105,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center gap-6">
-      <div className="z-10 flex w-full max-w-sm flex-col rounded-lg border-2 border-gray-200 bg-white p-8 shadow-sm">
+      <div className="z-10 flex w-full max-w-sm flex-col rounded-lg border-2 border-border bg-background p-8 shadow-sm">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleCreateWorkspace)}
@@ -126,7 +127,13 @@ export default function OnboardingPage() {
               )}
             />
             <div className="flex gap-x-2">
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                size="lg"
+                variant="secondary"
+                className="flex w-full items-center justify-center"
+              >
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -145,7 +152,9 @@ export default function OnboardingPage() {
         </Form>
       </div>
       {error && (
-        <p className="text-error-500 self-center text-center">{error}</p>
+        <p className="self-center text-center text-destructive-foreground">
+          {error}
+        </p>
       )}
       <AnimatedGridPattern
         numSquares={30}
