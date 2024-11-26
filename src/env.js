@@ -15,6 +15,8 @@ export const env = createEnv({
     VERVE_GA4_SERVICE_ACCOUNT_JSON_BASE64: z.string(),
     HELICONE_API_KEY: z.string(),
     OPENAI_API_KEY: z.string(),
+    CLERK_SECRET_KEY: z.string(),
+    SIGNING_SECRET: z.string(),
   },
 
   /**
@@ -24,6 +26,7 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
   },
 
   /**
@@ -39,6 +42,10 @@ export const env = createEnv({
       process.env.VERVE_GA4_SERVICE_ACCOUNT_JSON_BASE64,
     HELICONE_API_KEY: process.env.HELICONE_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+    SIGNING_SECRET: process.env.SIGNING_SECRET,
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

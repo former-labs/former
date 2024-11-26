@@ -22,6 +22,7 @@ const updatedAtField = timestamp("updated_at", {
 
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
+  authId: text("auth_id").notNull(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
 });

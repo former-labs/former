@@ -6,11 +6,14 @@ const isProtectedRoute = createRouteMatcher([
   "/chat(.*)",
 ]);
 
+
 export default clerkMiddleware(async (auth, request) => {
   if (isProtectedRoute(request)) {
     await auth.protect()
   }
-})
+},
+{ debug: process.env.NODE_ENV === 'development' }
+)
 
 export const config = {
   matcher: [
