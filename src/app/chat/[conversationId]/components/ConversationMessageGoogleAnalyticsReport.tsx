@@ -141,7 +141,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-y-2 rounded-md bg-gray-100 p-4">
+      <div className="flex flex-col gap-y-2 rounded-md bg-gray-200 p-4">
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>

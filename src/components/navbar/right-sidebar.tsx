@@ -24,7 +24,9 @@ export function RightAppSidebar({
             onClose={closeGoogleAnalyticsReport}
           />
         ) : (
-          <div>Nothing to see here...</div>
+          <div className="flex h-full items-center justify-center">
+            Nothing to see here...
+          </div>
         )}
       </SidebarContent>
     </SidebarRight>
