@@ -4,7 +4,7 @@ import { TableDataView } from "@/components/charting/TableDataView";
 import { Button } from "@/components/ui/button";
 import { type EvalApiTest } from "@/server/api/routers/eval/evalTestListAndFilter";
 import { type GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
-import { api, RouterOutputs } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { useState } from "react";
 import { MetadataDetails } from "./MetadataDetails";
 
@@ -289,7 +289,7 @@ const EvalTestComponent = ({
 };
 
 type GoogleAnalyticsReportResultType =
-  RouterOutputs["eval"]["getGoogleAnalyticsReport"];
+  RouterOutputs["eval"]["executeGoogleAnalyticsReport"];
 
 const GoogleAnalyticsReportRunner = ({
   workspaceUid,
@@ -298,7 +298,8 @@ const GoogleAnalyticsReportRunner = ({
   workspaceUid: string;
   parameters: GoogleAnalyticsReportParameters;
 }) => {
-  const runGa4Mutation = api.eval.getGoogleAnalyticsReport.useMutation();
+  const executeReportMutation =
+    api.eval.executeGoogleAnalyticsReport.useMutation();
   const [reportResult, setReportResult] = useState<
     GoogleAnalyticsReportResultType["data"] | null
   >(null);
@@ -306,7 +307,7 @@ const GoogleAnalyticsReportRunner = ({
 
   const handleRunReport = async () => {
     try {
-      const response = await runGa4Mutation.mutateAsync({
+      const response = await executeReportMutation.mutateAsync({
         workspaceUid,
         parameters,
       });
@@ -332,9 +333,9 @@ const GoogleAnalyticsReportRunner = ({
         <Button
           variant="secondary"
           onClick={handleRunReport}
-          disabled={runGa4Mutation.isPending}
+          disabled={executeReportMutation.isPending}
         >
-          {runGa4Mutation.isPending ? "Running Report..." : "Run Report"}
+          {executeReportMutation.isPending ? "Running Report..." : "Run Report"}
         </Button>
       </div>
       {(reportResult ?? error) && (

@@ -57,7 +57,7 @@ export const evalRouter = createTRPCRouter({
       };
     }),
 
-  getGoogleAnalyticsReport: publicProcedure
+  executeGoogleAnalyticsReport: publicProcedure
     .input(
       z.object({
         workspaceUid: z.string(),

@@ -1,10 +1,9 @@
 "use client";
 
-import { Loading } from "@/components/utils/Loading";
-import { LogoVerve } from "@/components/utils/LogoVerve";
 import { type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { use, useState } from "react";
+import { ConversationMessageGoogleAnalyticsReport } from "./components/ConversationMessageGoogleAnalyticsReport";
 import { SearchBar } from "./components/SearchBar";
 
 export default function Page({
@@ -103,49 +102,6 @@ const ConversationMessageUser = ({ message }: { message: MessageSelect }) => {
     // </div>
     <div className="flex w-auto gap-x-4 self-end rounded bg-orange-50 px-4 pb-4 pt-4">
       <div className="flex flex-col text-gray-900">{message.text}</div>
-    </div>
-  );
-};
-
-const ConversationMessageGoogleAnalyticsReport = ({
-  message,
-}: {
-  message: MessageSelect;
-}) => {
-  const { data: report, isLoading } =
-    api.conversation.getGoogleAnalyticsReport.useQuery(
-      {
-        googleAnalyticsReportId: message.googleAnalyticsReportId!,
-      },
-      {
-        enabled: !!message.googleAnalyticsReportId,
-      },
-    );
-
-  return (
-    <div className="flex flex-col gap-y-2">
-      <div className="flex gap-x-4 rounded px-2 pb-4 pt-4">
-        <div>
-          <LogoVerve />
-        </div>
-      </div>
-      <div className="space-y-4 rounded bg-red-50 p-4">
-        <pre>{JSON.stringify(message, null, 2)}</pre>
-        {isLoading ? (
-          <Loading />
-        ) : (
-          report && (
-            <>
-              <div className="border-t border-red-200 pt-4">
-                <h3 className="mb-2 font-bold">
-                  Associated Google Analytics Report:
-                </h3>
-                <pre>{JSON.stringify(report, null, 2)}</pre>
-              </div>
-            </>
-          )
-        )}
-      </div>
     </div>
   );
 };

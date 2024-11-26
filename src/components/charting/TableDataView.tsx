@@ -27,7 +27,7 @@ export const TableDataView = ({
   }, []);
 
   return (
-    <div className={`ag-theme-quartz w-full ${className ?? ""}`}>
+    <div className={`ag-theme-quartz h-[400px] w-full ${className ?? ""}`}>
       <AgGridReact
         rowData={data}
         columnDefs={columnDefs}
