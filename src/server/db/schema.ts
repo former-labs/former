@@ -49,9 +49,10 @@ const createdAtField = timestamp("created_at", { withTimezone: true })
   .defaultNow()
   .notNull();
 
-const updatedAtField = timestamp("updated_at", {
-  withTimezone: true,
-}).$onUpdate(() => new Date());
+const updatedAtField = timestamp("updated_at", { withTimezone: true })
+  .defaultNow()
+  .notNull()
+  .$onUpdate(() => new Date());
 
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
