@@ -1,9 +1,10 @@
 "use client";
 
+import { TableDataView } from "@/components/charting/TableDataView";
 import { Button } from "@/components/ui/button";
 import { type EvalApiTest } from "@/server/api/routers/eval/evalTestListAndFilter";
 import { type GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
-import { api, RouterOutputs } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { useState } from "react";
 import { MetadataDetails } from "./MetadataDetails";
 
@@ -111,7 +112,7 @@ export default function Page() {
   const isAnyTestRunning = Object.values(evalTestLoading).some(Boolean);
 
   return (
-    <div className="mx-auto flex w-full flex-col">
+    <div className="mx-auto flex w-full max-w-screen-lg flex-col">
       {error && <div className="text-red-500">Error: {error.message}</div>}
 
       <div className="mb-8 flex flex-col gap-y-2">
@@ -288,7 +289,7 @@ const EvalTestComponent = ({
 };
 
 type GoogleAnalyticsReportResultType =
-  RouterOutputs["eval"]["getGoogleAnalyticsReport"];
+  RouterOutputs["eval"]["executeGoogleAnalyticsReport"];
 
 const GoogleAnalyticsReportRunner = ({
   workspaceUid,
@@ -297,7 +298,8 @@ const GoogleAnalyticsReportRunner = ({
   workspaceUid: string;
   parameters: GoogleAnalyticsReportParameters;
 }) => {
-  const runGa4Mutation = api.eval.getGoogleAnalyticsReport.useMutation();
+  const executeReportMutation =
+    api.eval.executeGoogleAnalyticsReport.useMutation();
   const [reportResult, setReportResult] = useState<
     GoogleAnalyticsReportResultType["data"] | null
   >(null);
@@ -305,7 +307,7 @@ const GoogleAnalyticsReportRunner = ({
 
   const handleRunReport = async () => {
     try {
-      const response = await runGa4Mutation.mutateAsync({
+      const response = await executeReportMutation.mutateAsync({
         workspaceUid,
         parameters,
       });
@@ -331,9 +333,9 @@ const GoogleAnalyticsReportRunner = ({
         <Button
           variant="secondary"
           onClick={handleRunReport}
-          disabled={runGa4Mutation.isPending}
+          disabled={executeReportMutation.isPending}
         >
-          {runGa4Mutation.isPending ? "Running Report..." : "Run Report"}
+          {executeReportMutation.isPending ? "Running Report..." : "Run Report"}
         </Button>
       </div>
       {(reportResult ?? error) && (
@@ -342,11 +344,11 @@ const GoogleAnalyticsReportRunner = ({
             Report Result
           </summary>
           {error && <div className="mb-4 text-red-500">Error: {error}</div>}
-          {/* {reportResult && (
-            <div className="my-4 border bg-gray-50">
-              <TableDataView data={reportResult.rows} />
+          {reportResult && (
+            <div className="my-4 bg-gray-50">
+              <TableDataView className="h-[300px]" data={reportResult.rows} />
             </div>
-          )} */}
+          )}
           <details className="ml-8 mt-4">
             <summary className="mb-2 cursor-pointer font-medium">
               Full Report

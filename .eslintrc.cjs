@@ -24,6 +24,7 @@ const config = {
       "warn",
       {
         argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
       },
     ],
     "@typescript-eslint/require-await": "off",
