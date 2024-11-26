@@ -132,7 +132,8 @@ export const messageTable = pgTable("message", {
     .references(() => conversationTable.id),
   role: text("role", { enum: ["user", "assistant"] }).notNull(),
   text: text("text"),
-  googleAnalyticsReportId: uuid("google_analytics_report_id").references(() => googleAnalyticsReportTable.id)
+  googleAnalyticsReportId: uuid("google_analytics_report_id").references(() => googleAnalyticsReportTable.id),
+  plotViewId: uuid("plot_view_id").references(() => plotViewTable.id),
 });
 
 export const googleAnalyticsReportTable = pgTable("google_analytics_report", {
@@ -144,7 +145,7 @@ export const googleAnalyticsReportTable = pgTable("google_analytics_report", {
 	reportParameters: json("report_parameters").$type<GoogleAnalyticsReportParameters>().notNull(),
 });
 
-export const dataSourceViewTable = pgTable("data_source_view", {
+export const plotViewTable = pgTable("plot_view", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	createdAt: createdAtField,
 	updatedAt: updatedAtField,
