@@ -37,7 +37,7 @@ const getErrorDetails = (error: string) => {
   }
 };
 
-export const OnboardingPage = () => {
+export default function OnboardingPage() {
   const [error, setError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -159,4 +159,4 @@ export const OnboardingPage = () => {
       />
     </div>
   );
-};
+}

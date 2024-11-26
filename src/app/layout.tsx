@@ -3,8 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
-import { LeftSidebar } from "@/components/navbar/left-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { RouteWrapper } from "@/components/route-wrapper";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
@@ -21,9 +20,7 @@ export default function RootLayout({
       <body>
         <ClerkProvider>
           <TRPCReactProvider>
-            <SidebarProvider>
-              <LeftSidebar>{children}</LeftSidebar>
-            </SidebarProvider>
+            <RouteWrapper>{children}</RouteWrapper>
           </TRPCReactProvider>
         </ClerkProvider>
       </body>
