@@ -1,11 +1,11 @@
+import { LayoutSidebar } from "@/components/navbar/layout-sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarRightProvider } from "@/components/ui/sidebar-right";
 import "@/styles/globals.css";
+import { TRPCReactProvider } from "@/trpc/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
-
-import { LeftSidebar } from "@/components/navbar/left-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
   title: "Werve",
@@ -21,9 +21,11 @@ export default function RootLayout({
       <body>
         <ClerkProvider>
           <TRPCReactProvider>
-            <SidebarProvider>
-              <LeftSidebar>{children}</LeftSidebar>
-            </SidebarProvider>
+            <SidebarRightProvider>
+              <SidebarProvider>
+                <LayoutSidebar>{children}</LayoutSidebar>
+              </SidebarProvider>
+            </SidebarRightProvider>
           </TRPCReactProvider>
         </ClerkProvider>
       </body>
