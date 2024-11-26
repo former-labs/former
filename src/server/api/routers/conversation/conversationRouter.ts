@@ -1,6 +1,5 @@
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
-import { conversationTable, googleAnalyticsReportTable, messageTable } from "@/server/db/schema";
-import { executeGoogleAnalyticsReport, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
+import { conversationTable, messageTable } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { createGoogleAnalyticsResponse } from "./createGoogleAnalyticsResponse";
@@ -60,20 +59,6 @@ export const conversationRouter = createTRPCRouter({
       return messages;
     }),
 
-  getGoogleAnalyticsReport: publicProcedure
-    .input(z.object({ googleAnalyticsReportId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      const report = await ctx.db.query.googleAnalyticsReportTable.findFirst({
-        where: eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId),
-      });
-
-      if (!report) {
-        throw new Error(`Report not found for id: ${input.googleAnalyticsReportId}`);
-      }
-
-      return report;
-    }),
-
   addMessage: publicProcedure
     .input(
       z.object({
@@ -96,39 +81,5 @@ export const conversationRouter = createTRPCRouter({
         assistantMessageId: newAssistantMessage.id,
         suggestedUserResponses,
       };
-    }),
-
-  executeGoogleAnalyticsReport: publicProcedure
-    .input(z.object({ googleAnalyticsReportId: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      const report = await ctx.db.query.googleAnalyticsReportTable.findFirst({
-        where: eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId),
-      });
-
-      if (!report) {
-        throw new Error(`Report not found for id: ${input.googleAnalyticsReportId}`);
-      }
-
-      try {
-        // Hardcoded to ours for now
-        const propertyId = "447821713";
-
-        const result = await executeGoogleAnalyticsReport({
-          parameters: report.reportParameters,
-          propertyId,
-          analyticsDataClient: verveGa4AnalyticsDataClient,
-        });
-        return {
-          success: true as const,
-          data: result,
-        };
-      } catch (error) {
-        console.log(error);
-        return {
-          success: false as const,
-          error:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        };
-      }
     }),
 });

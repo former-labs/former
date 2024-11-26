@@ -22,7 +22,7 @@ export const ConversationMessageGoogleAnalyticsReport = ({
   }
 
   const { data: report, isLoading } =
-    api.conversation.getGoogleAnalyticsReport.useQuery(
+    api.googleAnalytics.getGoogleAnalyticsReport.useQuery(
       {
         googleAnalyticsReportId: message.googleAnalyticsReportId,
       },
@@ -54,7 +54,7 @@ export const ConversationMessageGoogleAnalyticsReport = ({
 };
 
 type GoogleAnalyticsReportResultType =
-  RouterOutputs["conversation"]["executeGoogleAnalyticsReport"];
+  RouterOutputs["googleAnalytics"]["executeGoogleAnalyticsReport"];
 
 const ConversationMessageGoogleAnalyticsReportContent = ({
   message,
@@ -70,7 +70,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   const [error, setError] = useState<string | null>(null);
 
   const executeReportMutation =
-    api.conversation.executeGoogleAnalyticsReport.useMutation();
+    api.googleAnalytics.executeGoogleAnalyticsReport.useMutation();
 
   useEffect(() => {
     const executeReport = async () => {

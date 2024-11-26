@@ -1,7 +1,7 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conversationRouter } from "./routers/conversation/conversationRouter";
-
 import { evalRouter } from "./routers/eval/evalRouter";
+import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsReport";
 
 /**
  * This is the primary router for your server.
@@ -11,6 +11,7 @@ import { evalRouter } from "./routers/eval/evalRouter";
 export const appRouter = createTRPCRouter({
   conversation: conversationRouter,
   eval: evalRouter,
+  googleAnalytics: googleAnalyticsRouter,
 });
 
 // export type definition of API
