@@ -16,7 +16,7 @@ export const env = createEnv({
     HELICONE_API_KEY: z.string(),
     OPENAI_API_KEY: z.string(),
     CLERK_SECRET_KEY: z.string(),
-    SIGNING_SECRET: z.string(),
+    CLERK_SIGNING_SECRET: z.string(),
   },
 
   /**
@@ -43,7 +43,7 @@ export const env = createEnv({
     HELICONE_API_KEY: process.env.HELICONE_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-    SIGNING_SECRET: process.env.SIGNING_SECRET,
+    CLERK_SIGNING_SECRET: process.env.CLERK_SIGNING_SECRET,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   },

@@ -8,7 +8,7 @@ import { Webhook } from 'svix'
 export async function POST(req: Request) {
 
   // Create new Svix instance with secret
-  const wh = new Webhook(env.SIGNING_SECRET)
+  const wh = new Webhook(env.CLERK_SIGNING_SECRET)
 
   // Get headers
   const headerPayload = await headers()
