@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { usePathname } from "next/navigation";
 
 export function NavPages({
   pages,
@@ -19,12 +20,17 @@ export function NavPages({
     icon: LucideIcon;
   }[];
 }) {
+  const pathname = usePathname();
+
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Features</SidebarGroupLabel>
       <SidebarMenu>
         {pages.map((item) => (
-          <SidebarMenuItem key={item.name}>
+          <SidebarMenuItem
+            key={item.name}
+            className={pathname === item.url ? "bg-accent" : ""}
+          >
             <SidebarMenuButton asChild>
               <a href={item.url}>
                 <item.icon />
