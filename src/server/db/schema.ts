@@ -1,6 +1,4 @@
-// Example model schema from the Drizzle docs
-// https://orm.drizzle.team/docs/sql-schema-declaration
-
+import { type ViewData } from "@/components/charting/chartTypes";
 import { env } from "@/env";
 import CryptoJS from "crypto-js";
 import { relations } from "drizzle-orm";
@@ -70,8 +68,6 @@ export const userRelations = relations(userTable, ({ many }) => ({
 }));
 
 
-
-
 export const roleTable = pgTable("role", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
@@ -98,6 +94,19 @@ export const workspaceTable = pgTable("workspace", {
   updatedAt: updatedAtField,
   name: text("name").notNull(),
 });
+
+export const integrationTable = pgTable("integration", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaceTable.id),
+  type: text("type", { enum: ["google_analytics"] }).notNull(),
+  credentials: encryptedJson("credentials").notNull(),
+  metadata: json("metadata").notNull(),
+});
+
 
 /*
   TODO: Make this reference a workspace
@@ -134,20 +143,12 @@ export const googleAnalyticsReportTable = pgTable("google_analytics_report", {
 	reportParameters: json("report_parameters").$type<GoogleAnalyticsReportParameters>().notNull(),
 });
 
-
-export const integrationTable = pgTable("integration", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  workspaceId: uuid("workspace_id")
-    .notNull()
-    .references(() => workspaceTable.id),
-  type: text("type", { enum: ["google_analytics"] }).notNull(),
-  credentials: encryptedJson("credentials").notNull(),
-  metadata: json("metadata").notNull(),
+export const dataSourceViewTable = pgTable("data_source_view", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	createdAt: createdAtField,
+	updatedAt: updatedAtField,
+	viewData: json("view_data").$type<ViewData>().notNull(),
 });
-
-
 
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;

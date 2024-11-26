@@ -57,6 +57,13 @@
       "when": 1732617308067,
       "tag": "0007_chubby_tusk",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1732660277714,
+      "tag": "0008_daffy_supreme_intelligence",
+      "breakpoints": true
     }
   ]
 }
