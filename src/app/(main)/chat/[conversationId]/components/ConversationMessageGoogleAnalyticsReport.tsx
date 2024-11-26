@@ -5,6 +5,7 @@ import { useRightSidebar } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
+import { getDebugMode } from "@/lib/debugMode";
 import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
 import {
   type GoogleAnalyticsReportSelect,
@@ -147,7 +148,9 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="resultTable">Result Table</TabsTrigger>
-              <TabsTrigger value="resultJson">Result JSON</TabsTrigger>
+              {getDebugMode() && (
+                <TabsTrigger value="resultJson">Result JSON</TabsTrigger>
+              )}
               <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
             </TabsList>
           </Tabs>

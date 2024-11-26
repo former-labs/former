@@ -158,7 +158,7 @@ export type GoogleAnalyticsReportSelect = typeof googleAnalyticsReportTable.$inf
 export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
 export type RoleSelect = typeof roleTable.$inferSelect;
 export type UserSelect = typeof userTable.$inferSelect;
-
+export type PlotViewSelect = typeof plotViewTable.$inferSelect;
 
 
 // Types
