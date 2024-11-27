@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 import { use, useState } from "react";
 import { DashboardGridItemGoogleAnalytics } from "./DashboardGridItemGoogleAnalytics";
-import { DashboardGridItemType, type DashboardType } from "./dashboardTypes";
-import { GridItem, GridStackContainer } from "./GridStackContainer";
+import {
+  type DashboardGridItemType,
+  type DashboardType,
+} from "./dashboardTypes";
+import { type GridItem, GridStackContainer } from "./GridStackContainer";
 
 export default function Page({
   params,
@@ -41,6 +44,8 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
   const [editMode, setEditMode] = useState(false);
   const [localDashboard, setLocalDashboard] = useState(dashboard);
 
+  const updateDashboardMutation = api.dashboard.updateDashboard.useMutation();
+
   const handleDelete = (localId: string) => {
     setLocalDashboard((prev) => ({
       ...prev,
@@ -54,6 +59,45 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
       items: prev.items.map((item) =>
         item.localId === updatedItem.localId ? updatedItem : item,
       ),
+    }));
+  };
+
+  const handleCancel = () => {
+    setLocalDashboard(dashboard);
+    setEditMode(false);
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateDashboardMutation.mutateAsync({
+        dashboardId: dashboard.id,
+        dashboard: localDashboard,
+      });
+      setEditMode(false);
+    } catch (error) {
+      console.error("Failed to save dashboard:", error);
+    }
+  };
+
+  const handleGridItemsChange = (updatedGridItems: GridItem[]) => {
+    setLocalDashboard((prev) => ({
+      ...prev,
+      items: prev.items.map((item) => {
+        const updatedGridItem = updatedGridItems.find(
+          (gridItem) => gridItem.id === item.localId,
+        );
+        if (!updatedGridItem) return item;
+
+        return {
+          ...item,
+          dashboardItem: {
+            gridX: updatedGridItem.x,
+            gridY: updatedGridItem.y,
+            gridWidth: updatedGridItem.w,
+            gridHeight: updatedGridItem.h,
+          },
+        };
+      }),
     }));
   };
 
@@ -77,13 +121,29 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
     <div>
       <div className="mb-4 flex items-center gap-4">
         <div>Dashboard ID: {dashboard.id}</div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setEditMode(!editMode)}
-        >
-          {editMode ? "Exit Edit Mode" : "Enter Edit Mode"}
-        </Button>
+        {!editMode ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setEditMode(true)}
+          >
+            Enter Edit Mode
+          </Button>
+        ) : (
+          <>
+            <Button variant="secondary" size="sm" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleSave}
+              loading={updateDashboardMutation.isPending}
+            >
+              Save
+            </Button>
+          </>
+        )}
       </div>
       <div className="min-h-[800px] w-full border bg-[#d5d5d5]">
         <GridStackContainer
@@ -91,7 +151,7 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
             editMode ? "grid-stack-container-edit" : "grid-stack-container-view"
           }
           items={gridItems}
-          onItemsChange={() => {}}
+          onItemsChange={handleGridItemsChange}
           options={{
             column: 20,
             margin: 5,

@@ -1,0 +1,1 @@
+ALTER TABLE "dashboard_item" ALTER COLUMN "plot_view_id" DROP NOT NULL;

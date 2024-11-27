@@ -29,7 +29,7 @@ export const ChartView = ({
 
   return (
     <>
-      <div className="h-[500px]">
+      <div className="h-full">
         {!viewData ? (
           <div className="flex h-full items-center justify-center">
             <Dialog open={showNewView} onOpenChange={setShowNewView}>

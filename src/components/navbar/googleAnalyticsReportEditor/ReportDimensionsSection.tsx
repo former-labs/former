@@ -62,7 +62,7 @@ export const ReportDimensionsSection = ({
                 <div className="flex-1">
                   {googleAnalyticsDefinitions.dimensions.find(
                     (d) => d.name === dimension.name,
-                  )?.displayName || "Select dimension"}
+                  )?.displayName ?? "Select dimension"}
                 </div>
                 <Button
                   variant="outline"
