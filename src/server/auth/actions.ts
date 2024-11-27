@@ -1,10 +1,10 @@
 "use server";
 
+import { env } from "@/env";
 import { PATH_GOOGLE_OAUTH_CALLBACK } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 import { type Provider } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 
@@ -13,9 +13,8 @@ export async function loginWithProvider({
 }: {
   provider: Provider;
 }) {
-  const origin = (await headers()).get("origin");
   const supabase = await createClient();
-  const redirectTo = `${origin}${PATH_GOOGLE_OAUTH_CALLBACK}`;
+  const redirectTo = `${env.DASHBOARD_URI}${PATH_GOOGLE_OAUTH_CALLBACK}`;
 
   const { error, data } = await supabase.auth.signInWithOAuth({
     provider,
