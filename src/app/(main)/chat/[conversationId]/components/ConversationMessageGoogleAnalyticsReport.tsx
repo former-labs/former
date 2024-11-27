@@ -1,10 +1,12 @@
 "use client";
 
+import { type ColumnDefinitions } from "@/components/charting/chartTypes";
 import { TableDataView } from "@/components/charting/TableDataView";
 import { useRightSidebar } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
+import { getDebugMode } from "@/lib/debugMode";
 import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
 import {
   type GoogleAnalyticsReportSelect,
@@ -13,6 +15,7 @@ import {
 import { api, type RouterOutputs } from "@/trpc/react";
 import { Download, Pencil, Play, Save } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ConversationMessageChartView } from "./ConversationMessageChartView";
 
 export const ConversationMessageGoogleAnalyticsReport = ({
   message,
@@ -65,7 +68,9 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   message: MessageSelect;
   report: GoogleAnalyticsReportSelect;
 }) => {
-  const [activeTab, setActiveTab] = useState<string>("resultTable");
+  const [activeTab, setActiveTab] = useState<string>(
+    message.plotViewId ? "visualisation" : "resultTable",
+  );
   const [reportResult, setReportResult] = useState<
     GoogleAnalyticsReportResultType["data"] | null
   >(null);
@@ -129,6 +134,21 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     console.log("Save to dashboard clicked");
   };
 
+  const columnDefinitions = reportResult
+    ? reportResult.columns.reduce((acc, column) => {
+        if (column.columnType === "dimension") {
+          acc[column.name] = {
+            type: column.dataType,
+          };
+        } else {
+          acc[column.name] = {
+            type: "number",
+          };
+        }
+        return acc;
+      }, {} as ColumnDefinitions)
+    : null;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="shadow-xs flex flex-row items-center justify-between rounded-md bg-blue-100 px-3.5 py-2.5">
@@ -146,9 +166,11 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
-              <TabsTrigger value="resultTable">Result Table</TabsTrigger>
-              <TabsTrigger value="resultJson">Result JSON</TabsTrigger>
               <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
+              <TabsTrigger value="resultTable">Result Table</TabsTrigger>
+              {getDebugMode() && (
+                <TabsTrigger value="resultJson">Result JSON</TabsTrigger>
+              )}
             </TabsList>
           </Tabs>
 
@@ -207,7 +229,12 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           )}
 
           {activeTab === "visualisation" && (
-            <div className="p-4">INSERT VISUALISATION</div>
+            <ConversationMessageChartView
+              messageId={message.id}
+              columnDefinitions={columnDefinitions}
+              data={reportResult?.rows ?? null}
+              isLoadingData={executeReportMutation.isPending}
+            />
           )}
         </div>
       </div>

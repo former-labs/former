@@ -1,5 +1,5 @@
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
-import { conversationTable, messageTable } from "@/server/db/schema";
+import { conversationTable, messageTable, plotViewTable } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { createGoogleAnalyticsResponse } from "./createGoogleAnalyticsResponse";
@@ -81,5 +81,91 @@ export const conversationRouter = createTRPCRouter({
         assistantMessageId: newAssistantMessage.id,
         suggestedUserResponses,
       };
+    }),
+
+  getMessagePlotView: publicProcedure
+    .input(z.object({ messageId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const plotViews = await ctx.db
+        .select({
+          plotView: plotViewTable,
+        })
+        .from(messageTable)
+        .innerJoin(
+          plotViewTable,
+          eq(messageTable.plotViewId, plotViewTable.id)
+        )
+        .where(eq(messageTable.id, input.messageId))
+        .limit(1);
+
+      return plotViews[0]?.plotView ?? null;
+    }),
+
+  setMessagePlotView: publicProcedure
+    .input(
+      z.object({
+        messageId: z.string().uuid(),
+        viewData: z.any().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Start a transaction since we need to coordinate multiple operations
+      return await ctx.db.transaction(async (tx) => {
+        // Get current message to check if it has a plotViewId
+        const [message] = await tx
+          .select()
+          .from(messageTable)
+          .where(eq(messageTable.id, input.messageId));
+
+        if (!message) {
+          throw new Error("Message not found");
+        }
+
+        // If viewData is null, we want to remove the plot view
+        if (input.viewData === null) {
+          if (message.plotViewId) {
+            // Update message to remove reference
+            await tx
+              .update(messageTable)
+              .set({ plotViewId: null })
+              .where(eq(messageTable.id, input.messageId));
+
+            // Delete the existing plot view
+            await tx
+              .delete(plotViewTable)
+              .where(eq(plotViewTable.id, message.plotViewId));
+          }
+          return null;
+        }
+
+        if (message.plotViewId) {
+          // Update existing plot view
+          const [updatedPlotView] = await tx
+            .update(plotViewTable)
+            .set({ viewData: input.viewData })
+            .where(eq(plotViewTable.id, message.plotViewId))
+            .returning();
+
+          return updatedPlotView;
+        } else {
+          // Create new plot view
+          const [newPlotView] = await tx
+            .insert(plotViewTable)
+            .values({ viewData: input.viewData })
+            .returning();
+
+          if (!newPlotView) {
+            throw new Error("Failed to create plot view");
+          }
+
+          // Update message with new plot view reference
+          await tx
+            .update(messageTable)
+            .set({ plotViewId: newPlotView.id })
+            .where(eq(messageTable.id, input.messageId));
+
+          return newPlotView;
+        }
+      });
     }),
 });

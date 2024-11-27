@@ -57,6 +57,41 @@
       "when": 1732617308067,
       "tag": "0007_chubby_tusk",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1732660277714,
+      "tag": "0008_daffy_supreme_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1732660353996,
+      "tag": "0009_nebulous_the_fallen",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1732660839867,
+      "tag": "0010_clever_pandemic",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1732660872456,
+      "tag": "0011_slim_wrecking_crew",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1732668008728,
+      "tag": "0012_bent_vulcan",
+      "breakpoints": true
     }
   ]
 }

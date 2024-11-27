@@ -1,0 +1,1 @@
+ALTER TABLE "data_source_view" RENAME TO "plot_view";
