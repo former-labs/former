@@ -1,5 +1,6 @@
 "use client";
 
+import { type ColumnDefinitions } from "@/components/charting/chartTypes";
 import { TableDataView } from "@/components/charting/TableDataView";
 import { useRightSidebar } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
 import { api, type RouterOutputs } from "@/trpc/react";
 import { Download, Pencil, Play, Save } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ConversationMessageChartView } from "./ConversationMessageChartView";
 
 export const ConversationMessageGoogleAnalyticsReport = ({
   message,
@@ -130,6 +132,21 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     console.log("Save to dashboard clicked");
   };
 
+  const columnDefinitions = reportResult
+    ? reportResult.columns.reduce((acc, column) => {
+        if (column.columnType === "dimension") {
+          acc[column.name] = {
+            type: column.dataType,
+          };
+        } else {
+          acc[column.name] = {
+            type: "number",
+          };
+        }
+        return acc;
+      }, {} as ColumnDefinitions)
+    : null;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="shadow-xs flex flex-row items-center justify-between rounded-md bg-blue-100 px-3.5 py-2.5">
@@ -210,7 +227,12 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           )}
 
           {activeTab === "visualisation" && (
-            <div className="p-4">INSERT VISUALISATION</div>
+            <ConversationMessageChartView
+              messageId={message.id}
+              columnDefinitions={columnDefinitions}
+              data={reportResult?.rows ?? null}
+              isLoadingData={executeReportMutation.isPending}
+            />
           )}
         </div>
       </div>
