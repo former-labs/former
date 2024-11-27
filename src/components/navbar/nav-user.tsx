@@ -1,6 +1,5 @@
 "use client";
 
-import { SignOutButton, useClerk } from "@clerk/nextjs";
 import { ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,10 +17,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
-  const { user: authUser } = useClerk();
+  const { authUser, logout } = useAuth();
 
   return (
     <SidebarMenu>
@@ -34,23 +34,21 @@ export function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
-                  src={authUser?.imageUrl}
-                  alt={authUser?.username ?? ""}
+                  src={authUser?.user_metadata.avatar_url}
+                  alt={authUser?.user_metadata.name ?? ""}
                 />
                 <AvatarFallback className="rounded-lg">
-                  {authUser?.fullName
+                  {authUser?.user_metadata.name
                     ?.split(" ")
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {authUser?.fullName}
+                  {authUser?.user_metadata.name}
                 </span>
-                <span className="truncate text-xs">
-                  {authUser?.primaryEmailAddress?.emailAddress}
-                </span>
+                <span className="truncate text-xs">{authUser?.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -65,25 +63,23 @@ export function NavUser() {
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage
-                    src={authUser?.imageUrl}
-                    alt={authUser?.username ?? ""}
+                    src={authUser?.user_metadata.avatar_url}
+                    alt={authUser?.user_metadata.name ?? ""}
                   />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
-                    {authUser?.fullName}
+                    {authUser?.user_metadata.name}
                   </span>
-                  <span className="truncate text-xs">
-                    {authUser?.primaryEmailAddress?.emailAddress}
-                  </span>
+                  <span className="truncate text-xs">{authUser?.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <LogOut />
-              <SignOutButton />
+              <span onClick={logout}>Sign out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

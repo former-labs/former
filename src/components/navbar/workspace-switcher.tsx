@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, Plus } from "lucide-react";
-import * as React from "react";
+import { Building2, ChevronsUpDown, Plus } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -18,24 +17,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
-export function WorkspaceSwitcher({
-  workspaces,
-}: {
-  workspaces: {
-    name: string;
-    logo: React.ElementType;
-    plan: string;
-  }[];
-}) {
+export function WorkspaceSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeWorkspace, setActiveWorkspace] = React.useState(
-    workspaces[0] ?? {
-      name: "",
-      logo: () => null,
-      plan: "",
-    },
-  );
+  const { roles, activeRole, setActiveRole } = useAuth();
 
   return (
     <SidebarMenu>
@@ -47,13 +33,13 @@ export function WorkspaceSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <activeWorkspace.logo className="size-4" />
+                <Building2 className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {activeWorkspace.name}
+                  {activeRole?.workspace.name}
                 </span>
-                <span className="truncate text-xs">{activeWorkspace.plan}</span>
+                <span className="truncate text-xs">{"A Plan"}</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -67,16 +53,16 @@ export function WorkspaceSwitcher({
             <DropdownMenuLabel className="text-xs text-muted-foreground">
               Workspaces
             </DropdownMenuLabel>
-            {workspaces.map((workspace, index) => (
+            {roles?.map((role, index) => (
               <DropdownMenuItem
-                key={workspace.name}
-                onClick={() => setActiveWorkspace(workspace)}
+                key={role.workspace.name}
+                onClick={() => setActiveRole(role)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <workspace.logo className="size-4 shrink-0" />
+                  <Building2 className="size-4 shrink-0" />
                 </div>
-                {workspace.name}
+                {role.workspace.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>
             ))}

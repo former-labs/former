@@ -6,11 +6,11 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { currentUser } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 
 /**
@@ -26,10 +26,14 @@ import { db } from "@/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const auth = await currentUser()
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return {
     db,
-    auth,
+    auth: user,
     ...opts,
   };
 };
@@ -108,15 +112,62 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
 
+
+// When a user is trying to access a resource that is not workspace-specific
+export const authProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    if (!ctx.auth?.id) {
+      throw new Error("You must be logged in to access this resource");
+    }
+
+    return next({
+      ctx: {
+        auth: ctx.auth,
+      },
+    });
+  });
+
+
+// When we expect both auth user and user to exist
+export const userProtectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    if (!ctx.auth?.id) {
+      throw new Error("You must be logged in to access this resource");
+    }
+
+    const user = await db.query.userTable.findFirst({
+      where: (user, { eq }) => eq(user.supabaseAuthId, ctx.auth?.id ?? ""),
+      with: {
+        roles: {
+          with: {
+            workspace: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return next({
+      ctx: {
+        auth: ctx.auth,
+        user,
+      },
+    });
+  });
+
+
+
 /**
  * Protected (authenticated) procedure
  *
- * This is the base piece you use to build new queries and mutations on your tRPC API that require
- * authentication. It guarantees that a user must be logged in to access the procedure.
- *
- * @see https://clerk.com/docs/nextjs/middleware
+ * When a user is trying to access a resource that is workspace-specific
  */
-export const protectedProcedure = t.procedure
+export const workspaceProtectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next, input }) => {
     if (!ctx.auth?.id) {
@@ -124,7 +175,7 @@ export const protectedProcedure = t.procedure
     }
     
     const user = await db.query.userTable.findFirst({
-      where: (user, { eq }) => eq(user.clerkAuthId, ctx.auth?.id ?? ""),
+      where: (user, { eq }) => eq(user.supabaseAuthId, ctx.auth?.id ?? ""),
       with: {
         roles: true
       }
@@ -158,20 +209,4 @@ export const protectedProcedure = t.procedure
       },
     });
   });
-
-
-export const authProcedure = t.procedure
-  .use(timingMiddleware)
-  .use(async ({ ctx, next }) => {
-    if (!ctx.auth?.id) {
-      throw new Error("You must be logged in to access this resource");
-    }
-
-    return next({
-      ctx: {
-        auth: ctx.auth,
-      },
-    });
-  });
-
 

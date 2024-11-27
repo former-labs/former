@@ -4,6 +4,10 @@
   In my experience this file becomes very convenient as the app grows.
 */
 
+export const PATH_HOME = "/";
+
+export const PATH_LOGIN = "/login";
+
 export const PATH_CHAT = "/chat";
 
 export const PATH_CONVERSATION_SINGLE = (conversationId: string) =>

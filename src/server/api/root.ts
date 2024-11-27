@@ -4,6 +4,7 @@ import { integrationRouter } from "./routers/conversation/integrationRouter";
 import { onboardingRouter } from "./routers/conversation/onboardingRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
 import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsRouter";
+import { userRouter } from "./routers/user";
 
 /**
  * This is the primary router for your server.
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   integration: integrationRouter,
   eval: evalRouter,
   googleAnalytics: googleAnalyticsRouter,
+  user: userRouter,
 });
 
 // export type definition of API
