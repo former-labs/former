@@ -1,6 +1,6 @@
 "use server";
 
-import { PATH_ONBOARDING } from "@/lib/paths";
+import { PATH_GOOGLE_OAUTH_CALLBACK } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 import { type Provider } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
@@ -15,7 +15,7 @@ export async function loginWithProvider({
 }) {
   const origin = (await headers()).get("origin");
   const supabase = await createClient();
-  const redirectTo = `${origin}${PATH_ONBOARDING}`;
+  const redirectTo = `${origin}${PATH_GOOGLE_OAUTH_CALLBACK}`;
 
   const { error, data } = await supabase.auth.signInWithOAuth({
     provider,

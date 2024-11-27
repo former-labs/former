@@ -17,3 +17,5 @@ export const PATH_DASHBOARD = "/dashboard";
 export const PATH_DASHBOARD_SINGLE = (dashboardId: string) => `/dashboard/${dashboardId}`;
 
 export const PATH_ONBOARDING = "/onboarding";
+
+export const PATH_GOOGLE_OAUTH_CALLBACK = "/auth/callback";
