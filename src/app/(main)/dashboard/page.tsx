@@ -1,17 +1,29 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PATH_DASHBOARD_SINGLE } from "@/lib/paths";
 import { api } from "@/trpc/react";
-import { BarChart } from "lucide-react";
+import { BarChart, Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function DashboardPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { data: dashboards, error } = api.dashboard.listDashboards.useQuery();
 
   if (error) {
@@ -47,7 +59,60 @@ export default function DashboardPage() {
             </Card>
           </Link>
         ))}
+
+        <div className="flex justify-center">
+          <Button
+            onClick={() => setIsDialogOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            New Dashboard
+          </Button>
+        </div>
       </div>
+
+      <NewDashboardDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </div>
   );
 }
+
+const NewDashboardDialog = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  const router = useRouter();
+  const createDashboard = api.dashboard.createDashboard.useMutation({
+    onSuccess: (data) => {
+      router.push(PATH_DASHBOARD_SINGLE(data.dashboardId));
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Dashboard</DialogTitle>
+          <DialogDescription>
+            Create a new dashboard to store your GA4 reports.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              createDashboard.mutate();
+            }}
+            loading={createDashboard.isPending}
+          >
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
