@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { type Data } from "plotly.js";
 import { useRef, useState } from "react";
-import Plot from "react-plotly.js";
 import { useResizeObserver } from "usehooks-ts";
 import {
   type ColumnDefinitions,
@@ -10,6 +10,9 @@ import {
   type ViewData,
 } from "./chartTypes";
 import { DeleteViewDialog } from "./DeleteViewDialog";
+
+// Dynamically import Plot with no SSR to prevent 'self is not defined' error
+const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 export const ViewContent = ({
   view,
