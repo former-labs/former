@@ -5,6 +5,7 @@ import { type Metadata } from "next";
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TRPCReactProvider } from "@/trpc/react";
+import { GoogleAnalyticsProvider } from "@/contexts/GoogleAnalyticsContext";
 
 export const metadata: Metadata = {
   title: "Werve",
@@ -19,7 +20,11 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
         <TRPCReactProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <GoogleAnalyticsProvider>
+              {children}
+            </GoogleAnalyticsProvider>
+          </AuthProvider>
         </TRPCReactProvider>
       </body>
     </html>

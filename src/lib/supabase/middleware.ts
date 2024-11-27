@@ -1,7 +1,7 @@
 import { env } from '@/env';
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
-import { PATH_CHAT, PATH_DASHBOARD, PATH_HOME, PATH_LOGIN, PATH_ONBOARDING } from '../paths';
+import { PATH_CHAT, PATH_DASHBOARD, PATH_HOME, PATH_LOGIN, PATH_ONBOARDING, PATH_SIGNUP } from '../paths';
 
 
 // Defining routes to allow logic within updateSession middleware, below
@@ -12,6 +12,7 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 const isOnboardingRoute = createRouteMatcher([PATH_ONBOARDING])
+const isLoginRoute = createRouteMatcher([PATH_LOGIN, PATH_SIGNUP])
 const isApiRoute = createRouteMatcher(['/api(.*)'])
 
 
@@ -53,19 +54,31 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
-  // Your existing routing logic, but using the new createRedirectResponse
-  if (user && (isOnboardingRoute(request) || isApiRoute(request))) {
-    return supabaseResponse;
-  }
-  
-  // if (user && !user.user_metadata?.onboardingComplete) {
-  //   const onboardingUrl = new URL(PATH_ONBOARDING, request.url)
-  //   return createRedirectResponse(onboardingUrl)
-  // }
-  
-  if (!user && (isProtectedRoute(request) || isOnboardingRoute(request))) {
-    const signInUrl = new URL(PATH_LOGIN, request.url)
-    return createRedirectResponse(signInUrl)
+  // Handle authentication and onboarding flow
+  if (user) {
+    // Allow API routes for authenticated users
+    if (isApiRoute(request)) {
+      return supabaseResponse;
+    }
+
+    // Redirect onboarded users away from auth/onboarding pages
+    if (user.user_metadata?.onboarding_complete) {
+      if (isOnboardingRoute(request) || isLoginRoute(request)) {
+        return createRedirectResponse(new URL(PATH_HOME, request.url));
+      }
+    } else {
+      // Allow non-onboarded users to access onboarding route
+      if (isOnboardingRoute(request)) {
+        return supabaseResponse;
+      } else {
+        // Redirect non-onboarded users to onboarding
+        return createRedirectResponse(new URL(PATH_ONBOARDING, request.url));
+      }
+    }
+  } 
+  // Handle non-authenticated users
+  else if (isProtectedRoute(request) || isOnboardingRoute(request)) {
+    return createRedirectResponse(new URL(PATH_LOGIN, request.url));
   }
 
   return supabaseResponse;

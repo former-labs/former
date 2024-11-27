@@ -39,7 +39,7 @@ export function WorkspaceSwitcher() {
                 <span className="truncate font-semibold">
                   {activeRole?.workspace.name}
                 </span>
-                <span className="truncate text-xs">{"A Plan"}</span>
+                {/* <span className="truncate text-xs">{"A Plan"}</span> */}
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -67,7 +67,7 @@ export function WorkspaceSwitcher() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem disabled className="gap-2 p-2">
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Plus className="size-4" />
               </div>

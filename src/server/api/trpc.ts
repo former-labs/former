@@ -114,7 +114,7 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 
 
 // When a user is trying to access a resource that is not workspace-specific
-export const authProcedure = t.procedure
+export const authUserProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
     if (!ctx.auth?.id) {
@@ -184,6 +184,7 @@ export const workspaceProtectedProcedure = t.procedure
     if (!user) {
       throw new Error("User not found");
     }
+    
     const workspaceId = typeof input === 'object' && input !== null && 'workspaceId' in input
       ? (input as { workspaceId: string }).workspaceId 
       : undefined;

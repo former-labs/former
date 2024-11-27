@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import Link from "next/link";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
+    <div className="flex h-full flex-col items-center justify-center">
       {/* Logo */}
       <div className="z-10 mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-md">
