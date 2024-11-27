@@ -184,6 +184,7 @@ export const workspaceProtectedProcedure = t.procedure
     if (!user) {
       throw new Error("User not found");
     }
+    
     const workspaceId = typeof input === 'object' && input !== null && 'workspaceId' in input
       ? (input as { workspaceId: string }).workspaceId 
       : undefined;

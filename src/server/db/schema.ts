@@ -210,7 +210,7 @@ export type DashboardItemSelect = typeof dashboardItemsTable.$inferSelect;
 
 
 // Types
-type GoogleAnalyticsCredentials = {
+export type GoogleAnalyticsCredentials = {
   scopes: string[];
   accessToken: string;
   refreshToken: string;

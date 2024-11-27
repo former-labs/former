@@ -39,7 +39,7 @@ export function WorkspaceSwitcher() {
                 <span className="truncate font-semibold">
                   {activeRole?.workspace.name}
                 </span>
-                <span className="truncate text-xs">{"A Plan"}</span>
+                {/* <span className="truncate text-xs">{"A Plan"}</span> */}
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
