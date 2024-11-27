@@ -2,12 +2,12 @@ import { env } from "@/env";
 import { TRPCError } from "@trpc/server";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, workspaceProtectedProcedure } from "../../trpc";
 
 
 
 export const integrationRouter = createTRPCRouter({
-  connectGoogleAnalytics: protectedProcedure
+  connectGoogleAnalytics: workspaceProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string(),

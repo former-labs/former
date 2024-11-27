@@ -54,12 +54,14 @@ const updatedAtField = timestamp("updated_at", { withTimezone: true })
   .notNull()
   .$onUpdate(() => new Date());
 
+
+// User
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
   firstName: text("first_name").default(""),
   lastName: text("last_name").default(""),
   email: text("email").default(""),
-  clerkAuthId: text("clerk_auth_id").notNull(),
+  supabaseAuthId: text("supabase_auth_id").notNull(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
 });
@@ -69,6 +71,20 @@ export const userRelations = relations(userTable, ({ many }) => ({
 }));
 
 
+// Workspace
+export const workspaceTable = pgTable("workspace", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  name: text("name").notNull(),
+});
+
+export const workspaceRelations = relations(workspaceTable, ({ many }) => ({
+  roles: many(roleTable)
+}));
+
+
+// Role
 export const roleTable = pgTable("role", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
@@ -87,14 +103,11 @@ export const roleRelations = relations(roleTable, ({ one }) => ({
     fields: [roleTable.userId],
     references: [userTable.id],
   }),
+  workspace: one(workspaceTable, {
+    fields: [roleTable.workspaceId],
+    references: [workspaceTable.id],
+  }),
 }));
-
-export const workspaceTable = pgTable("workspace", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  name: text("name").notNull(),
-});
 
 export const integrationTable = pgTable("integration", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -109,6 +122,7 @@ export const integrationTable = pgTable("integration", {
 });
 
 
+// Conversation
 /*
   TODO: Make this reference a workspace
 */
@@ -183,8 +197,13 @@ export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type GoogleAnalyticsReportSelect = typeof googleAnalyticsReportTable.$inferSelect;
 export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
-export type RoleSelect = typeof roleTable.$inferSelect;
 export type UserSelect = typeof userTable.$inferSelect;
+export type RoleSelect = typeof roleTable.$inferSelect;
+export type RoleSelectWithRelations = RoleSelect & {
+  user: UserSelect;
+  workspace: WorkspaceSelect;
+};
+
 export type PlotViewSelect = typeof plotViewTable.$inferSelect;
 export type DashboardSelect = typeof dashboardTable.$inferSelect;
 export type DashboardItemSelect = typeof dashboardItemsTable.$inferSelect;

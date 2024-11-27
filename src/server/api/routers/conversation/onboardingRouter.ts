@@ -1,12 +1,12 @@
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createClient } from "@/lib/supabase/server";
+import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { roleTable, workspaceTable } from "@/server/db/schema";
-import { clerk } from "@/server/utils/clerk";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const onboardingRouter = createTRPCRouter({
-  createWorkspace: protectedProcedure
+  createWorkspace: workspaceProtectedProcedure
     .input(
       z.object({
         workspaceName: z.string().min(3, "Workspace name must be at least 3 characters"),
@@ -48,11 +48,10 @@ export const onboardingRouter = createTRPCRouter({
             });
           }
 
-          // Update Clerk metadata after role is created
-          await clerk.users.updateUser(ctx.auth.id, {
-            publicMetadata: {
-              onboardingComplete: true
-            }
+          // Create the Supabase client and update auth metadata
+          const supabase = await createClient();
+          await supabase.auth.updateUser({
+            data: { onboardingComplete: true }
           });
 
           // 3. Return the workspace UID and user ID

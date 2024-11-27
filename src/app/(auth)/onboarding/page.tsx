@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import AnimatedGridPattern from "@/components/ui/animated-grid-pattern";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -13,7 +12,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -111,8 +109,8 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-6">
-      <div className="z-10 flex w-full max-w-sm flex-col rounded-lg border-2 border-border bg-background p-8 shadow-sm">
+    <div className="z-10 flex w-full max-w-sm flex-col rounded-lg border-2 border-border bg-background p-8 shadow-sm">
+      <div>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleCreateWorkspace)}
@@ -163,16 +161,6 @@ export default function OnboardingPage() {
           {error}
         </p>
       )}
-      <AnimatedGridPattern
-        numSquares={30}
-        maxOpacity={0.1}
-        duration={3}
-        repeatDelay={1}
-        className={cn(
-          "[mask-image:radial-gradient(950px_circle_at_center,white,transparent)]",
-          "inset-x-0 inset-y-[-50%] h-[200%] skew-y-12",
-        )}
-      />
     </div>
   );
 }
