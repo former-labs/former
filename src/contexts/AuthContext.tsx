@@ -3,6 +3,7 @@
 import { PATH_LOGIN } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/client";
 import {
+  type ROLE_VALUES,
   type RoleSelectWithRelations,
   type UserSelect,
 } from "@/server/db/schema";
@@ -10,6 +11,12 @@ import { api } from "@/trpc/react";
 import { type User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
+
+export type ActiveRole = {
+  id: string;
+  workspaceId: string;
+  roleType: (typeof ROLE_VALUES)[number];
+};
 
 type AuthContextType = {
   authLoading: boolean;
@@ -21,6 +28,7 @@ type AuthContextType = {
   setActiveRole: React.Dispatch<
     React.SetStateAction<RoleSelectWithRelations | null>
   >;
+  handleWorkspaceSwitch: (role: RoleSelectWithRelations) => void;
   logout: () => Promise<void>;
   authError: string | null;
   setAuthError: React.Dispatch<React.SetStateAction<string | null>>;
@@ -35,6 +43,7 @@ export const AuthContext = createContext<AuthContextType>({
   activeRole: null,
   isWorkspaceLoading: true,
   setActiveRole: () => null,
+  handleWorkspaceSwitch: () => null,
   logout: () => Promise.resolve(),
   authError: null,
   setAuthError: () => null,
@@ -52,6 +61,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeRole, setActiveRole] = useState<RoleSelectWithRelations | null>(
     null,
   );
+  const setActiveRoleMutation = api.user.setActiveRole.useMutation();
+
+  const handleWorkspaceSwitch = (role: RoleSelectWithRelations) => {
+    setActiveRole(role);
+    if (role?.workspaceId) {
+      setActiveRoleMutation.mutate({
+        workspaceId: role.workspaceId,
+        roleId: role.id,
+      });
+    }
+  };
 
   const { data: rolesData, isLoading: isWorkspaceLoading } =
     api.user.getRoles.useQuery(undefined, {
@@ -60,10 +80,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (rolesData && rolesData.length > 0) {
-      setActiveRole(rolesData[0] ?? null);
-      setRoles(rolesData);
-      setUser(rolesData[0]?.user ?? null);
+      const activeRoleMetadata = authUser?.app_metadata?.activeRole;
+      const activeWorkspaceRole = activeRoleMetadata
+        ? rolesData.find((role) => role.id === activeRoleMetadata.id)
+        : null;
+
+      if (activeWorkspaceRole) {
+        setActiveRole(activeWorkspaceRole);
+        setRoles(rolesData);
+        setUser(activeWorkspaceRole.user ?? null);
+      } else {
+        // If no active role is set or it's invalid, use the first role
+        const firstRole = rolesData[0];
+        if (firstRole) {
+          handleWorkspaceSwitch(firstRole);
+        }
+        setRoles(rolesData);
+        setUser(rolesData[0]?.user ?? null);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rolesData]);
 
   useEffect(() => {
@@ -118,6 +154,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         roles,
         activeRole,
         setActiveRole,
+        handleWorkspaceSwitch,
         isWorkspaceLoading,
         authError,
         logout,

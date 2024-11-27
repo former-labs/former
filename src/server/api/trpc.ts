@@ -6,7 +6,7 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC, TRPCError } from "@trpc/server";
+import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
@@ -169,44 +169,33 @@ export const userProtectedProcedure = t.procedure
  */
 export const workspaceProtectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(async ({ ctx, next, input }) => {
+  .use(async ({ ctx, next }) => {
     if (!ctx.auth?.id) {
       throw new Error("You must be logged in to access this resource");
     }
     
-    const user = await db.query.userTable.findFirst({
-      where: (user, { eq }) => eq(user.supabaseAuthId, ctx.auth?.id ?? ""),
-      with: {
-        roles: true
-      }
-    });
+    const activeRole = ctx.auth.app_metadata?.activeRole;
+    const activeRoleId = activeRole?.id ?? null;
+    const activeWorkspaceId = activeRole?.workspaceId ?? null; 
+    const activeRoleType = activeRole?.roleType ?? null;
 
-    if (!user) {
-      throw new Error("User not found");
+    if (!activeRoleId) {
+      throw new Error("User does not have an active role");
     }
+
+    if (!activeWorkspaceId) {
+      throw new Error("User does not have an active workspace");
+    }
+
     
-    const workspaceId = typeof input === 'object' && input !== null && 'workspaceId' in input
-      ? (input as { workspaceId: string }).workspaceId 
-      : undefined;
-
     // Add workspace validation if workspaceId is provided in input
-    if (workspaceId) {      
-      const hasAccess = user?.roles?.some((role) => role.workspaceId === workspaceId);
-
-      if (!hasAccess) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'User does not have access to this workspace',
-        });
-      }
-    }
 
     return next({
       ctx: {
         auth: ctx.auth,
-        user,
-        workspaceId,
-        // Add workspaceUid if it exists in input
+        activeRoleId,
+        activeRoleType,
+        activeWorkspaceId,
       },
     });
   });
