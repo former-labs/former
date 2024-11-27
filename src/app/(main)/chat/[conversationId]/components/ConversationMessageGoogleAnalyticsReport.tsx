@@ -4,6 +4,14 @@ import { type ColumnDefinitions } from "@/components/charting/chartTypes";
 import { TableDataView } from "@/components/charting/TableDataView";
 import { useRightSidebar } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
 import { getDebugMode } from "@/lib/debugMode";
@@ -75,6 +83,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     GoogleAnalyticsReportResultType["data"] | null
   >(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const { openGoogleAnalyticsReport } = useRightSidebar();
 
   const executeReportMutation =
@@ -130,10 +139,6 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     }
   };
 
-  const handleSaveToDashboard = () => {
-    console.log("Save to dashboard clicked");
-  };
-
   const columnDefinitions = reportResult
     ? reportResult.columns.reduce((acc, column) => {
         if (column.columnType === "dimension") {
@@ -179,7 +184,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
               className="flex gap-x-2"
               variant="secondary"
               size="sm"
-              onClick={handleSaveToDashboard}
+              onClick={() => setIsSaveDialogOpen(true)}
             >
               <Save className="h-4 w-4" />
               Save to Dashboard
@@ -238,6 +243,58 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           )}
         </div>
       </div>
+
+      <SaveToDashboardDialog
+        open={isSaveDialogOpen}
+        onOpenChange={setIsSaveDialogOpen}
+        messageId={message.id}
+      />
     </div>
+  );
+};
+
+const SaveToDashboardDialog = ({
+  open,
+  onOpenChange,
+  messageId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  messageId: string;
+}) => {
+  const saveMessageToDashboardMutation =
+    api.conversation.saveMessageToDashboard.useMutation({
+      onSuccess: () => {
+        onOpenChange(false);
+      },
+    });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Save to Dashboard</DialogTitle>
+          <DialogDescription>
+            Save this report and visualization to your dashboard.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              saveMessageToDashboardMutation.mutate({
+                messageId: messageId,
+                dashboardId: "a17d725d-4ca1-404e-8c3e-dd5b77844b79", // TODO: Allow selecting dashboard
+              });
+            }}
+            loading={saveMessageToDashboardMutation.isPending}
+          >
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

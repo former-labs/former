@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 import {
   type ColumnDefinitions,
   type Metric,
@@ -480,7 +479,6 @@ const ViewForm = ({
 }) => {
   const [viewData, setViewData] = useState<ViewData>(
     initialData ?? {
-      id: uuidv4(),
       name: "",
       description: "",
       viewType: "lineChart",
