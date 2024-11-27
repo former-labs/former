@@ -2,6 +2,7 @@
 
 import { api } from "@/trpc/react";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 
 type GoogleAnalyticsProperty = {
   propertyId: string;
@@ -33,12 +34,15 @@ export const GoogleAnalyticsProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { activeRole } = useAuth();
   const [accounts, setAccounts] = useState<GoogleAnalyticsAccount[]>([]);
   const [activeProperty, setActiveProperty] =
     useState<GoogleAnalyticsProperty | null>(null);
 
   const { data: analyticsData, isLoading: isLoadingGoogleAccounts } =
-    api.googleAnalytics.getAccounts.useQuery();
+    api.googleAnalytics.getAccounts.useQuery(undefined, {
+      enabled: !!activeRole,
+    });
 
   useEffect(() => {
     if (analyticsData) {
