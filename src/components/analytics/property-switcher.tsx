@@ -42,22 +42,25 @@ export function PropertySwitcher() {
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
+      <PopoverContent className="w-[300px] p-0">
+        <Command className="w-full">
           <CommandInput placeholder="Search properties..." />
           <CommandList>
             <CommandEmpty>No properties found.</CommandEmpty>
             {accounts.map((account) => (
-              <CommandGroup key={account.projectId} heading={account.name}>
+              <CommandGroup key={account.accountId} heading={account.name}>
                 {account.properties.map((property) => (
                   <CommandItem
-                    key={`${account.projectId}-${property.propertyId}`}
+                    key={`${account.accountId}-${property.propertyId}`}
                     onSelect={() => {
                       setActiveProperty(property);
                       setOpen(false);
                     }}
                   >
-                    {property.name}
+                    {property.name}{" "}
+                    <span className="text-xs text-muted-foreground">
+                      ({property.propertyId})
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>

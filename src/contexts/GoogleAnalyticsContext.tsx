@@ -9,7 +9,7 @@ type GoogleAnalyticsProperty = {
 };
 
 type GoogleAnalyticsAccount = {
-  projectId: string;
+  accountId: string;
   name: string;
   properties: GoogleAnalyticsProperty[];
 };
