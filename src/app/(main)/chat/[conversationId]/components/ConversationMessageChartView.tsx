@@ -50,6 +50,14 @@ export const ConversationMessageChartView = ({
     <ChartView
       viewData={plotView?.viewData ?? null}
       setViewData={async (view) => {
+        // Nice lil optimistic update in the case where the view is being edited
+        if (view && plotView) {
+          utils.conversation.getMessagePlotView.setData(
+            { messageId },
+            { ...plotView, viewData: view },
+          );
+        }
+
         await setMessagePlotView.mutateAsync({
           messageId,
           viewData: view,
