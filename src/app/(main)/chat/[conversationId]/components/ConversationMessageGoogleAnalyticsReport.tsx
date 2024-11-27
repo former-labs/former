@@ -4,14 +4,6 @@ import { type ColumnDefinitions } from "@/components/charting/chartTypes";
 import { TableDataView } from "@/components/charting/TableDataView";
 import { useRightSidebar } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
 import { getDebugMode } from "@/lib/debugMode";
@@ -24,6 +16,7 @@ import { api, type RouterOutputs } from "@/trpc/react";
 import { Download, Pencil, Play, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConversationMessageChartView } from "./ConversationMessageChartView";
+import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
 
 export const ConversationMessageGoogleAnalyticsReport = ({
   message,
@@ -250,51 +243,5 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         messageId={message.id}
       />
     </div>
-  );
-};
-
-const SaveToDashboardDialog = ({
-  open,
-  onOpenChange,
-  messageId,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  messageId: string;
-}) => {
-  const saveMessageToDashboardMutation =
-    api.conversation.saveMessageToDashboard.useMutation({
-      onSuccess: () => {
-        onOpenChange(false);
-      },
-    });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Save to Dashboard</DialogTitle>
-          <DialogDescription>
-            Save this report and visualization to your dashboard.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              saveMessageToDashboardMutation.mutate({
-                messageId: messageId,
-                dashboardId: "650655b7-2372-4ae3-81f5-9845720ee559", // TODO: Allow selecting dashboard
-              });
-            }}
-            loading={saveMessageToDashboardMutation.isPending}
-          >
-            Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 };
