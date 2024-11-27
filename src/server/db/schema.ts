@@ -167,7 +167,7 @@ export const plotViewTable = pgTable("plot_view", {
 });
 
 export const dashboardTable = pgTable("dashboard", {
-	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	id: uuid("id").defaultRandom().primaryKey(),
 	createdAt: createdAtField,
 	updatedAt: updatedAtField,
 	title: text("title").notNull(),
@@ -175,7 +175,7 @@ export const dashboardTable = pgTable("dashboard", {
 });
 
 export const dashboardItemsTable = pgTable("dashboard_item", {
-	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	id: uuid("id").defaultRandom().primaryKey(),
 	createdAt: createdAtField,
 	updatedAt: updatedAtField,
 	dashboardId: uuid("dashboard_id")
@@ -186,8 +186,7 @@ export const dashboardItemsTable = pgTable("dashboard_item", {
 	gridWidth: integer("grid_width").notNull(),
 	gridHeight: integer("grid_height").notNull(),
 	plotViewId: uuid("plot_view_id")
-		.references(() => plotViewTable.id)
-		.notNull(),
+		.references(() => plotViewTable.id),
   googleAnalyticsReportId: uuid("google_analytics_report_id")
     .references(() => googleAnalyticsReportTable.id)
     .notNull(),

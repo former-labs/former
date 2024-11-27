@@ -1,5 +1,7 @@
 import type { DashboardGridItemType, DashboardType } from "@/app/(main)/dashboard/[dashboardId]/dashboardTypes";
+import { dashboardSchema } from "@/app/(main)/dashboard/[dashboardId]/dashboardTypes";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { db } from "@/server/db";
 import { dashboardItemsTable, dashboardTable, googleAnalyticsReportTable, plotViewTable } from "@/server/db/schema";
 import { executeGoogleAnalyticsReport as executeGA, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
 import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
@@ -76,7 +78,7 @@ export const dashboardRouter = createTRPCRouter({
           plotViewTable,
           eq(dashboardItemsTable.plotViewId, plotViewTable.id)
         )
-        .leftJoin(
+        .innerJoin(
           googleAnalyticsReportTable,
           eq(dashboardItemsTable.googleAnalyticsReportId, googleAnalyticsReportTable.id)
         )
@@ -95,11 +97,11 @@ export const dashboardRouter = createTRPCRouter({
         plotView: item.plotView ? {
           viewData: item.plotView.viewData
         } : null,
-        googleAnalyticsReport: item.googleAnalyticsReport ? {
+        googleAnalyticsReport: {
           title: item.googleAnalyticsReport.title,
           description: item.googleAnalyticsReport.description,
           reportParameters: item.googleAnalyticsReport.reportParameters
-        } : null
+        }
       }));
 
       return {
@@ -136,5 +138,77 @@ export const dashboardRouter = createTRPCRouter({
             error instanceof Error ? error.message : "Unknown error occurred",
         };
       }
+    }),
+
+  updateDashboard: publicProcedure
+    .input(z.object({
+      dashboardId: z.string().uuid(),
+      dashboard: dashboardSchema
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Update dashboard title and description
+      await db
+        .update(dashboardTable)
+        .set({
+          title: input.dashboard.title,
+          description: input.dashboard.description,
+        })
+        .where(eq(dashboardTable.id, input.dashboardId));
+
+      // Delete all existing dashboard items
+      await db
+        .delete(dashboardItemsTable)
+        .where(eq(dashboardItemsTable.dashboardId, input.dashboardId));
+
+      // Create new items
+      for (const item of input.dashboard.items) {
+        let newPlotViewId: string | null = null;
+
+        if (item.plotView) {
+          // Create plot view if it exists
+          const [newPlotView] = await ctx.db
+            .insert(plotViewTable)
+            .values({
+              viewData: item.plotView.viewData,
+            })
+            .returning();
+
+          if (!newPlotView) {
+            throw new Error("Failed to create plot view");
+          }
+
+          newPlotViewId = newPlotView.id;
+        }
+
+        // Create GA report
+        const [newGAReport] = await ctx.db
+          .insert(googleAnalyticsReportTable)
+          .values({
+            title: item.googleAnalyticsReport.title,
+            description: item.googleAnalyticsReport.description,
+            reportParameters: item.googleAnalyticsReport.reportParameters,
+          })
+          .returning();
+
+        if (!newGAReport) {
+          throw new Error("Failed to create GA report");
+        }
+
+        // Create dashboard item
+        await db
+          .insert(dashboardItemsTable)
+          .values({
+            dashboardId: input.dashboardId,
+            gridX: item.dashboardItem.gridX,
+            gridY: item.dashboardItem.gridY,
+            gridWidth: item.dashboardItem.gridWidth,
+            gridHeight: item.dashboardItem.gridHeight,
+            plotViewId: newPlotViewId,
+            googleAnalyticsReportId: newGAReport.id,
+          })
+          .returning();
+      }
+
+      return { success: true };
     }),
 });

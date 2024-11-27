@@ -179,7 +179,7 @@ ${googleAnalyticsDefinitions.dimensions
   const messageFlattened = response.choices[0]?.message;
 
   if (!messageFlattened?.parsed) {
-    const errorMessage = messageFlattened?.refusal || "No response from model";
+    const errorMessage = messageFlattened?.refusal ?? "No response from model";
     throw new Error(errorMessage);
   }
 

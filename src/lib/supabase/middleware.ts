@@ -58,10 +58,10 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
   
-  if (user && !user.user_metadata?.onboardingComplete) {
-    const onboardingUrl = new URL(PATH_ONBOARDING, request.url)
-    return createRedirectResponse(onboardingUrl)
-  }
+  // if (user && !user.user_metadata?.onboardingComplete) {
+  //   const onboardingUrl = new URL(PATH_ONBOARDING, request.url)
+  //   return createRedirectResponse(onboardingUrl)
+  // }
   
   if (!user && (isProtectedRoute(request) || isOnboardingRoute(request))) {
     const signInUrl = new URL(PATH_LOGIN, request.url)

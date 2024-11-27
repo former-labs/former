@@ -1,3 +1,4 @@
+import { viewDataSchema } from "@/components/charting/chartTypes";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { conversationTable, dashboardItemsTable, googleAnalyticsReportTable, messageTable, plotViewTable } from "@/server/db/schema";
@@ -106,7 +107,7 @@ export const conversationRouter = createTRPCRouter({
     .input(
       z.object({
         messageId: z.string().uuid(),
-        viewData: z.any().nullable(),
+        viewData: viewDataSchema.nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
