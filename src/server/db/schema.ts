@@ -61,7 +61,7 @@ export const userTable = pgTable("user", {
   firstName: text("first_name").default(""),
   lastName: text("last_name").default(""),
   email: text("email").default(""),
-  clerkAuthId: text("clerk_auth_id").notNull(),
+  supabaseAuthId: text("supabase_auth_id").notNull(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
 });
