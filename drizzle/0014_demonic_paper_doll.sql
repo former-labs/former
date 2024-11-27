@@ -1,0 +1,1 @@
+ALTER TABLE "user" ALTER COLUMN "supabase_auth_id" DROP DEFAULT;
