@@ -85,6 +85,13 @@
       "when": 1732660872456,
       "tag": "0011_slim_wrecking_crew",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1732668008728,
+      "tag": "0012_bent_vulcan",
+      "breakpoints": true
     }
   ]
 }

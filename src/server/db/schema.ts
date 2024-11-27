@@ -2,7 +2,7 @@ import { type ViewData } from "@/components/charting/chartTypes";
 import { env } from "@/env";
 import CryptoJS from "crypto-js";
 import { relations } from "drizzle-orm";
-import { customType, json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { customType, integer, json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportParametersSchema";
 
 // /**
@@ -152,6 +152,33 @@ export const plotViewTable = pgTable("plot_view", {
 	viewData: json("view_data").$type<ViewData>().notNull(),
 });
 
+export const dashboardTable = pgTable("dashboard", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	createdAt: createdAtField,
+	updatedAt: updatedAtField,
+	title: text("title").notNull(),
+	description: text("description"),
+});
+
+export const dashboardItemsTable = pgTable("dashboard_item", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	createdAt: createdAtField,
+	updatedAt: updatedAtField,
+	dashboardId: uuid("dashboard_id")
+    .references(() => dashboardTable.id)
+    .notNull(),
+	gridX: integer("grid_x").notNull(),
+	gridY: integer("grid_y").notNull(),
+	gridWidth: integer("grid_width").notNull(),
+	gridHeight: integer("grid_height").notNull(),
+	plotViewId: uuid("plot_view_id")
+		.references(() => plotViewTable.id)
+		.notNull(),
+  googleAnalyticsReportId: uuid("google_analytics_report_id")
+    .references(() => googleAnalyticsReportTable.id)
+    .notNull(),
+});
+
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type GoogleAnalyticsReportSelect = typeof googleAnalyticsReportTable.$inferSelect;
@@ -159,10 +186,12 @@ export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
 export type RoleSelect = typeof roleTable.$inferSelect;
 export type UserSelect = typeof userTable.$inferSelect;
 export type PlotViewSelect = typeof plotViewTable.$inferSelect;
+export type DashboardSelect = typeof dashboardTable.$inferSelect;
+export type DashboardItemSelect = typeof dashboardItemsTable.$inferSelect;
 
 
 // Types
-export type GoogleAnalyticsCredentials = {
+type GoogleAnalyticsCredentials = {
   scopes: string[];
   accessToken: string;
   refreshToken: string;

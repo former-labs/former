@@ -64,7 +64,7 @@ export default function Page({
       </div>
 
       <div className="sticky bottom-0 w-full">
-        <div className="flex w-full justify-center pb-8">
+        <div className="flex w-full justify-center pb-16 pt-8">
           <div className="w-[50rem]">
             <SearchBar
               placeholder="Ask a question..."
