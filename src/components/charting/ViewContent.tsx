@@ -34,16 +34,16 @@ export const ViewContent = ({
         <h2 className="text-2xl font-bold">{view.name}</h2>
         {editMode && (
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit View
+            <Button size="sm" onClick={onEdit}>
+              <Pencil className="h-4 w-4" />
+              Edit Chart
             </Button>
             <Button
               variant="destructive"
               size="sm"
               onClick={() => setShowDeleteConfirm(true)}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
               Delete
             </Button>
           </div>
