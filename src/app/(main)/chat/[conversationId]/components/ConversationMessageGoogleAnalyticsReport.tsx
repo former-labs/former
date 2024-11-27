@@ -68,7 +68,9 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   message: MessageSelect;
   report: GoogleAnalyticsReportSelect;
 }) => {
-  const [activeTab, setActiveTab] = useState<string>("resultTable");
+  const [activeTab, setActiveTab] = useState<string>(
+    message.plotViewId ? "visualisation" : "resultTable",
+  );
   const [reportResult, setReportResult] = useState<
     GoogleAnalyticsReportResultType["data"] | null
   >(null);
@@ -164,11 +166,11 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
+              <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
               <TabsTrigger value="resultTable">Result Table</TabsTrigger>
               {getDebugMode() && (
                 <TabsTrigger value="resultJson">Result JSON</TabsTrigger>
               )}
-              <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
             </TabsList>
           </Tabs>
 
