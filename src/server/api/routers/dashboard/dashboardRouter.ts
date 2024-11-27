@@ -146,6 +146,36 @@ export const dashboardRouter = createTRPCRouter({
       dashboard: dashboardSchema
     }))
     .mutation(async ({ ctx, input }) => {
+      // Get existing dashboard items to find referenced reports and plot views
+      const existingItems = await db
+        .select({
+          plotViewId: dashboardItemsTable.plotViewId,
+          googleAnalyticsReportId: dashboardItemsTable.googleAnalyticsReportId,
+        })
+        .from(dashboardItemsTable)
+        .where(eq(dashboardItemsTable.dashboardId, input.dashboardId));
+
+      // Delete all existing dashboard items
+      await db
+        .delete(dashboardItemsTable)
+        .where(eq(dashboardItemsTable.dashboardId, input.dashboardId));
+
+      // Delete referenced plot views
+      for (const item of existingItems) {
+        if (item.plotViewId) {
+          await db
+            .delete(plotViewTable)
+            .where(eq(plotViewTable.id, item.plotViewId));
+        }
+      }
+
+      // Delete referenced GA reports
+      for (const item of existingItems) {
+        await db
+          .delete(googleAnalyticsReportTable)
+          .where(eq(googleAnalyticsReportTable.id, item.googleAnalyticsReportId));
+      }
+
       // Update dashboard title and description
       await db
         .update(dashboardTable)
@@ -154,11 +184,6 @@ export const dashboardRouter = createTRPCRouter({
           description: input.dashboard.description,
         })
         .where(eq(dashboardTable.id, input.dashboardId));
-
-      // Delete all existing dashboard items
-      await db
-        .delete(dashboardItemsTable)
-        .where(eq(dashboardItemsTable.dashboardId, input.dashboardId));
 
       // Create new items
       for (const item of input.dashboard.items) {

@@ -286,7 +286,7 @@ const SaveToDashboardDialog = ({
             onClick={() => {
               saveMessageToDashboardMutation.mutate({
                 messageId: messageId,
-                dashboardId: "a17d725d-4ca1-404e-8c3e-dd5b77844b79", // TODO: Allow selecting dashboard
+                dashboardId: "650655b7-2372-4ae3-81f5-9845720ee559", // TODO: Allow selecting dashboard
               });
             }}
             loading={saveMessageToDashboardMutation.isPending}
