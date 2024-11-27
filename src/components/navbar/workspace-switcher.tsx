@@ -21,7 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function WorkspaceSwitcher() {
   const { isMobile } = useSidebar();
-  const { roles, activeRole, setActiveRole } = useAuth();
+  const { roles, activeRole, handleWorkspaceSwitch } = useAuth();
 
   return (
     <SidebarMenu>
@@ -56,7 +56,7 @@ export function WorkspaceSwitcher() {
             {roles?.map((role, index) => (
               <DropdownMenuItem
                 key={role.workspace.name}
-                onClick={() => setActiveRole(role)}
+                onClick={() => handleWorkspaceSwitch(role)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">

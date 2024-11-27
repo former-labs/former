@@ -85,11 +85,19 @@ export const workspaceRelations = relations(workspaceTable, ({ many }) => ({
 
 
 // Role
+export enum RoleType {
+  OWNER = "owner",
+  VIEWER = "viewer",
+}
+
+// Use the enum values as a tuple
+export const ROLE_VALUES = [RoleType.OWNER, RoleType.VIEWER] as const;
+
 export const roleTable = pgTable("role", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
-  roleType: text("role_type", { enum: ["owner", "viewer"] }).notNull(),
+  roleType: text("role_type", { enum: ROLE_VALUES }).notNull(),
   userId: uuid("user_id")
     .notNull()
     .references(() => userTable.id),

@@ -5,7 +5,7 @@ import { onboardingRouter } from "./routers/conversation/onboardingRouter";
 import { dashboardRouter } from "./routers/dashboard/dashboardRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
 import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsRouter";
-import { userRouter } from "./routers/user";
+import { userRouter } from "./routers/userRouter";
 
 /**
  * This is the primary router for your server.
