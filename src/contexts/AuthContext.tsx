@@ -1,5 +1,6 @@
 "use client";
 
+import { PATH_LOGIN } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/client";
 import {
   type RoleSelectWithRelations,
@@ -7,6 +8,7 @@ import {
 } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { type User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type AuthContextType = {
@@ -41,6 +43,7 @@ export const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
+  const router = useRouter();
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
@@ -96,6 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    router.push(PATH_LOGIN);
   };
 
   const resetAuthState = () => {

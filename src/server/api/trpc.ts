@@ -114,7 +114,7 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 
 
 // When a user is trying to access a resource that is not workspace-specific
-export const authProcedure = t.procedure
+export const authUserProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
     if (!ctx.auth?.id) {
