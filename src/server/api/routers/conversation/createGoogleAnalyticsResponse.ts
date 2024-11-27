@@ -3,12 +3,14 @@ import {
   conversationTable,
   googleAnalyticsReportTable,
   messageTable,
+  plotViewTable,
   type GoogleAnalyticsReportSelect,
   type MessageSelect,
 } from "@/server/db/schema";
 import { getAgentResponse } from "@/server/googleAnalytics/getAgentResponse";
 import { eq } from "drizzle-orm";
 import { type ChatCompletionMessageParam } from "openai/resources/index.mjs";
+import { getVisualizationResponse } from "./getVisualizationResponse";
 
 export const createGoogleAnalyticsResponse = async ({
   conversationId,
@@ -52,43 +54,44 @@ export const createGoogleAnalyticsResponse = async ({
     throw new Error("Failed to create Google Analytics report");
   }
 
+  let plotViewId = null;
+  if (agentResponse.includeVisualization) {
+    const view = await getVisualizationResponse({
+      formattedConversationHistory: formattedMessages,
+      prompt: userMessage,
+      agentResponse: {
+        title: agentResponse.title,
+        description: agentResponse.description,
+        googleAnalyticsReportParameters: agentResponse.googleAnalyticsReportParameters
+      },
+    });
+
+    const [newPlotView] = await db
+      .insert(plotViewTable)
+      .values({
+        viewData: view,
+      })
+      .returning();
+
+    if (!newPlotView) {
+      throw new Error("Failed to create plot view");
+    }
+
+    plotViewId = newPlotView.id;
+  }
+
   const [ newAssistantMessage ] = await db.insert(messageTable)
     .values({
       conversationId,
       role: "assistant",
-      googleAnalyticsReportId: newGoogleAnalyticsReport.id
+      googleAnalyticsReportId: newGoogleAnalyticsReport.id,
+      plotViewId
     })
     .returning();
 
   if (!newAssistantMessage) {
     throw new Error("Failed to create assistant message");
   }
-
-  // let view = null;
-  // if (agentResponse.includeVisualization) {
-  //   view = await getVisualizationResponse({
-  //     formattedConversationHistory: formattedMessages,
-  //     prompt,
-  //     agentResponse: {
-  //       title: agentResponse.title,
-  //       description: agentResponse.description,
-  //       googleAnalyticsReportParameters: agentResponse.googleAnalyticsReportParameters
-  //     },
-  //     workspaceUid
-  //   });
-
-  //   if (view) {
-  //     await db
-  //       .insert(dataSourceViewTable)
-  //       .values({
-  //         workspaceUid,
-  //         queryId: null,
-  //         messageId: newAssistantMessage.id,
-  //         viewData: view,
-  //         filterData: { filters: [] },
-  //       });
-  //   }
-  // }
 
   return {
     newUserMessage,
