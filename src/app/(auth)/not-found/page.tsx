@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { PATH_HOME } from "@/lib/paths";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -10,7 +11,7 @@ export default function PageNotFound() {
         Oops! The page you&apos;re looking for doesn&apos;t exist.
       </p>
       <Button asChild variant="outline" size="lg">
-        <Link href="/">
+        <Link href={PATH_HOME}>
           <ArrowLeft className="mr-2 size-4" />
           Back to Home
         </Link>
