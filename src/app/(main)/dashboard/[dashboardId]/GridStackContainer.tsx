@@ -1,4 +1,4 @@
-import { GridStack, GridStackOptions } from "gridstack";
+import { GridStack, type GridStackOptions } from "gridstack";
 import "gridstack/dist/gridstack-extra.min.css";
 import "gridstack/dist/gridstack.min.css";
 import { useEffect, useRef, useState } from "react";

@@ -1,6 +1,8 @@
 import type { DashboardGridItemType, DashboardType } from "@/app/(main)/dashboard/[dashboardId]/dashboardTypes";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { dashboardItemsTable, dashboardTable, googleAnalyticsReportTable, plotViewTable } from "@/server/db/schema";
+import { executeGoogleAnalyticsReport as executeGA, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
+import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -106,5 +108,33 @@ export const dashboardRouter = createTRPCRouter({
         description: dashboard.description,
         items
       };
+    }),
+
+  executeGoogleAnalyticsReport: publicProcedure
+    .input(z.object({
+      reportParameters: googleAnalyticsReportParametersSchema,
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Hardcoded to ours for now
+        const propertyId = "447821713";
+
+        const result = await executeGA({
+          parameters: input.reportParameters,
+          propertyId,
+          analyticsDataClient: verveGa4AnalyticsDataClient,
+        });
+        return {
+          success: true as const,
+          data: result,
+        };
+      } catch (error) {
+        console.log(error);
+        return {
+          success: false as const,
+          error:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
     }),
 });

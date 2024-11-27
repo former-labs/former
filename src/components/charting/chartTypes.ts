@@ -42,7 +42,6 @@ export type FilterData = {
 }
 
 export type SharedViewFields = {
-  id: string;
   name: string;
   description: string;
 };
