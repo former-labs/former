@@ -5,72 +5,71 @@ import {
   SidebarRight,
   useSidebar,
 } from "@/components/ui/sidebar-right";
+import { usePathname } from "next/navigation";
 import * as React from "react";
+import { useEffect } from "react";
+import ReactDOM from "react-dom";
 import { create } from "zustand";
-import { SidebarGoogleAnalyticsReportEditor } from "./googleAnalyticsReportEditor/SidebarGoogleAnalyticsReportEditor";
 
 export function RightAppSidebar({
   ...props
 }: React.ComponentProps<typeof SidebarRight>) {
-  const { googleAnalyticsReportId, closeGoogleAnalyticsReport } =
-    useRightSidebar();
+  const { setOpen } = useSidebar();
+  const { activeKey, setActiveKey } = useRightSidebarStore();
+  const pathname = usePathname();
+
+  // Close the sidebar when the active key is null
+  useEffect(() => {
+    setOpen(activeKey !== null);
+  }, [activeKey, setOpen]);
+
+  // Reset active key when pathname changes
+  useEffect(() => {
+    setActiveKey(null);
+  }, [pathname, setActiveKey]);
 
   return (
     <SidebarRight side="right" collapsible="offcanvas" {...props}>
       <SidebarContent>
-        {googleAnalyticsReportId ? (
-          <SidebarGoogleAnalyticsReportEditor
-            googleAnalyticsReportId={googleAnalyticsReportId}
-            onClose={closeGoogleAnalyticsReport}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            Nothing to see here...
-          </div>
-        )}
+        <div id="sidebar-root"></div>
       </SidebarContent>
     </SidebarRight>
   );
 }
 
+export const RightSidebarPortal = ({
+  nodeKey,
+  children,
+}: {
+  nodeKey: string;
+  children: React.ReactNode;
+}) => {
+  // We only render a child if it is active
+  const { activeKey } = useRightSidebarStore();
+  if (activeKey !== nodeKey) {
+    return null;
+  }
+
+  const sidebarRoot = document.getElementById("sidebar-root");
+  if (!sidebarRoot) {
+    return null;
+  }
+  return ReactDOM.createPortal(children, sidebarRoot);
+};
+
 const useRightSidebarStore = create<{
-  googleAnalyticsReportId: string | null;
-  setGoogleAnalyticsReportId: (id: string | null) => void;
+  activeKey: string | null;
+  setActiveKey: (key: string | null) => void;
 }>((set) => ({
-  googleAnalyticsReportId: null,
-  setGoogleAnalyticsReportId: (id) => set({ googleAnalyticsReportId: id }),
+  activeKey: null,
+  setActiveKey: (key) => set({ activeKey: key }),
 }));
 
-// Some of this logic should maybe just exist inside the RightAppSidebar component...?
 export const useRightSidebar = () => {
-  const { setOpen, setOpenMobile, isMobile } = useSidebar();
-  const { googleAnalyticsReportId, setGoogleAnalyticsReportId } =
-    useRightSidebarStore();
-
-  const openGoogleAnalyticsReport = React.useCallback(
-    (id: string) => {
-      setGoogleAnalyticsReportId(id);
-      if (isMobile) {
-        setOpenMobile(true);
-      } else {
-        setOpen(true);
-      }
-    },
-    [isMobile, setOpen, setOpenMobile, setGoogleAnalyticsReportId],
-  );
-
-  const closeGoogleAnalyticsReport = React.useCallback(() => {
-    setGoogleAnalyticsReportId(null);
-    if (isMobile) {
-      setOpenMobile(false);
-    } else {
-      setOpen(false);
-    }
-  }, [isMobile, setOpen, setOpenMobile, setGoogleAnalyticsReportId]);
+  const { activeKey, setActiveKey } = useRightSidebarStore();
 
   return {
-    openGoogleAnalyticsReport,
-    closeGoogleAnalyticsReport,
-    googleAnalyticsReportId,
+    activeKey,
+    setActiveKey,
   };
 };

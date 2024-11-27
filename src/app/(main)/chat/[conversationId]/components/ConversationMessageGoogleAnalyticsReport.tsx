@@ -2,7 +2,11 @@
 
 import { type ColumnDefinitions } from "@/components/charting/chartTypes";
 import { TableDataView } from "@/components/charting/TableDataView";
-import { useRightSidebar } from "@/components/navbar/right-sidebar";
+import { SidebarGoogleAnalyticsReportEditor } from "@/components/navbar/googleAnalyticsReportEditor/SidebarGoogleAnalyticsReportEditor";
+import {
+  RightSidebarPortal,
+  useRightSidebar,
+} from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
@@ -77,7 +81,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const { openGoogleAnalyticsReport } = useRightSidebar();
+  const { setActiveKey } = useRightSidebar();
 
   const executeReportMutation =
     api.googleAnalytics.executeGoogleAnalyticsReport.useMutation();
@@ -110,7 +114,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   };
 
   const handleEditReport = () => {
-    openGoogleAnalyticsReport(report.id);
+    setActiveKey(report.id);
   };
 
   const handleRunReport = async () => {
@@ -242,6 +246,15 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         onOpenChange={setIsSaveDialogOpen}
         messageId={message.id}
       />
+
+      <RightSidebarPortal nodeKey={report.id}>
+        <SidebarGoogleAnalyticsReportEditor
+          googleAnalyticsReportId={report.id}
+          onClose={() => {
+            setActiveKey(null);
+          }}
+        />
+      </RightSidebarPortal>
     </div>
   );
 };
