@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getDebugMode } from "@/lib/debugMode";
 import { type GoogleAnalyticsReportSelect } from "@/server/db/schema";
 import { type GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
-import { api } from "@/trpc/react";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReportDateRangesSection } from "./ReportDateRangeSection";
 import { ReportDimensionsSection } from "./ReportDimensionsSection";
@@ -10,15 +11,19 @@ import { ReportFiltersSection } from "./ReportFiltersSection";
 import { ReportMetricsSection } from "./ReportMetricsSection";
 import { ReportOrderBySection } from "./ReportOrderBySection";
 
-export const ReportParametersSection = ({
+export const ReportEditor = ({
   report,
+  onReportSave,
+  isSaving,
+  onClose,
 }: {
   report: GoogleAnalyticsReportSelect;
+  onReportSave: (
+    reportParameters: GoogleAnalyticsReportParameters,
+  ) => Promise<void>;
+  isSaving: boolean;
+  onClose: () => void;
 }) => {
-  const updateReportMutation =
-    api.googleAnalytics.updateGoogleAnalyticsReportParameters.useMutation();
-  const utils = api.useUtils();
-
   const [localReport, setLocalReport] =
     useState<GoogleAnalyticsReportSelect>(report);
 
@@ -27,12 +32,7 @@ export const ReportParametersSection = ({
   }, [report]);
 
   const handleSave = async () => {
-    await updateReportMutation.mutateAsync({
-      googleAnalyticsReportId: report.id,
-      reportParameters: localReport.reportParameters,
-    });
-
-    void utils.googleAnalytics.getGoogleAnalyticsReport.invalidate();
+    await onReportSave(localReport.reportParameters);
   };
 
   const handleMetricsChange = (metrics: { name: string }[]) => {
@@ -186,61 +186,88 @@ export const ReportParametersSection = ({
   };
 
   return (
-    <div className="space-y-4 rounded-md bg-white p-4">
-      <ReportMetricsSection
-        metrics={localReport.reportParameters.metrics}
-        onMetricsChange={handleMetricsChange}
-      />
-
-      <ReportDimensionsSection
-        dimensions={localReport.reportParameters.dimensions}
-        onDimensionsChange={handleDimensionsChange}
-      />
-
-      <ReportDateRangesSection
-        dateRanges={localReport.reportParameters.dateRanges}
-        onDateRangesChange={handleDateRangesChange}
-      />
-
-      <ReportFiltersSection
-        metrics={localReport.reportParameters.metrics}
-        dimensions={localReport.reportParameters.dimensions}
-        metricFilter={localReport.reportParameters.metricFilter}
-        dimensionFilter={localReport.reportParameters.dimensionFilter}
-        onFilterChange={handleFilterChange}
-      />
-
-      <ReportOrderBySection
-        metrics={localReport.reportParameters.metrics}
-        dimensions={localReport.reportParameters.dimensions}
-        orderBys={localReport.reportParameters.orderBys}
-        onOrderByChange={handleOrderByChange}
-      />
-
-      <div>
-        <h3 className="mb-2 font-bold text-gray-900">Limit</h3>
-        <div className="">
-          <Input
-            type="number"
-            placeholder="Enter row limit"
-            value={localReport.reportParameters.limit ?? ""}
-            onChange={(e) => handleLimitChange(e.target.value)}
-            className="max-w-[200px]"
-          />
+    <div className="h-full space-y-4 overflow-y-auto p-4">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {report.title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 hover:bg-gray-100"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
         </div>
+        <p className="text-sm text-gray-600">{report.description}</p>
+        {getDebugMode() && (
+          <details>
+            <summary className="cursor-pointer text-sm text-gray-500">
+              View Report JSON
+            </summary>
+            <pre className="mt-2 overflow-auto rounded-md bg-white p-4">
+              {JSON.stringify(report, null, 2)}
+            </pre>
+          </details>
+        )}
       </div>
 
-      <Button
-        onClick={handleSave}
-        className="mb-4"
-        disabled={
-          updateReportMutation.isPending ||
-          localReport.reportParameters.metrics.length === 0 ||
-          localReport.reportParameters.dateRanges.length === 0
-        }
-      >
-        {updateReportMutation.isPending ? "Saving..." : "Save Report"}
-      </Button>
+      <div className="space-y-4 rounded-md p-4">
+        <ReportMetricsSection
+          metrics={localReport.reportParameters.metrics}
+          onMetricsChange={handleMetricsChange}
+        />
+
+        <ReportDimensionsSection
+          dimensions={localReport.reportParameters.dimensions}
+          onDimensionsChange={handleDimensionsChange}
+        />
+
+        <ReportDateRangesSection
+          dateRanges={localReport.reportParameters.dateRanges}
+          onDateRangesChange={handleDateRangesChange}
+        />
+
+        <ReportFiltersSection
+          metrics={localReport.reportParameters.metrics}
+          dimensions={localReport.reportParameters.dimensions}
+          metricFilter={localReport.reportParameters.metricFilter}
+          dimensionFilter={localReport.reportParameters.dimensionFilter}
+          onFilterChange={handleFilterChange}
+        />
+
+        <ReportOrderBySection
+          metrics={localReport.reportParameters.metrics}
+          dimensions={localReport.reportParameters.dimensions}
+          orderBys={localReport.reportParameters.orderBys}
+          onOrderByChange={handleOrderByChange}
+        />
+
+        <div>
+          <h3 className="mb-2 font-bold text-gray-900">Limit</h3>
+          <div className="">
+            <Input
+              type="number"
+              placeholder="Enter row limit"
+              value={localReport.reportParameters.limit ?? ""}
+              onChange={(e) => handleLimitChange(e.target.value)}
+              className="max-w-[200px] bg-white"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleSave}
+          className="mb-4"
+          disabled={
+            isSaving ||
+            localReport.reportParameters.metrics.length === 0 ||
+            localReport.reportParameters.dateRanges.length === 0
+          }
+        >
+          {isSaving ? "Saving..." : "Save Report"}
+        </Button>
+      </div>
     </div>
   );
 };
