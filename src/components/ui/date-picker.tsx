@@ -44,7 +44,7 @@ export function DatePicker({
           <Calendar
             mode="single"
             selected={value}
-            onSelect={(date) => onChange(date as Date)}
+            onSelect={(date) => date && onChange(date)}
             initialFocus
           />
         </PopoverContent>
