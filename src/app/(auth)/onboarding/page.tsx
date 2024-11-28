@@ -114,23 +114,28 @@ export default function OnboardingPage() {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleCreateWorkspace)}
-            className="flex h-full flex-col justify-between space-y-10"
+            className="flex h-full flex-col justify-between space-y-4"
           >
-            <FormField
-              control={form.control}
-              name="workspaceName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Choose a name for your workspace"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-error-500" />
-                </FormItem>
-              )}
-            />
+            <div>
+              <h1 className="mb-4 text-center text-xl font-semibold">
+                Create a workspace
+              </h1>
+              <FormField
+                control={form.control}
+                name="workspaceName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter your workspace name..."
+                      />
+                    </FormControl>
+                    <FormMessage className="text-error-500" />
+                  </FormItem>
+                )}
+              />
+            </div>
             <div className="flex gap-x-2">
               <Button
                 type="submit"
