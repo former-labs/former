@@ -8,22 +8,25 @@ import {
   type MessageSelect,
 } from "@/server/db/schema";
 import { getAgentResponse } from "@/server/googleAnalytics/getAgentResponse";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { type ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { getVisualizationResponse } from "./getVisualizationResponse";
 
 export const createGoogleAnalyticsResponse = async ({
+  workspaceId,
   conversationId,
   userMessage,
 }: {
+  workspaceId: string;
   conversationId: string;
   userMessage: string;
 }) => {
-  const { messages } = await getConversationDetails({ conversationId });
+  const { messages } = await getConversationDetails({ workspaceId, conversationId });
   const formattedMessages = formatConversationHistory({ messages });
 
   const [ newUserMessage ] = await db.insert(messageTable)
     .values({
+      workspaceId,
       conversationId,
       role: "user",
       text: userMessage
@@ -44,6 +47,7 @@ export const createGoogleAnalyticsResponse = async ({
   const [ newGoogleAnalyticsReport ] = await db
     .insert(googleAnalyticsReportTable)
     .values({
+      workspaceId,
       title: agentResponse.title,
       description: agentResponse.description,
       reportParameters: agentResponse.googleAnalyticsReportParameters
@@ -69,6 +73,7 @@ export const createGoogleAnalyticsResponse = async ({
     const [newPlotView] = await db
       .insert(plotViewTable)
       .values({
+        workspaceId,
         viewData: view,
       })
       .returning();
@@ -82,6 +87,7 @@ export const createGoogleAnalyticsResponse = async ({
 
   const [ newAssistantMessage ] = await db.insert(messageTable)
     .values({
+      workspaceId,
       conversationId,
       role: "assistant",
       googleAnalyticsReportId: newGoogleAnalyticsReport.id,
@@ -102,13 +108,18 @@ export const createGoogleAnalyticsResponse = async ({
 
 
 const getConversationDetails = async ({
+  workspaceId,
   conversationId
 }: {
+  workspaceId: string;
   conversationId: string;
 }) => {
   const [conversation, messagesDetails] = await Promise.all([
     db.query.conversationTable.findFirst({
-      where: eq(conversationTable.id, conversationId)
+      where: and(
+        eq(conversationTable.workspaceId, workspaceId),
+        eq(conversationTable.id, conversationId),
+      )
     }),
     db.select({
       message: messageTable,
@@ -119,7 +130,11 @@ const getConversationDetails = async ({
         googleAnalyticsReportTable,
         eq(messageTable.googleAnalyticsReportId, googleAnalyticsReportTable.id)
       )
-      .where(eq(messageTable.conversationId, conversationId))
+      .where(and(
+        eq(googleAnalyticsReportTable.workspaceId, workspaceId),
+        eq(messageTable.workspaceId, workspaceId),
+        eq(messageTable.conversationId, conversationId),
+      ))
       .orderBy(messageTable.createdAt)
   ]);
 

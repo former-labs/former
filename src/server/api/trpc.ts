@@ -130,7 +130,11 @@ export const authUserProcedure = t.procedure
   });
 
 
-// When we expect both auth user and user to exist
+/*
+  When we expect both auth user and user to exist.
+  This should generally not be used except in onboarding stuff where the user
+  has not yet selected a workspace.
+*/
 export const userProtectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
@@ -187,6 +191,10 @@ export const workspaceProtectedProcedure = t.procedure
 
     if (!activeWorkspaceId) {
       throw new Error("User does not have an active workspace");
+    }
+
+    if (!activeRoleType) {
+      throw new Error("User does not have an active role type");
     }
 
     return next({
