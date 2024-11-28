@@ -1,7 +1,5 @@
 "use client";
 
-import { type LucideIcon } from "lucide-react";
-
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -9,6 +7,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export function NavPages({
@@ -32,10 +32,10 @@ export function NavPages({
             className={pathname === item.url ? "bg-accent" : ""}
           >
             <SidebarMenuButton asChild>
-              <a href={item.url}>
+              <Link href={item.url}>
                 <item.icon />
                 <span>{item.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}

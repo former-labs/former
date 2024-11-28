@@ -10,6 +10,7 @@ import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { ActiveRole } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 
@@ -174,7 +175,7 @@ export const workspaceProtectedProcedure = t.procedure
       throw new Error("You must be logged in to access this resource");
     }
     
-    const activeRole = ctx.auth.app_metadata?.activeRole;
+    const activeRole = ctx.auth.app_metadata?.activeRole as ActiveRole | null;
     const activeRoleId = activeRole?.id ?? null;
     const activeWorkspaceId = activeRole?.workspaceId ?? null; 
     const activeRoleType = activeRole?.roleType ?? null;
@@ -186,9 +187,6 @@ export const workspaceProtectedProcedure = t.procedure
     if (!activeWorkspaceId) {
       throw new Error("User does not have an active workspace");
     }
-
-    
-    // Add workspace validation if workspaceId is provided in input
 
     return next({
       ctx: {
