@@ -148,13 +148,13 @@ export const adminProtectedProcedure = authUserProcedure
 export const userProtectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    const supabaseAuthId = ctx.auth?.id;
-    if (!supabaseAuthId) {
+    const auth = ctx.auth;
+    if (!auth) {
       throw new Error("You must be logged in to access this resource");
     }
 
     const user = await db.query.userTable.findFirst({
-      where: (user, { eq }) => eq(user.supabaseAuthId, supabaseAuthId),
+      where: (user, { eq }) => eq(user.supabaseAuthId, auth.id),
       with: {
         roles: {
           with: {
@@ -171,12 +171,11 @@ export const userProtectedProcedure = t.procedure
     return next({
       ctx: {
         ...ctx,
-        auth: ctx.auth,
+        auth,
         user,
       },
     });
   });
-
 
 
 /**

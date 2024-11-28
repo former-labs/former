@@ -6,23 +6,26 @@ import { z } from "zod";
 import { createTRPCRouter, userProtectedProcedure } from "../trpc";
 
 export const userRouter = createTRPCRouter({
-  getRoles: userProtectedProcedure.query(async ({ ctx }) => {
-    const roles = await db.query.roleTable.findMany({
-      where: (role, { eq }) => eq(role.userId, ctx.user.id),
-      with: {
-        workspace: true,
-        user: true,
-      },
-      orderBy: (role, { desc }) => [desc(role.createdAt)],
-    });
+  getRoles: userProtectedProcedure
+    .query(async ({ ctx }) => {
+      const roles = await db.query.roleTable.findMany({
+        where: (role, { eq }) => eq(role.userId, ctx.user.id),
+        with: {
+          workspace: true,
+          user: true,
+        },
+        orderBy: (role, { desc }) => [desc(role.createdAt)],
+      });
 
-    return roles;
-  }),
+      return roles;
+    }),
 
-  setActiveRole: userProtectedProcedure.input(z.object({
-    roleId: z.string(),
-    workspaceId: z.string()
-  })).mutation(async ({ ctx, input }) => {
+  setActiveRole: userProtectedProcedure
+    .input(z.object({
+      roleId: z.string(),
+      workspaceId: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
       const role = await db.query.roleTable.findFirst({
         where: (role, { and, eq }) => and(
           eq(role.workspaceId, input.workspaceId),
