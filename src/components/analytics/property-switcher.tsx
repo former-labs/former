@@ -34,7 +34,7 @@ export function PropertySwitcher() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild className="bg-background">
         <Button
           variant="ghost"
           role="combobox"
