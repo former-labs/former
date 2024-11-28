@@ -15,7 +15,7 @@ export default function Page() {
  * This should probably share more components from the normal Conversation component, but this works
  * for now. We just need to remember to update this if we change how the regular conversation looks.
  */
-export const ConversationPending = () => {
+const ConversationPending = () => {
   const { pendingUserMessage } = usePendingMessageStore();
 
   return (
