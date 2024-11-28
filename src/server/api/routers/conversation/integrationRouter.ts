@@ -19,7 +19,7 @@ export const integrationRouter = createTRPCRouter({
         const state = jwt.sign(
           {
           workspaceId: input.workspaceId,
-          userId: ctx.user.id,
+          userId: ctx.auth.id,
           timestamp: Date.now(),
         },
         env.OAUTH_CALLBACK_SECRET,

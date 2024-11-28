@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   try {
     const { workspaceId, timestamp } = jwt.verify(state, env.OAUTH_CALLBACK_SECRET) as {
       workspaceId: string;
-      userId: number;
+      userId: string;
       timestamp: number;
     };
 
