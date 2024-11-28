@@ -1,4 +1,5 @@
 import { env } from "@/env";
+import { GoogleAnalyticsAccount } from "@/lib/googleAnalytics/googleAnalyticsTypes";
 import { createTRPCRouter, userProtectedProcedure, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { googleAnalyticsReportTable, integrationTable } from "@/server/db/schema";
@@ -70,7 +71,7 @@ export const googleAnalyticsRouter = createTRPCRouter({
         propertyId: property.property.split("/")[1],
         name: property.displayName,
       })),
-    }));
+    })) as GoogleAnalyticsAccount[];
   }),
 
   getGoogleAnalyticsReport: workspaceProtectedProcedure

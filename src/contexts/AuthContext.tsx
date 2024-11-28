@@ -57,7 +57,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [user, setUser] = useState<UserSelect | null>(null);
-  const [roles, setRoles] = useState<RoleSelectWithRelations[]>([]);
   const [activeRole, setActiveRole] = useState<RoleSelectWithRelations | null>(
     null,
   );
@@ -73,7 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const { data: rolesData, isLoading: isWorkspaceLoading } =
+  const { data: roles = [], isLoading: isWorkspaceLoading } =
     api.user.getRoles.useQuery(undefined, {
       enabled: !!authUser,
     });
@@ -87,7 +86,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (activeWorkspaceRole) {
         setActiveRole(activeWorkspaceRole);
-        setRoles(rolesList);
         setUser(activeWorkspaceRole.user ?? null);
       } else {
         // If no active role is set or it's invalid, use the first role
@@ -95,15 +93,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (firstRole) {
           await handleWorkspaceSwitch(firstRole);
         }
-        setRoles(rolesList);
         setUser(rolesList[0]?.user ?? null);
       }
     };
-    if (rolesData && rolesData.length > 0) {
-      void initializeAuth(rolesData);
+    if (roles.length > 0) {
+      void initializeAuth(roles);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rolesData]);
+  }, [roles]);
 
   useEffect(() => {
     const initializeAuth = async () => {
