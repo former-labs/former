@@ -1,18 +1,19 @@
 import type { DashboardGridItemType, DashboardType } from "@/app/(main)/dashboard/[dashboardId]/dashboardTypes";
 import { dashboardSchema } from "@/app/(main)/dashboard/[dashboardId]/dashboardTypes";
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { dashboardItemsTable, dashboardTable, googleAnalyticsReportTable, plotViewTable } from "@/server/db/schema";
 import { executeGoogleAnalyticsReport as executeGA, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
 import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 export const dashboardRouter = createTRPCRouter({
-  createDashboard: publicProcedure.mutation(async ({ ctx }) => {
+  createDashboard: workspaceProtectedProcedure.mutation(async ({ ctx }) => {
     const [dashboard] = await ctx.db
       .insert(dashboardTable)
       .values({
+        workspaceId: ctx.activeWorkspaceId,
         title: "Untitled dashboard",
         description: null,
       })
@@ -27,20 +28,24 @@ export const dashboardRouter = createTRPCRouter({
     };
   }),
 
-  listDashboards: publicProcedure.query(async ({ ctx }) => {
+  listDashboards: workspaceProtectedProcedure.query(async ({ ctx }) => {
     const dashboards = await ctx.db
       .select()
       .from(dashboardTable)
+      .where(eq(dashboardTable.workspaceId, ctx.activeWorkspaceId))
       .orderBy(dashboardTable.title);
 
     return dashboards;
   }),
 
-  getDashboard: publicProcedure
+  getDashboard: workspaceProtectedProcedure
     .input(z.object({ dashboardId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const dashboard = await ctx.db.query.dashboardTable.findFirst({
-        where: eq(dashboardTable.id, input.dashboardId),
+        where: and(
+          eq(dashboardTable.id, input.dashboardId),
+          eq(dashboardTable.workspaceId, ctx.activeWorkspaceId),
+        ),
       });
 
       if (!dashboard) {
@@ -50,13 +55,16 @@ export const dashboardRouter = createTRPCRouter({
       return dashboard;
     }),
 
-  getDashboardDetails: publicProcedure
+  getDashboardDetails: workspaceProtectedProcedure
     .input(z.object({
       dashboardId: z.string().uuid()
     }))
     .query(async ({ ctx, input }): Promise<DashboardType> => {
       const dashboard = await ctx.db.query.dashboardTable.findFirst({
-        where: eq(dashboardTable.id, input.dashboardId),
+        where: and(
+          eq(dashboardTable.id, input.dashboardId),
+          eq(dashboardTable.workspaceId, ctx.activeWorkspaceId),
+        ),
       });
 
       if (!dashboard) {
@@ -82,9 +90,12 @@ export const dashboardRouter = createTRPCRouter({
           googleAnalyticsReportTable,
           eq(dashboardItemsTable.googleAnalyticsReportId, googleAnalyticsReportTable.id)
         )
-        .where(
-          eq(dashboardItemsTable.dashboardId, input.dashboardId)
-        );
+        .where(and(
+          eq(dashboardItemsTable.dashboardId, input.dashboardId),
+          eq(dashboardItemsTable.workspaceId, ctx.activeWorkspaceId),
+          eq(googleAnalyticsReportTable.workspaceId, ctx.activeWorkspaceId),
+          eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       const items: DashboardGridItemType[] = dashboardItems.map(item => ({
         localId: item.id,
@@ -112,7 +123,7 @@ export const dashboardRouter = createTRPCRouter({
       };
     }),
 
-  executeGoogleAnalyticsReport: publicProcedure
+  executeGoogleAnalyticsReport: workspaceProtectedProcedure
     .input(z.object({
       reportParameters: googleAnalyticsReportParametersSchema,
     }))
@@ -140,7 +151,7 @@ export const dashboardRouter = createTRPCRouter({
       }
     }),
 
-  updateDashboard: publicProcedure
+  updateDashboard: workspaceProtectedProcedure
     .input(z.object({
       dashboardId: z.string().uuid(),
       dashboard: dashboardSchema
@@ -153,19 +164,28 @@ export const dashboardRouter = createTRPCRouter({
           googleAnalyticsReportId: dashboardItemsTable.googleAnalyticsReportId,
         })
         .from(dashboardItemsTable)
-        .where(eq(dashboardItemsTable.dashboardId, input.dashboardId));
+        .where(and(
+          eq(dashboardItemsTable.dashboardId, input.dashboardId),
+          eq(dashboardItemsTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       // Delete all existing dashboard items
       await db
         .delete(dashboardItemsTable)
-        .where(eq(dashboardItemsTable.dashboardId, input.dashboardId));
+        .where(and(
+          eq(dashboardItemsTable.dashboardId, input.dashboardId),
+          eq(dashboardItemsTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       // Delete referenced plot views
       for (const item of existingItems) {
         if (item.plotViewId) {
           await db
             .delete(plotViewTable)
-            .where(eq(plotViewTable.id, item.plotViewId));
+            .where(and(
+              eq(plotViewTable.id, item.plotViewId),
+              eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
+            ));
         }
       }
 
@@ -173,7 +193,10 @@ export const dashboardRouter = createTRPCRouter({
       for (const item of existingItems) {
         await db
           .delete(googleAnalyticsReportTable)
-          .where(eq(googleAnalyticsReportTable.id, item.googleAnalyticsReportId));
+          .where(and(
+            eq(googleAnalyticsReportTable.id, item.googleAnalyticsReportId),
+            eq(googleAnalyticsReportTable.workspaceId, ctx.activeWorkspaceId),
+          ));
       }
 
       // Update dashboard title and description
@@ -183,7 +206,10 @@ export const dashboardRouter = createTRPCRouter({
           title: input.dashboard.title,
           description: input.dashboard.description,
         })
-        .where(eq(dashboardTable.id, input.dashboardId));
+        .where(and(
+          eq(dashboardTable.id, input.dashboardId),
+          eq(dashboardTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       // Create new items
       for (const item of input.dashboard.items) {
@@ -194,6 +220,7 @@ export const dashboardRouter = createTRPCRouter({
           const [newPlotView] = await ctx.db
             .insert(plotViewTable)
             .values({
+              workspaceId: ctx.activeWorkspaceId,
               viewData: item.plotView.viewData,
             })
             .returning();
@@ -209,6 +236,7 @@ export const dashboardRouter = createTRPCRouter({
         const [newGAReport] = await ctx.db
           .insert(googleAnalyticsReportTable)
           .values({
+            workspaceId: ctx.activeWorkspaceId,
             title: item.googleAnalyticsReport.title,
             description: item.googleAnalyticsReport.description,
             reportParameters: item.googleAnalyticsReport.reportParameters,
@@ -223,6 +251,7 @@ export const dashboardRouter = createTRPCRouter({
         await db
           .insert(dashboardItemsTable)
           .values({
+            workspaceId: ctx.activeWorkspaceId,
             dashboardId: input.dashboardId,
             gridX: item.dashboardItem.gridX,
             gridY: item.dashboardItem.gridY,

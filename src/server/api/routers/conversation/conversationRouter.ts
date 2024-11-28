@@ -1,19 +1,20 @@
 import { viewDataSchema } from "@/components/charting/chartTypes";
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { conversationTable, dashboardItemsTable, googleAnalyticsReportTable, messageTable, plotViewTable } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createGoogleAnalyticsResponse } from "./createGoogleAnalyticsResponse";
 
 export const conversationRouter = createTRPCRouter({
-  createConversation: publicProcedure
+  createConversation: workspaceProtectedProcedure
     .input(z.object({ initialUserMessage: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const [conversation] = await ctx.db
         .insert(conversationTable)
         .values({
           name: "Untitled Conversation",
+          workspaceId: ctx.activeWorkspaceId,
         })
         .returning();
 
@@ -26,6 +27,7 @@ export const conversationRouter = createTRPCRouter({
         newAssistantMessage,
         suggestedUserResponses,
       } = await createGoogleAnalyticsResponse({
+        workspaceId: ctx.activeWorkspaceId,
         conversationId: conversation.id,
         userMessage: input.initialUserMessage,
       });
@@ -38,42 +40,49 @@ export const conversationRouter = createTRPCRouter({
       };
     }),
 
-  getConversation: publicProcedure
+  getConversation: workspaceProtectedProcedure
     .input(z.object({ conversationId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const conversations = await ctx.db
         .select()
         .from(conversationTable)
-        .where(eq(conversationTable.id, input.conversationId));
+        .where(and(
+          eq(conversationTable.id, input.conversationId),
+          eq(conversationTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       return conversations[0] ?? null;
     }),
 
-  listConversationMessages: publicProcedure
+  listConversationMessages: workspaceProtectedProcedure
     .input(z.object({ conversationId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const messages = await ctx.db
         .select()
         .from(messageTable)
-        .where(eq(messageTable.conversationId, input.conversationId))
+        .where(and(
+          eq(messageTable.conversationId, input.conversationId),
+          eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+        ))
         .orderBy(messageTable.createdAt);
 
       return messages;
     }),
 
-  addMessage: publicProcedure
+  addMessage: workspaceProtectedProcedure
     .input(
       z.object({
         conversationId: z.string().uuid(),
         text: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const {
         newUserMessage,
         newAssistantMessage,
         suggestedUserResponses,
       } = await createGoogleAnalyticsResponse({
+        workspaceId: ctx.activeWorkspaceId,
         conversationId: input.conversationId,
         userMessage: input.text,
       });
@@ -85,7 +94,7 @@ export const conversationRouter = createTRPCRouter({
       };
     }),
 
-  getMessagePlotView: publicProcedure
+  getMessagePlotView: workspaceProtectedProcedure
     .input(z.object({ messageId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const plotViews = await ctx.db
@@ -97,13 +106,17 @@ export const conversationRouter = createTRPCRouter({
           plotViewTable,
           eq(messageTable.plotViewId, plotViewTable.id)
         )
-        .where(eq(messageTable.id, input.messageId))
+        .where(and(
+          eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
+          eq(messageTable.id, input.messageId),
+          eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+        ))
         .limit(1);
 
       return plotViews[0]?.plotView ?? null;
     }),
 
-  setMessagePlotView: publicProcedure
+  setMessagePlotView: workspaceProtectedProcedure
     .input(
       z.object({
         messageId: z.string().uuid(),
@@ -115,7 +128,10 @@ export const conversationRouter = createTRPCRouter({
       const [message] = await db
         .select()
         .from(messageTable)
-        .where(eq(messageTable.id, input.messageId));
+        .where(and(
+          eq(messageTable.id, input.messageId),
+          eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       if (!message) {
         throw new Error("Message not found");
@@ -128,12 +144,18 @@ export const conversationRouter = createTRPCRouter({
           await db
             .update(messageTable)
             .set({ plotViewId: null })
-            .where(eq(messageTable.id, input.messageId));
+            .where(and(
+              eq(messageTable.id, input.messageId),
+              eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+            ));
 
           // Delete the existing plot view
           await db
             .delete(plotViewTable)
-            .where(eq(plotViewTable.id, message.plotViewId));
+            .where(and(
+              eq(plotViewTable.id, message.plotViewId),
+              eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
+            ));
         }
         return null;
       }
@@ -143,7 +165,10 @@ export const conversationRouter = createTRPCRouter({
         const [updatedPlotView] = await db
           .update(plotViewTable)
           .set({ viewData: input.viewData })
-          .where(eq(plotViewTable.id, message.plotViewId))
+          .where(and(
+            eq(plotViewTable.id, message.plotViewId),
+            eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
+          ))
           .returning();
 
         return updatedPlotView;
@@ -151,7 +176,10 @@ export const conversationRouter = createTRPCRouter({
         // Create new plot view
         const [newPlotView] = await db
           .insert(plotViewTable)
-          .values({ viewData: input.viewData })
+          .values({
+            workspaceId: ctx.activeWorkspaceId,
+            viewData: input.viewData,
+          })
           .returning();
 
         if (!newPlotView) {
@@ -162,13 +190,16 @@ export const conversationRouter = createTRPCRouter({
         await db
           .update(messageTable)
           .set({ plotViewId: newPlotView.id })
-          .where(eq(messageTable.id, input.messageId));
+          .where(and(
+            eq(messageTable.id, input.messageId),
+            eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+          ));
 
         return newPlotView;
       }
     }),
 
-  saveMessageToDashboard: publicProcedure
+  saveMessageToDashboard: workspaceProtectedProcedure
     .input(
       z.object({
         messageId: z.string().uuid(),
@@ -180,7 +211,10 @@ export const conversationRouter = createTRPCRouter({
       const [message] = await db
         .select()
         .from(messageTable)
-        .where(eq(messageTable.id, input.messageId));
+        .where(and(
+          eq(messageTable.id, input.messageId),
+          eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       if (!message) {
         throw new Error("Message not found");
@@ -194,7 +228,10 @@ export const conversationRouter = createTRPCRouter({
       const [originalPlotView] = await db
         .select()
         .from(plotViewTable)
-        .where(eq(plotViewTable.id, message.plotViewId));
+        .where(and(
+          eq(plotViewTable.id, message.plotViewId),
+          eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       if (!originalPlotView) {
         throw new Error("Plot view not found");
@@ -204,7 +241,10 @@ export const conversationRouter = createTRPCRouter({
       const [originalGAReport] = await db
         .select()
         .from(googleAnalyticsReportTable)
-        .where(eq(googleAnalyticsReportTable.id, message.googleAnalyticsReportId));
+        .where(and(
+          eq(googleAnalyticsReportTable.id, message.googleAnalyticsReportId),
+          eq(googleAnalyticsReportTable.workspaceId, ctx.activeWorkspaceId),
+        ));
 
       if (!originalGAReport) {
         throw new Error("Google Analytics report not found");
@@ -214,6 +254,7 @@ export const conversationRouter = createTRPCRouter({
       const [newPlotView] = await db
         .insert(plotViewTable)
         .values({
+          workspaceId: ctx.activeWorkspaceId,
           viewData: originalPlotView.viewData,
         })
         .returning();
@@ -226,6 +267,7 @@ export const conversationRouter = createTRPCRouter({
       const [newGAReport] = await db
         .insert(googleAnalyticsReportTable)
         .values({
+          workspaceId: ctx.activeWorkspaceId,
           title: originalGAReport.title,
           description: originalGAReport.description,
           reportParameters: originalGAReport.reportParameters,
@@ -240,6 +282,7 @@ export const conversationRouter = createTRPCRouter({
       const [dashboardItem] = await db
         .insert(dashboardItemsTable)
         .values({
+          workspaceId: ctx.activeWorkspaceId,
           dashboardId: input.dashboardId,
           gridX: 0,
           gridY: 0,

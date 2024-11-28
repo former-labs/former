@@ -21,6 +21,10 @@ const updatedAtField = timestamp("updated_at", { withTimezone: true })
   .notNull()
   .$onUpdate(() => new Date());
 
+const workspaceIdField = uuid("workspace_id")
+    .references(() => workspaceTable.id)
+    .notNull();
+
 
 // User
 export const userTable = pgTable("user", {
@@ -64,13 +68,11 @@ export const roleTable = pgTable("role", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
   roleType: text("role_type", { enum: ROLE_VALUES }).notNull(),
   userId: uuid("user_id")
     .notNull()
     .references(() => userTable.id),
-  workspaceId: uuid("workspace_id")
-    .notNull() 
-    .references(() => workspaceTable.id),
 });
 
 export const roleRelations = relations(roleTable, ({ one }) => ({
@@ -88,9 +90,7 @@ export const integrationTable = pgTable("integration", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
-  workspaceId: uuid("workspace_id")
-    .notNull()
-    .references(() => workspaceTable.id),
+  workspaceId: workspaceIdField,
   type: text("type", { enum: ["google_analytics"] }).notNull(),
   credentials: encryptedJson("credentials").notNull(),
   metadata: json("metadata").notNull(),
@@ -105,6 +105,7 @@ export const conversationTable = pgTable("conversation", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
   name: text("name").notNull(),
 });
 
@@ -116,6 +117,7 @@ export const messageTable = pgTable("message", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
   conversationId: uuid("conversation_id")
     .notNull()
     .references(() => conversationTable.id),
@@ -129,6 +131,7 @@ export const googleAnalyticsReportTable = pgTable("google_analytics_report", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	createdAt: createdAtField,
 	updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
 	title: text("title").notNull(),
 	description: text("description").notNull(),
 	reportParameters: json("report_parameters").$type<GoogleAnalyticsReportParameters>().notNull(),
@@ -138,6 +141,7 @@ export const plotViewTable = pgTable("plot_view", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	createdAt: createdAtField,
 	updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
 	viewData: json("view_data").$type<ViewData>().notNull(),
 });
 
@@ -145,6 +149,7 @@ export const dashboardTable = pgTable("dashboard", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	createdAt: createdAtField,
 	updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
 	title: text("title").notNull(),
 	description: text("description"),
 });
@@ -153,6 +158,7 @@ export const dashboardItemsTable = pgTable("dashboard_item", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	createdAt: createdAtField,
 	updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
 	dashboardId: uuid("dashboard_id")
     .references(() => dashboardTable.id)
     .notNull(),

@@ -6,7 +6,7 @@ import { googleAnalyticsReportTable, integrationTable } from "@/server/db/schema
 import { executeGoogleAnalyticsReport, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
 import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 async function refreshAccessToken(refreshToken: string) {
@@ -78,7 +78,10 @@ export const googleAnalyticsRouter = createTRPCRouter({
     .input(z.object({ googleAnalyticsReportId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const report = await ctx.db.query.googleAnalyticsReportTable.findFirst({
-        where: eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId),
+        where: and(
+          eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId),
+          eq(googleAnalyticsReportTable.workspaceId, ctx.activeWorkspaceId),
+        ),
       });
 
       if (!report) {
@@ -99,7 +102,10 @@ export const googleAnalyticsRouter = createTRPCRouter({
         .set({
           reportParameters: input.reportParameters,
         })
-        .where(eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId))
+        .where(and(
+          eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId),
+          eq(googleAnalyticsReportTable.workspaceId, ctx.activeWorkspaceId),
+        ))
         .returning();
 
       if (!updatedReport) {
@@ -113,7 +119,10 @@ export const googleAnalyticsRouter = createTRPCRouter({
     .input(z.object({ googleAnalyticsReportId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const report = await ctx.db.query.googleAnalyticsReportTable.findFirst({
-        where: eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId),
+        where: and(
+          eq(googleAnalyticsReportTable.id, input.googleAnalyticsReportId),
+          eq(googleAnalyticsReportTable.workspaceId, ctx.activeWorkspaceId),
+        ),
       });
 
       if (!report) {
