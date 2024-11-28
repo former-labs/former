@@ -1,4 +1,4 @@
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { adminProtectedProcedure, createTRPCRouter } from "@/server/api/trpc";
 import { getAgentResponse } from "@/server/googleAnalytics/getAgentResponse";
 import {
   executeGoogleAnalyticsReport,
@@ -11,20 +11,14 @@ import { evalTestList } from "./evalTestListAndFilter";
 import { verifyEvalResponse } from "./verifyEvalResponse";
 
 export const evalRouter = createTRPCRouter({
-  listEvalTests: publicProcedure
-    .input(
-      z.object({
-        workspaceUid: z.string(),
-      }),
-    )
+  listEvalTests: adminProtectedProcedure
     .query(async () => {
       return evalTestList;
     }),
 
-  runEvalTest: publicProcedure
+  runEvalTest: adminProtectedProcedure
     .input(
       z.object({
-        workspaceUid: z.string(),
         evalId: z.enum(evalTestList.map((t) => t.id) as [string, ...string[]]),
       }),
     )
@@ -57,10 +51,9 @@ export const evalRouter = createTRPCRouter({
       };
     }),
 
-  executeGoogleAnalyticsReport: publicProcedure
+  executeGoogleAnalyticsReport: adminProtectedProcedure
     .input(
       z.object({
-        workspaceUid: z.string(),
         parameters: googleAnalyticsReportParametersSchema,
       }),
     )
@@ -88,12 +81,7 @@ export const evalRouter = createTRPCRouter({
       }
     }),
 
-  getGoogleAnalyticsMetadata: publicProcedure
-    .input(
-      z.object({
-        workspaceUid: z.string(),
-      }),
-    )
+  getGoogleAnalyticsMetadata: adminProtectedProcedure
     .query(async ({ input }) => {
       try {
         // Hardcoded to ours for now

@@ -2,10 +2,8 @@
 
 import { api } from "@/trpc/react";
 
-export const MetadataDetails = ({ workspaceUid }: { workspaceUid: string }) => {
-  const { data: metadata } = api.eval.getGoogleAnalyticsMetadata.useQuery({
-    workspaceUid,
-  });
+export const MetadataDetails = () => {
+  const { data: metadata } = api.eval.getGoogleAnalyticsMetadata.useQuery();
 
   const groupByCategory = (items: any[] = []) => {
     return items.reduce((acc, item) => {
