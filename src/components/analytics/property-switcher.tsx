@@ -17,10 +17,20 @@ import {
 import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { Skeleton } from "../ui/skeleton";
 
 export function PropertySwitcher() {
   const [open, setOpen] = useState(false);
-  const { accounts, activeProperty, setActiveProperty } = useGoogleAnalytics();
+  const {
+    accounts,
+    activeProperty,
+    setActiveProperty,
+    isLoadingGoogleAccounts,
+  } = useGoogleAnalytics();
+
+  if (isLoadingGoogleAccounts) {
+    return <Skeleton className="h-8 w-32" />;
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
