@@ -17,6 +17,7 @@ import {
 import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { Skeleton } from "../ui/skeleton";
 
 export function PropertySwitcher() {
   const [open, setOpen] = useState(false);
@@ -28,7 +29,7 @@ export function PropertySwitcher() {
   } = useGoogleAnalytics();
 
   if (isLoadingGoogleAccounts) {
-    return null;
+    return <Skeleton className="h-8 w-32" />;
   }
 
   return (
