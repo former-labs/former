@@ -45,9 +45,9 @@ export const GoogleAnalyticsProvider = ({
     });
 
   useEffect(() => {
-    if (analyticsData) {
+    if (analyticsData && !activeProperty) {
       setAccounts(analyticsData);
-      if (analyticsData[0]?.properties[0] && !activeProperty) {
+      if (analyticsData[0]?.properties[0]) {
         setActiveProperty(analyticsData[0].properties[0]);
       }
     }

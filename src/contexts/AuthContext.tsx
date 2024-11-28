@@ -22,7 +22,7 @@ type AuthContextType = {
   authLoading: boolean;
   authUser: User | null;
   user: UserSelect | null;
-  roles: RoleSelectWithRelations[] | null;
+  roles: RoleSelectWithRelations[];
   activeRole: RoleSelectWithRelations | null;
   isWorkspaceLoading: boolean;
   setActiveRole: React.Dispatch<
@@ -39,7 +39,7 @@ export const AuthContext = createContext<AuthContextType>({
   authLoading: true,
   authUser: null,
   user: null,
-  roles: null,
+  roles: [],
   activeRole: null,
   isWorkspaceLoading: true,
   setActiveRole: () => null,
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [user, setUser] = useState<UserSelect | null>(null);
-  const [roles, setRoles] = useState<RoleSelectWithRelations[] | null>(null);
+  const [roles, setRoles] = useState<RoleSelectWithRelations[]>([]);
   const [activeRole, setActiveRole] = useState<RoleSelectWithRelations | null>(
     null,
   );

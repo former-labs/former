@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { cn } from "@/lib/utils";
 import { Stars } from "lucide-react";
 import React, { useRef, useState } from "react";
@@ -26,6 +27,7 @@ export const SearchBar = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const { activeProperty } = useGoogleAnalytics();
 
   useOnClickOutside(containerRef, () => setIsFocused(false));
 
@@ -74,7 +76,10 @@ export const SearchBar = ({
           )}
         </div>
       </div>
-      <Button onClick={handleSearchSubmit} disabled={isLoading}>
+      <Button
+        onClick={handleSearchSubmit}
+        disabled={isLoading || !activeProperty}
+      >
         <Stars className="mr-2 h-4 w-4" />
         Search
       </Button>
