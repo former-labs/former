@@ -1,21 +1,14 @@
 "use client";
 
+import {
+  type GoogleAnalyticsAccount,
+  type GoogleAnalyticsProperty,
+} from "@/lib/googleAnalytics/googleAnalyticsTypes";
 import { api } from "@/trpc/react";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 
-type GoogleAnalyticsProperty = {
-  propertyId: string;
-  name: string;
-};
-
-type GoogleAnalyticsAccount = {
-  accountId: string;
-  name: string;
-  properties: GoogleAnalyticsProperty[];
-};
-
-type GoogleAnalyticsContextType = {
+export type GoogleAnalyticsContextType = {
   isLoadingGoogleAccounts: boolean;
   accounts: GoogleAnalyticsAccount[];
   activeProperty: GoogleAnalyticsProperty | null;
@@ -35,23 +28,19 @@ export const GoogleAnalyticsProvider = ({
   children: React.ReactNode;
 }) => {
   const { activeRole } = useAuth();
-  const [accounts, setAccounts] = useState<GoogleAnalyticsAccount[]>([]);
   const [activeProperty, setActiveProperty] =
     useState<GoogleAnalyticsProperty | null>(null);
 
-  const { data: analyticsData, isLoading: isLoadingGoogleAccounts } =
+  const { data: accounts = [], isLoading: isLoadingGoogleAccounts } =
     api.googleAnalytics.getAccounts.useQuery(undefined, {
       enabled: !!activeRole,
     });
 
   useEffect(() => {
-    if (analyticsData && !activeProperty) {
-      setAccounts(analyticsData);
-      if (analyticsData[0]?.properties[0]) {
-        setActiveProperty(analyticsData[0].properties[0]);
-      }
+    if (!activeProperty && accounts[0]?.properties[0]) {
+      setActiveProperty(accounts[0].properties[0]);
     }
-  }, [analyticsData]);
+  }, [accounts, activeProperty]);
 
   return (
     <GoogleAnalyticsContext.Provider
