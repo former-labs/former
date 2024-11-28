@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,6 +41,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { handleWorkspaceSwitch } = useAuth();
 
   const formSchema = z.object({
     workspaceName: z.string().min(3, "Must be at least 3 characters"),
@@ -85,19 +87,21 @@ export default function OnboardingPage() {
     setError("");
     setIsLoading(true);
 
-    const { workspaceId } = await createWorkspace.mutateAsync({
+    const { role } = await createWorkspace.mutateAsync({
       workspaceName: values.workspaceName,
     });
 
-    if (!workspaceId) {
+    if (!role) {
       setError("Failed to create workspace");
       setIsLoading(false);
       return;
+    } else {
+      await handleWorkspaceSwitch(role);
     }
 
     // Send them to Google Analytics
     const { redirectUrl } = await connectGoogleAnalytics.mutateAsync({
-      workspaceId,
+      workspaceId: role.workspaceId,
     });
 
     if (redirectUrl) {

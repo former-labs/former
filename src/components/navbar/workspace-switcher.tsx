@@ -56,7 +56,7 @@ export function WorkspaceSwitcher() {
             {roles?.map((role, index) => (
               <DropdownMenuItem
                 key={role.workspace.name}
-                onClick={() => handleWorkspaceSwitch(role)}
+                onClick={() => void handleWorkspaceSwitch(role)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">
