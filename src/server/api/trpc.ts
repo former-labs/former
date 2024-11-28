@@ -6,13 +6,12 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
+import { type ActiveRole } from "@/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/server/db";
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-
-import { ActiveRole } from "@/contexts/AuthContext";
-import { createClient } from "@/lib/supabase/server";
-import { db } from "@/server/db";
 
 /**
  * 1. CONTEXT
@@ -124,6 +123,7 @@ export const authUserProcedure = t.procedure
 
     return next({
       ctx: {
+        ...ctx,
         auth: ctx.auth,
       },
     });
@@ -155,6 +155,7 @@ export const userProtectedProcedure = t.procedure
 
     return next({
       ctx: {
+        ...ctx,
         auth: ctx.auth,
         user,
       },
@@ -190,6 +191,7 @@ export const workspaceProtectedProcedure = t.procedure
 
     return next({
       ctx: {
+        ...ctx,
         auth: ctx.auth,
         activeRoleId,
         activeRoleType,

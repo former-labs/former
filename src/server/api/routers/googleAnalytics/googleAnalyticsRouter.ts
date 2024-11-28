@@ -32,7 +32,7 @@ async function refreshAccessToken(refreshToken: string) {
 }
 
 export const googleAnalyticsRouter = createTRPCRouter({
-  getAccounts: userProtectedProcedure.query(async ({ ctx }) => {
+  getAccounts: userProtectedProcedure.query(async ({ ctx }): Promise<GoogleAnalyticsAccount[]> => {
     const integration = await db.query.integrationTable.findFirst({
       where: eq(integrationTable.workspaceId, ctx.user.roles[0]?.workspaceId ?? ""),
     });
