@@ -34,7 +34,7 @@ export const ViewContent = ({
   return (
     <div className="flex h-full flex-col">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{view.name}</h2>
+        <h2 className="text-xl font-bold">{view.name}</h2>
         {editMode && (
           <div className="flex space-x-2">
             <Button size="sm" onClick={onEdit}>
