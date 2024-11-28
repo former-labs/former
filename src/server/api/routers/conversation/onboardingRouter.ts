@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createTRPCRouter, userProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
-import { roleTable, workspaceTable } from "@/server/db/schema";
+import { roleTable, RoleType, workspaceTable } from "@/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -38,7 +38,7 @@ export const onboardingRouter = createTRPCRouter({
             .values({
               workspaceId: newWorkspace.id,
               userId: ctx.user.id,
-              roleType: "owner",
+              roleType: RoleType.OWNER,
             })
             .returning();
 
