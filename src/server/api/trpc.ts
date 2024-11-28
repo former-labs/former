@@ -12,6 +12,7 @@ import { db } from "@/server/db";
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import { isAdminEmail } from "../auth/admin";
 
 /**
  * 1. CONTEXT
@@ -129,6 +130,15 @@ export const authUserProcedure = t.procedure
     });
   });
 
+// Admin-only procedure that checks for specific email addresses
+export const adminProtectedProcedure = authUserProcedure
+  .use(async ({ ctx, next }) => {
+    if (!ctx.auth.email || !isAdminEmail(ctx.auth.email)) {
+      throw new Error("You must be an admin to access this resource");
+    }
+
+    return next();
+  });
 
 /*
   When we expect both auth user and user to exist.
@@ -138,12 +148,13 @@ export const authUserProcedure = t.procedure
 export const userProtectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    if (!ctx.auth?.id) {
+    const supabaseAuthId = ctx.auth?.id;
+    if (!supabaseAuthId) {
       throw new Error("You must be logged in to access this resource");
     }
 
     const user = await db.query.userTable.findFirst({
-      where: (user, { eq }) => eq(user.supabaseAuthId, ctx.auth?.id ?? ""),
+      where: (user, { eq }) => eq(user.supabaseAuthId, supabaseAuthId),
       with: {
         roles: {
           with: {

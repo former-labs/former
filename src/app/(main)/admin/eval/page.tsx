@@ -9,21 +9,9 @@ import { useState } from "react";
 import { MetadataDetails } from "./MetadataDetails";
 
 export default function Page() {
-  const workspaceUid = "FAKE_WORKSPACE_UID";
   const runEvalMutation = api.eval.runEvalTest.useMutation();
 
-  const {
-    data: evals,
-    isLoading,
-    error,
-  } = api.eval.listEvalTests.useQuery(
-    {
-      workspaceUid,
-    },
-    {
-      enabled: !!workspaceUid,
-    },
-  );
+  const { data: evals, isLoading, error } = api.eval.listEvalTests.useQuery();
 
   const [testResults, setTestResults] = useState<
     Record<
@@ -53,7 +41,6 @@ export default function Page() {
     //     agentResponse: undefined,
     //   },
     // }));
-    if (!workspaceUid) return;
 
     setEvalTestLoading((prev) => ({
       ...prev,
@@ -62,7 +49,6 @@ export default function Page() {
 
     try {
       const response = await runEvalMutation.mutateAsync({
-        workspaceUid,
         evalId,
       });
       setTestResults((prev) => ({
@@ -86,10 +72,6 @@ export default function Page() {
       }));
     }
   };
-
-  if (!workspaceUid) {
-    return <div>Loading workspace...</div>;
-  }
 
   const totalTests = evals?.length ?? 0;
   const testsRun = Object.keys(testResults).length;
@@ -116,7 +98,7 @@ export default function Page() {
       {error && <div className="text-red-500">Error: {error.message}</div>}
 
       <div className="mb-8 flex flex-col gap-y-2">
-        <p className="text-gray-600">Workspace Uid: {workspaceUid}</p>
+        {/* <p className="text-gray-600">Workspace Uid: {workspaceUid}</p> */}
         <div className="mt-4 flex items-center gap-4">
           <p className="text-lg font-medium">
             Passed {passedTests}/{totalTests} ({failedTests} fails)
@@ -144,7 +126,7 @@ export default function Page() {
         </div>
       </div>
 
-      <MetadataDetails workspaceUid={workspaceUid} />
+      <MetadataDetails />
 
       {isLoading ? (
         <div className="flex items-center justify-center p-8">
@@ -161,7 +143,6 @@ export default function Page() {
                 onRun={() => handleRunTest(evalTest.id)}
                 isRunning={evalTestLoading[evalTest.id] ?? false}
                 result={testResults[evalTest.id]}
-                workspaceUid={workspaceUid}
                 index={index + minIndex}
               />
             ))}
@@ -180,13 +161,11 @@ const EvalTestComponent = ({
   onRun,
   isRunning,
   result,
-  workspaceUid,
   index,
 }: {
   evalTest: EvalApiTest;
   onRun: () => Promise<void>;
   isRunning: boolean;
-  workspaceUid: string;
   index: number;
   result:
     | {
@@ -235,10 +214,7 @@ const EvalTestComponent = ({
           <pre className="bg-gray-100 p-2 text-sm">
             {JSON.stringify(evalTest.targetParameters, null, 2)}
           </pre>
-          <GoogleAnalyticsReportRunner
-            workspaceUid={workspaceUid}
-            parameters={evalTest.targetParameters}
-          />
+          <GoogleAnalyticsReportRunner parameters={evalTest.targetParameters} />
         </div>
       </details>
       {result && (
@@ -276,7 +252,6 @@ const EvalTestComponent = ({
               </pre>
               <div className="mt-4">
                 <GoogleAnalyticsReportRunner
-                  workspaceUid={workspaceUid}
                   parameters={result.agentResponse}
                 />
               </div>
@@ -292,10 +267,8 @@ type GoogleAnalyticsReportResultType =
   RouterOutputs["eval"]["executeGoogleAnalyticsReport"];
 
 const GoogleAnalyticsReportRunner = ({
-  workspaceUid,
   parameters,
 }: {
-  workspaceUid: string;
   parameters: GoogleAnalyticsReportParameters;
 }) => {
   const executeReportMutation =
@@ -308,7 +281,6 @@ const GoogleAnalyticsReportRunner = ({
   const handleRunReport = async () => {
     try {
       const response = await executeReportMutation.mutateAsync({
-        workspaceUid,
         parameters,
       });
       if (response.success) {
