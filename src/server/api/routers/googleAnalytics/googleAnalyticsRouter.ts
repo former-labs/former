@@ -1,6 +1,6 @@
 import { env } from "@/env";
 import { GoogleAnalyticsAccount } from "@/lib/googleAnalytics/googleAnalyticsTypes";
-import { createTRPCRouter, userProtectedProcedure, workspaceProtectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { googleAnalyticsReportTable, integrationTable } from "@/server/db/schema";
 import { executeGoogleAnalyticsReport, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
@@ -32,16 +32,17 @@ async function refreshAccessToken(refreshToken: string) {
 }
 
 export const googleAnalyticsRouter = createTRPCRouter({
-  getAccounts: userProtectedProcedure.query(async ({ ctx }): Promise<GoogleAnalyticsAccount[]> => {
+  getAccounts: workspaceProtectedProcedure.query(async ({ ctx }): Promise<GoogleAnalyticsAccount[]> => {
     const integration = await db.query.integrationTable.findFirst({
-      where: eq(integrationTable.workspaceId, ctx.user.roles[0]?.workspaceId ?? ""),
+      where: eq(integrationTable.workspaceId, ctx.activeWorkspaceId),
     });
 
     if (!integration?.credentials) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Google Analytics not connected",
-      });
+      return [];
+      // throw new TRPCError({
+      //   code: "NOT_FOUND",
+      //   message: "Google Analytics not connected",
+      // });
     }
 
     const credentials = integration.credentials;

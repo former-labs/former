@@ -6,6 +6,7 @@ import { integrationTable } from "@/server/db/schema";
 import jwt from "jsonwebtoken";
 import { type NextRequest } from "next/server";
 
+// Google analytics callback
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
