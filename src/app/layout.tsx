@@ -4,13 +4,13 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
 import { AuthProvider } from "@/contexts/AuthContext";
-import { TRPCReactProvider } from "@/trpc/react";
 import { GoogleAnalyticsProvider } from "@/contexts/GoogleAnalyticsContext";
+import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
   title: "Werve",
   description: "Werve",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/favicon.svg" }],
 };
 
 export default function RootLayout({
@@ -21,9 +21,7 @@ export default function RootLayout({
       <body>
         <TRPCReactProvider>
           <AuthProvider>
-            <GoogleAnalyticsProvider>
-              {children}
-            </GoogleAnalyticsProvider>
+            <GoogleAnalyticsProvider>{children}</GoogleAnalyticsProvider>
           </AuthProvider>
         </TRPCReactProvider>
       </body>
