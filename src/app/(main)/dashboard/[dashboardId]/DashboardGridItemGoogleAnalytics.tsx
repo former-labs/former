@@ -1,16 +1,22 @@
+import { ReportEditor } from "@/components/analytics/googleAnalyticsReportEditor/ReportEditor";
 import {
   type ColumnDefinitions,
   type ViewData,
 } from "@/components/charting/chartTypes";
 import { ChartView } from "@/components/charting/ChartView";
 import { TableDataView } from "@/components/charting/TableDataView";
+import {
+  RightSidebarPortal,
+  useRightSidebarLock,
+} from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
 import { getDebugMode } from "@/lib/debugMode";
 import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
+import type { GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { Download, Play, Trash2 } from "lucide-react";
+import { Download, Pencil, Play, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { type DashboardGridItemType } from "./dashboardTypes";
 
@@ -63,6 +69,9 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
   const [reportResult, setReportResult] =
     useState<GoogleAnalyticsReportResultType | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingReport, setIsEditingReport] = useRightSidebarLock(
+    item.localId,
+  );
 
   const executeReportMutation =
     api.dashboard.executeGoogleAnalyticsReport.useMutation({
@@ -96,10 +105,21 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
     }
   }, [item.googleAnalyticsReport]);
 
+  // Disable report editor when not in edit mode
+  useEffect(() => {
+    if (!editMode && isEditingReport) {
+      setIsEditingReport(false);
+    }
+  }, [editMode]);
+
   const handleExportCsv = () => {
     if (reportResult) {
       exportGoogleAnalyticsToCsv(reportResult);
     }
+  };
+
+  const handleEditReport = () => {
+    setIsEditingReport(true);
   };
 
   const handleUpdateView = (viewData: ViewData | null) => {
@@ -110,6 +130,24 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
             viewData,
           }
         : null,
+    });
+  };
+
+  const handleReportSave = async ({
+    title,
+    description,
+    reportParameters,
+  }: {
+    title: string;
+    description: string;
+    reportParameters: GoogleAnalyticsReportParameters;
+  }) => {
+    onUpdateItem({
+      ...item,
+      googleAnalyticsReport: {
+        ...item.googleAnalyticsReport,
+        reportParameters,
+      },
     });
   };
 
@@ -152,6 +190,17 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
             <Download className="h-4 w-4" />
             Export CSV
           </Button>
+          {editMode && (
+            <Button
+              className="flex gap-x-2"
+              variant="secondary"
+              size="sm"
+              onClick={handleEditReport}
+            >
+              <Pencil className="h-4 w-4" />
+              Edit Report
+            </Button>
+          )}
           <Button
             className="flex gap-x-2"
             variant="secondary"
@@ -216,6 +265,21 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
           </>
         )}
       </div>
+
+      {isEditingReport && (
+        <RightSidebarPortal>
+          <ReportEditor
+            report={{
+              title: item.googleAnalyticsReport.title,
+              description: item.googleAnalyticsReport.description,
+              reportParameters: item.googleAnalyticsReport.reportParameters,
+            }}
+            onReportSave={handleReportSave}
+            isSaving={false}
+            onClose={() => setIsEditingReport(false)}
+          />
+        </RightSidebarPortal>
+      )}
     </div>
   );
 };

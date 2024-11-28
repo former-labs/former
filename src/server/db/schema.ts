@@ -1,9 +1,8 @@
 import { type ViewData } from "@/components/charting/chartTypes";
-import { env } from "@/env";
-import CryptoJS from "crypto-js";
 import { relations } from "drizzle-orm";
-import { customType, integer, json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportParametersSchema";
+import { encryptedJson } from "./encryptedJsonFieldType";
 
 // /**
 //  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -12,38 +11,6 @@ import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportP
 //  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
 //  */
 // export const createTable = pgTableCreator((name) => `werve_${name}`);
-
-const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
-  dataType() {
-    return "text"
-  },
-  fromDriver(value: unknown) {
-    try {
-      if (typeof value !== 'string') {
-        throw new Error('Expected string value from database')
-      }
-      const decrypted = CryptoJS.AES.decrypt(value, env.DB_COLUMN_ENCRYPTION_SECRET).toString(
-        CryptoJS.enc.Utf8
-      )
-      if (!decrypted) {
-        throw new Error('Decryption failed')
-      }
-      return JSON.parse(decrypted)
-    } catch (error) {
-      console.error('Error decrypting/parsing JSON:', error)
-      throw error
-    }
-  },
-  toDriver(value: GoogleAnalyticsCredentials) {
-    try {
-      const jsonString = JSON.stringify(value)
-      return CryptoJS.AES.encrypt(jsonString, env.DB_COLUMN_ENCRYPTION_SECRET).toString()
-    } catch (error) {
-      console.error('Error encrypting JSON:', error)
-      throw error
-    }
-  },
-})
 
 const createdAtField = timestamp("created_at", { withTimezone: true })
   .defaultNow()
@@ -214,11 +181,3 @@ export type RoleSelectWithRelations = RoleSelect & {
 export type PlotViewSelect = typeof plotViewTable.$inferSelect;
 export type DashboardSelect = typeof dashboardTable.$inferSelect;
 export type DashboardItemSelect = typeof dashboardItemsTable.$inferSelect;
-
-
-// Types
-export type GoogleAnalyticsCredentials = {
-  scopes: string[];
-  accessToken: string;
-  refreshToken: string;
-};

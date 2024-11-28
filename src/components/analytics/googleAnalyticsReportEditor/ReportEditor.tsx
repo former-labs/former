@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getDebugMode } from "@/lib/debugMode";
-import { type GoogleAnalyticsReportSelect } from "@/server/db/schema";
-import { type GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
+import type { GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReportDateRangesSection } from "./ReportDateRangeSection";
@@ -17,22 +16,31 @@ export const ReportEditor = ({
   isSaving,
   onClose,
 }: {
-  report: GoogleAnalyticsReportSelect;
-  onReportSave: (
-    reportParameters: GoogleAnalyticsReportParameters,
-  ) => Promise<void>;
+  report: {
+    title: string;
+    description: string;
+    reportParameters: GoogleAnalyticsReportParameters;
+  };
+  onReportSave: ({
+    title,
+    description,
+    reportParameters,
+  }: {
+    title: string;
+    description: string;
+    reportParameters: GoogleAnalyticsReportParameters;
+  }) => Promise<void>;
   isSaving: boolean;
   onClose: () => void;
 }) => {
-  const [localReport, setLocalReport] =
-    useState<GoogleAnalyticsReportSelect>(report);
+  const [localReport, setLocalReport] = useState(report);
 
   useEffect(() => {
     setLocalReport(report);
   }, [report]);
 
   const handleSave = async () => {
-    await onReportSave(localReport.reportParameters);
+    await onReportSave(localReport);
   };
 
   const handleMetricsChange = (metrics: { name: string }[]) => {
@@ -260,12 +268,12 @@ export const ReportEditor = ({
           onClick={handleSave}
           className="mb-4"
           disabled={
-            isSaving ||
             localReport.reportParameters.metrics.length === 0 ||
             localReport.reportParameters.dateRanges.length === 0
           }
+          loading={isSaving}
         >
-          {isSaving ? "Saving..." : "Save Report"}
+          Save Report
         </Button>
       </div>
     </div>
