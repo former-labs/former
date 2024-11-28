@@ -268,12 +268,12 @@ export const ReportEditor = ({
           onClick={handleSave}
           className="mb-4"
           disabled={
-            isSaving ||
             localReport.reportParameters.metrics.length === 0 ||
             localReport.reportParameters.dateRanges.length === 0
           }
+          loading={isSaving}
         >
-          {isSaving ? "Saving..." : "Save Report"}
+          Save Report
         </Button>
       </div>
     </div>

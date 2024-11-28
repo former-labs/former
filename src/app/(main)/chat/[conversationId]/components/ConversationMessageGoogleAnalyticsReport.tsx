@@ -1,8 +1,8 @@
 "use client";
 
+import { SidebarGoogleAnalyticsReportEditor } from "@/components/analytics/googleAnalyticsReportEditor/SidebarGoogleAnalyticsReportEditor";
 import { type ColumnDefinitions } from "@/components/charting/chartTypes";
 import { TableDataView } from "@/components/charting/TableDataView";
-import { SidebarGoogleAnalyticsReportEditor } from "@/components/navbar/googleAnalyticsReportEditor/SidebarGoogleAnalyticsReportEditor";
 import {
   RightSidebarPortal,
   useRightSidebarLock,

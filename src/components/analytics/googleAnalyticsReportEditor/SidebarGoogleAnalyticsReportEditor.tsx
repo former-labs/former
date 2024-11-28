@@ -1,4 +1,4 @@
-import { ReportEditor } from "@/components/navbar/googleAnalyticsReportEditor/ReportEditor";
+import { ReportEditor } from "@/components/analytics/googleAnalyticsReportEditor/ReportEditor";
 import { Loading } from "@/components/utils/Loading";
 import type { GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
 import { api } from "@/trpc/react";

@@ -1,10 +1,10 @@
+import { ReportEditor } from "@/components/analytics/googleAnalyticsReportEditor/ReportEditor";
 import {
   type ColumnDefinitions,
   type ViewData,
 } from "@/components/charting/chartTypes";
 import { ChartView } from "@/components/charting/ChartView";
 import { TableDataView } from "@/components/charting/TableDataView";
-import { ReportEditor } from "@/components/navbar/googleAnalyticsReportEditor/ReportEditor";
 import {
   RightSidebarPortal,
   useRightSidebarLock,
