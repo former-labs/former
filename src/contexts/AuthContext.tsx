@@ -28,7 +28,7 @@ type AuthContextType = {
   setActiveRole: React.Dispatch<
     React.SetStateAction<RoleSelectWithRelations | null>
   >;
-  handleWorkspaceSwitch: (role: RoleSelectWithRelations) => void;
+  handleWorkspaceSwitch: (role: RoleSelectWithRelations) => Promise<void>;
   logout: () => Promise<void>;
   authError: string | null;
   setAuthError: React.Dispatch<React.SetStateAction<string | null>>;
@@ -43,7 +43,7 @@ export const AuthContext = createContext<AuthContextType>({
   activeRole: null,
   isWorkspaceLoading: true,
   setActiveRole: () => null,
-  handleWorkspaceSwitch: () => null,
+  handleWorkspaceSwitch: () => Promise.resolve(),
   logout: () => Promise.resolve(),
   authError: null,
   setAuthError: () => null,
@@ -63,10 +63,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const setActiveRoleMutation = api.user.setActiveRole.useMutation();
 
-  const handleWorkspaceSwitch = (role: RoleSelectWithRelations) => {
+  const handleWorkspaceSwitch = async (role: RoleSelectWithRelations) => {
     setActiveRole(role);
     if (role?.workspaceId) {
-      setActiveRoleMutation.mutate({
+      await setActiveRoleMutation.mutateAsync({
         workspaceId: role.workspaceId,
         roleId: role.id,
       });
@@ -79,25 +79,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
   useEffect(() => {
-    if (rolesData && rolesData.length > 0) {
+    const initializeAuth = async (rolesList: RoleSelectWithRelations[]) => {
       const activeRoleMetadata = authUser?.app_metadata?.activeRole;
       const activeWorkspaceRole = activeRoleMetadata
-        ? rolesData.find((role) => role.id === activeRoleMetadata.id)
+        ? rolesList.find((role) => role.id === activeRoleMetadata.id)
         : null;
 
       if (activeWorkspaceRole) {
         setActiveRole(activeWorkspaceRole);
-        setRoles(rolesData);
+        setRoles(rolesList);
         setUser(activeWorkspaceRole.user ?? null);
       } else {
         // If no active role is set or it's invalid, use the first role
-        const firstRole = rolesData[0];
+        const firstRole = rolesList[0];
         if (firstRole) {
-          handleWorkspaceSwitch(firstRole);
+          await handleWorkspaceSwitch(firstRole);
         }
-        setRoles(rolesData);
-        setUser(rolesData[0]?.user ?? null);
+        setRoles(rolesList);
+        setUser(rolesList[0]?.user ?? null);
       }
+    };
+    if (rolesData && rolesData.length > 0) {
+      void initializeAuth(rolesData);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rolesData]);

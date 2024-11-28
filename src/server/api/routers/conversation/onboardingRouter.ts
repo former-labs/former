@@ -40,7 +40,9 @@ export const onboardingRouter = createTRPCRouter({
               userId: ctx.user.id,
               roleType: RoleType.OWNER,
             })
-            .returning();
+            .returning({
+              id: roleTable.id,
+            });
 
           if (!newRole) {
             throw new TRPCError({
@@ -55,11 +57,17 @@ export const onboardingRouter = createTRPCRouter({
             data: { onboarding_complete: true }
           });
 
+          const newRoleWithRelations = await tx.query.roleTable.findFirst({
+            where: (role, { eq }) => eq(role.id, newRole.id),
+            with: {
+              workspace: true,
+              user: true,
+            },
+          });
+
           // 3. Return the workspace UID and user ID
           return {
-            workspaceId: newWorkspace.id,
-            userId: ctx.user.id,
-            roleId: newRole.id,
+            role: newRoleWithRelations,
           };
         });
 
