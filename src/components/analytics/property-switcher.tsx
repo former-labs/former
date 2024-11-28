@@ -20,7 +20,16 @@ import { useState } from "react";
 
 export function PropertySwitcher() {
   const [open, setOpen] = useState(false);
-  const { accounts, activeProperty, setActiveProperty } = useGoogleAnalytics();
+  const {
+    accounts,
+    activeProperty,
+    setActiveProperty,
+    isLoadingGoogleAccounts,
+  } = useGoogleAnalytics();
+
+  if (isLoadingGoogleAccounts) {
+    return null;
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
