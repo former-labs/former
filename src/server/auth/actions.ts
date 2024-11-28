@@ -1,7 +1,7 @@
 "use server";
 
 import { env } from "@/env";
-import { PATH_GOOGLE_OAUTH_CALLBACK } from "@/lib/paths";
+import { PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 import { type Provider } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
@@ -14,7 +14,7 @@ export async function loginWithProvider({
   provider: Provider;
 }) {
   const supabase = await createClient();
-  const redirectTo = `${env.DASHBOARD_URI}${PATH_GOOGLE_OAUTH_CALLBACK}`;
+  const redirectTo = `${env.DASHBOARD_URI}${PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK}`;
 
   const { error, data } = await supabase.auth.signInWithOAuth({
     provider,
