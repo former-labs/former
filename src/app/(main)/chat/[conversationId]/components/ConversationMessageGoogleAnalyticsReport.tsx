@@ -5,7 +5,7 @@ import { TableDataView } from "@/components/charting/TableDataView";
 import { SidebarGoogleAnalyticsReportEditor } from "@/components/navbar/googleAnalyticsReportEditor/SidebarGoogleAnalyticsReportEditor";
 import {
   RightSidebarPortal,
-  useRightSidebar,
+  useRightSidebarLock,
 } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,7 +81,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const { setActiveKey } = useRightSidebar();
+  const [isEditingReport, setIsEditingReport] = useRightSidebarLock(report.id);
 
   const executeReportMutation =
     api.googleAnalytics.executeGoogleAnalyticsReport.useMutation();
@@ -114,7 +114,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   };
 
   const handleEditReport = () => {
-    setActiveKey(report.id);
+    setIsEditingReport(true);
   };
 
   const handleRunReport = async () => {
@@ -247,14 +247,16 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         messageId={message.id}
       />
 
-      <RightSidebarPortal nodeKey={report.id}>
-        <SidebarGoogleAnalyticsReportEditor
-          googleAnalyticsReportId={report.id}
-          onClose={() => {
-            setActiveKey(null);
-          }}
-        />
-      </RightSidebarPortal>
+      {isEditingReport && (
+        <RightSidebarPortal>
+          <SidebarGoogleAnalyticsReportEditor
+            googleAnalyticsReportId={report.id}
+            onClose={() => {
+              setIsEditingReport(false);
+            }}
+          />
+        </RightSidebarPortal>
+      )}
     </div>
   );
 };

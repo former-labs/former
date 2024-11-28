@@ -19,9 +19,13 @@ export const SidebarGoogleAnalyticsReportEditor = ({
     api.googleAnalytics.updateGoogleAnalyticsReportParameters.useMutation();
   const utils = api.useUtils();
 
-  const handleReportSave = async (
-    reportParameters: GoogleAnalyticsReportParameters,
-  ) => {
+  const handleReportSave = async ({
+    reportParameters,
+  }: {
+    title: string;
+    description: string;
+    reportParameters: GoogleAnalyticsReportParameters;
+  }) => {
     await updateReportMutation.mutateAsync({
       googleAnalyticsReportId,
       reportParameters,
@@ -52,7 +56,11 @@ export const SidebarGoogleAnalyticsReportEditor = ({
 
   return (
     <ReportEditor
-      report={report}
+      report={{
+        title: report.title,
+        description: report.description,
+        reportParameters: report.reportParameters,
+      }}
       onReportSave={handleReportSave}
       isSaving={updateReportMutation.isPending}
       onClose={onClose}
