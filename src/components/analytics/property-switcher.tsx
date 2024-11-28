@@ -28,13 +28,13 @@ export function PropertySwitcher() {
     isLoadingGoogleAccounts,
   } = useGoogleAnalytics();
 
-  if (isLoadingGoogleAccounts || accounts.length === 0) {
+  if (isLoadingGoogleAccounts) {
     return <Skeleton className="h-8 w-32" />;
   }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild className="bg-background">
         <Button
           variant="ghost"
           role="combobox"
