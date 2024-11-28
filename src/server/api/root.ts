@@ -1,10 +1,10 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conversationRouter } from "./routers/conversation/conversationRouter";
-import { integrationRouter } from "./routers/conversation/integrationRouter";
-import { onboardingRouter } from "./routers/conversation/onboardingRouter";
 import { dashboardRouter } from "./routers/dashboard/dashboardRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
 import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsRouter";
+import { integrationRouter } from "./routers/integrationRouter";
+import { onboardingRouter } from "./routers/onboardingRouter";
 import { userRouter } from "./routers/userRouter";
 
 /**
