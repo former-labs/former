@@ -28,7 +28,7 @@ export function PropertySwitcher() {
     isLoadingGoogleAccounts,
   } = useGoogleAnalytics();
 
-  if (isLoadingGoogleAccounts || !activeProperty) {
+  if (isLoadingGoogleAccounts || accounts.length === 0) {
     return <Skeleton className="h-8 w-32" />;
   }
 
