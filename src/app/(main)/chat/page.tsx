@@ -1,8 +1,8 @@
 "use client";
 
+import { usePendingMessageStore } from "../../../components/chat/usePendingMessageStore";
 import { PendingConversationMessage } from "./[conversationId]/components/Conversation";
 import { SearchBar } from "./[conversationId]/components/SearchBar";
-import { usePendingMessageStore } from "./usePendingMessageStore";
 
 export default function Page() {
   return <ConversationPending />;

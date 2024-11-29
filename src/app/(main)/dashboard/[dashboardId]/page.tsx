@@ -1,8 +1,16 @@
 "use client";
 
+import { NewConversationSearchBar } from "@/components/chat/NewConversationSearchBar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "@/trpc/react";
-import { Pencil } from "lucide-react";
+import { Pencil, Plus, Settings } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import { DashboardGridItemGoogleAnalytics } from "./DashboardGridItemGoogleAnalytics";
 import {
@@ -46,6 +54,7 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
   const [editMode, setEditMode] = useState(false);
   const [localDashboard, setLocalDashboard] = useState(dashboard);
   const [editTitleDialogOpen, setEditTitleDialogOpen] = useState(false);
+  const [newItemDialogOpen, setNewItemDialogOpen] = useState(false);
 
   /*
     If the dashboard is updated externally we probably want to replace local state?
@@ -152,12 +161,23 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
           </p>
         </div>
         <div className="flex gap-4">
+          {!editMode && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setNewItemDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              New Item
+            </Button>
+          )}
           {!editMode ? (
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setEditMode(true)}
             >
+              <Settings className="h-4 w-4" />
               Edit Dashboard
             </Button>
           ) : (
@@ -211,6 +231,37 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
           }));
         }}
       />
+
+      <NewDashboardItemDialog
+        open={newItemDialogOpen}
+        onOpenChange={setNewItemDialogOpen}
+      />
     </div>
+  );
+};
+
+const NewDashboardItemDialog = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle>Add New Dashboard Item</DialogTitle>
+          <DialogDescription>
+            Ask a question about your analytics data to create a new
+            visualization.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div>
+          <NewConversationSearchBar />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

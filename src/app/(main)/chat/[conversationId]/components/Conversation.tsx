@@ -3,8 +3,8 @@
 import { Loading } from "@/components/utils/Loading";
 import { type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
-import { useState } from "react";
-import { usePendingMessageStore } from "../../usePendingMessageStore";
+import { useEffect, useRef, useState } from "react";
+import { usePendingMessageStore } from "../../../../../components/chat/usePendingMessageStore";
 import { ConversationMessageGoogleAnalyticsReport } from "./ConversationMessageGoogleAnalyticsReport";
 import { SearchBar } from "./SearchBar";
 
@@ -17,6 +17,7 @@ export const Conversation = ({
   const utils = api.useUtils();
   const { pendingUserMessage, setPendingUserMessage, clearPendingUserMessage } =
     usePendingMessageStore();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: conversation, error: conversationError } =
     api.conversation.getConversation.useQuery({
@@ -36,6 +37,14 @@ export const Conversation = ({
       });
     },
   });
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, pendingUserMessage]);
 
   const handleSendMessage = async () => {
     const searchValueTemp = searchValue;
@@ -65,13 +74,18 @@ export const Conversation = ({
         <div className="mt-4 space-y-4">
           <div className="flex flex-col gap-4">
             {messages.map((message) => (
-              <ConversationMessage key={message.id} message={message} />
+              <ConversationMessage
+                key={message.id}
+                message={message}
+                scrollToBottom={scrollToBottom}
+              />
             ))}
             {pendingUserMessage && (
               <PendingConversationMessage
                 pendingChatMessage={pendingUserMessage}
               />
             )}
+            <div ref={messagesEndRef} />
           </div>
         </div>
       </div>
@@ -93,11 +107,22 @@ export const Conversation = ({
   );
 };
 
-const ConversationMessage = ({ message }: { message: MessageSelect }) => {
+const ConversationMessage = ({
+  message,
+  scrollToBottom,
+}: {
+  message: MessageSelect;
+  scrollToBottom: () => void;
+}) => {
   if (message.role === "user") {
     return <ConversationMessageUser messageText={message.text ?? ""} />;
   } else if (message.role === "assistant") {
-    return <ConversationMessageGoogleAnalyticsReport message={message} />;
+    return (
+      <ConversationMessageGoogleAnalyticsReport
+        message={message}
+        scrollToBottom={scrollToBottom}
+      />
+    );
   }
   const _exhaustiveCheck: never = message.role;
 };
