@@ -15,19 +15,11 @@ export const ConversationMessageChartView = ({
   columnDefinitions: ColumnDefinitions | null;
   data: DataRow[] | null;
 }) => {
-  const utils = api.useUtils();
-
   const {
     data: plotView,
     isLoading: isLoadingPlotView,
     isError: isErrorPlotView,
   } = api.conversation.getMessagePlotView.useQuery({ messageId: messageId });
-
-  const setMessagePlotView = api.conversation.setMessagePlotView.useMutation({
-    onSuccess: async () => {
-      await utils.conversation.getMessagePlotView.invalidate({ messageId });
-    },
-  });
 
   if (isLoadingPlotView) {
     return <div>Loading...</div>;
@@ -48,23 +40,8 @@ export const ConversationMessageChartView = ({
       ) : (
         <ChartView
           viewData={plotView?.viewData ?? null}
-          setViewData={async (view) => {
-            // Nice lil optimistic update in the case where the view is being edited
-            if (view && plotView) {
-              utils.conversation.getMessagePlotView.setData(
-                { messageId },
-                { ...plotView, viewData: view },
-              );
-            }
-
-            await setMessagePlotView.mutateAsync({
-              messageId,
-              viewData: view,
-            });
-          }}
           columnDefinitions={columnDefinitions}
           data={data}
-          editMode={true}
         />
       )}
     </>

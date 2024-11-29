@@ -1,12 +1,5 @@
+import { DeleteViewDialog } from "@/components/charting/DeleteViewDialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import {
   type ColumnDefinitions,
@@ -466,7 +458,7 @@ const ClusteredChartViewForm = ({
   </>
 );
 
-const ViewForm = ({
+export const ViewForm = ({
   initialData,
   columnDefinitions,
   onSubmit,
@@ -474,7 +466,7 @@ const ViewForm = ({
 }: {
   initialData?: ViewData;
   columnDefinitions: ColumnDefinitions;
-  onSubmit: (view: ViewData) => Promise<void>;
+  onSubmit: (view: ViewData | null) => Promise<void>;
   submitLabel: string;
 }) => {
   const [viewData, setViewData] = useState<ViewData>(
@@ -489,6 +481,8 @@ const ViewForm = ({
     },
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleViewTypeChange = (type: ViewData["viewType"]) => {
     const firstMetric: Metric = Object.keys(columnDefinitions)[0]!;
@@ -662,7 +656,19 @@ const ViewForm = ({
           />
         )}
       </div>
-      <DialogFooter>
+
+      <div className="flex justify-end gap-2">
+        {initialData && (
+          <>
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteDialog(true)}
+              loading={isDeleting}
+            >
+              Delete View
+            </Button>
+          </>
+        )}
         <Button
           onClick={async () => {
             if (viewData.name) {
@@ -674,73 +680,25 @@ const ViewForm = ({
               }
             }
           }}
-          disabled={isSubmitting}
+          loading={isSubmitting}
         >
           {submitLabel}
-          {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
         </Button>
-      </DialogFooter>
+      </div>
+
+      <DeleteViewDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={async () => {
+          setIsDeleting(true);
+          try {
+            await onSubmit(null);
+          } finally {
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+          }
+        }}
+      />
     </>
-  );
-};
-
-export const NewViewDialog = ({
-  open,
-  onOpenChange,
-  columnDefinitions,
-  onCreateView,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  columnDefinitions: ColumnDefinitions;
-  onCreateView: (view: ViewData) => Promise<void>;
-}) => {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create New View</DialogTitle>
-          <DialogDescription>Configure a new chart view.</DialogDescription>
-        </DialogHeader>
-        <ViewForm
-          columnDefinitions={columnDefinitions}
-          onSubmit={onCreateView}
-          submitLabel="Create View"
-        />
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-export const EditViewDialog = ({
-  open,
-  onOpenChange,
-  view,
-  columnDefinitions,
-  onUpdateView,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  view: ViewData | null;
-  columnDefinitions: ColumnDefinitions;
-  onUpdateView: (view: ViewData) => Promise<void>;
-}) => {
-  if (!view) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Edit View</DialogTitle>
-          <DialogDescription>Update your chart view.</DialogDescription>
-        </DialogHeader>
-        <ViewForm
-          initialData={view}
-          columnDefinitions={columnDefinitions}
-          onSubmit={onUpdateView}
-          submitLabel="Update View"
-        />
-      </DialogContent>
-    </Dialog>
   );
 };

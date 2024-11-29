@@ -5,11 +5,18 @@ import {
 } from "@/components/charting/chartTypes";
 import { ChartView } from "@/components/charting/ChartView";
 import { TableDataView } from "@/components/charting/TableDataView";
+import { ViewForm } from "@/components/charting/ViewForm";
 import {
   RightSidebarPortal,
   useRightSidebarLock,
 } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
 import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
@@ -17,7 +24,14 @@ import { getDebugMode } from "@/lib/debugMode";
 import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
 import type { GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { Download, Pencil, Play, Trash2 } from "lucide-react";
+import {
+  BarChart3,
+  Download,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { type DashboardGridItemType } from "./dashboardTypes";
 
@@ -74,6 +88,9 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
   const [isEditingReport, setIsEditingReport] = useRightSidebarLock(
     item.localId,
   );
+  const [sidebarTab, setSidebarTab] = useState<"dataSource" | "visualisation">(
+    "dataSource",
+  );
 
   const executeReportDirectMutation =
     api.googleAnalytics.executeGoogleAnalyticsReportDirect.useMutation({
@@ -129,9 +146,15 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
 
   const handleEditReport = () => {
     setIsEditingReport(true);
+    setSidebarTab("dataSource");
   };
 
-  const handleUpdateView = (viewData: ViewData | null) => {
+  const handleEditVisualization = () => {
+    setIsEditingReport(true);
+    setSidebarTab("visualisation");
+  };
+
+  const handleUpdateView = async (viewData: ViewData | null) => {
     onUpdateItem({
       ...item,
       plotView: viewData
@@ -180,50 +203,62 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
       <div className="flex items-center justify-between">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
+            <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
             <TabsTrigger value="resultTable">Result Table</TabsTrigger>
             {getDebugMode() && (
               <TabsTrigger value="resultJson">Result JSON</TabsTrigger>
             )}
-            <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
           </TabsList>
         </Tabs>
 
         <div className="flex gap-2">
           <Button
-            className="flex gap-x-2"
-            variant="secondary"
-            size="sm"
+            variant="outline"
+            size="icon"
             onClick={handleExportCsv}
             disabled={!reportResult}
+            title="Export CSV"
           >
             <Download className="h-4 w-4" />
-            Export CSV
           </Button>
           {editMode && (
-            <Button
-              className="flex gap-x-2"
-              variant="secondary"
-              size="sm"
-              onClick={handleEditReport}
-            >
-              <Pencil className="h-4 w-4" />
-              Edit Report
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" title="Edit Options">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={handleEditReport}
+                  className="font-semibold"
+                >
+                  <Pencil className="h-4 w-4 cursor-pointer" />
+                  Edit Data Source
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleEditVisualization}
+                  className="font-semibold"
+                >
+                  <BarChart3 className="h-4 w-4 cursor-pointer" />
+                  Edit Visualization
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button
-            className="flex gap-x-2"
-            variant="secondary"
-            size="sm"
+            variant="outline"
+            size="icon"
             onClick={handleRunReport}
             disabled={executeReportDirectMutation.isPending || !activeProperty}
+            title="Refresh Data"
           >
-            <Play className="h-4 w-4" />
-            {executeReportDirectMutation.isPending
-              ? "Running..."
-              : "Run Report"}
+            <RefreshCw
+              className={`h-4 w-4 ${executeReportDirectMutation.isPending ? "animate-spin" : ""}`}
+            />
           </Button>
           {editMode && (
-            <Button variant="destructive" size="sm" onClick={onDelete}>
+            <Button variant="destructive" size="icon" onClick={onDelete}>
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
@@ -265,10 +300,8 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
                 ) : (
                   <ChartView
                     viewData={item.plotView?.viewData ?? null}
-                    setViewData={handleUpdateView}
                     columnDefinitions={columnDefinitions}
                     data={reportResult.rows}
-                    editMode={editMode}
                   />
                 )}
               </>
@@ -279,16 +312,54 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
 
       {isEditingReport && (
         <RightSidebarPortal>
-          <ReportEditor
-            report={{
-              title: item.googleAnalyticsReport.title,
-              description: item.googleAnalyticsReport.description,
-              reportParameters: item.googleAnalyticsReport.reportParameters,
-            }}
-            onReportSave={handleReportSave}
-            isSaving={false}
-            onClose={() => setIsEditingReport(false)}
-          />
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between p-4">
+              <Tabs
+                value={sidebarTab}
+                onValueChange={(value) =>
+                  setSidebarTab(value as "dataSource" | "visualisation")
+                }
+              >
+                <TabsList>
+                  <TabsTrigger value="dataSource">Data Source</TabsTrigger>
+                  <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="p-0"
+                onClick={() => setIsEditingReport(false)}
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {sidebarTab === "dataSource" && (
+                <ReportEditor
+                  report={{
+                    title: item.googleAnalyticsReport.title,
+                    description: item.googleAnalyticsReport.description,
+                    reportParameters:
+                      item.googleAnalyticsReport.reportParameters,
+                  }}
+                  onReportSave={handleReportSave}
+                  isSaving={false}
+                />
+              )}
+              {sidebarTab === "visualisation" && columnDefinitions && (
+                <div className="p-4">
+                  <ViewForm
+                    initialData={item.plotView?.viewData}
+                    columnDefinitions={columnDefinitions}
+                    onSubmit={handleUpdateView}
+                    submitLabel="Update Visualization"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </RightSidebarPortal>
       )}
     </div>

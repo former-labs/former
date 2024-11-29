@@ -26,6 +26,7 @@ import {
 import { api, type RouterOutputs } from "@/trpc/react";
 import { BarChart3, Download, Pencil, RefreshCw, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { SidebarVisualizationEditor } from "../../../../../components/charting/SidebarVisualizationEditor";
 import { ConversationMessageChartView } from "./ConversationMessageChartView";
 import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
 
@@ -309,7 +310,12 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
                   googleAnalyticsReportId={report.id}
                 />
               )}
-              {sidebarTab === "visualisation" && <div>hello</div>}
+              {sidebarTab === "visualisation" && columnDefinitions && (
+                <SidebarVisualizationEditor
+                  messageId={message.id}
+                  columnDefinitions={columnDefinitions}
+                />
+              )}
             </div>
           </div>
         </RightSidebarPortal>
