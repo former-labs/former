@@ -167,7 +167,7 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
     : null;
 
   return (
-    <div className="flex h-full w-full flex-col gap-2 overflow-auto bg-white p-4">
+    <div className="flex h-full w-full flex-col gap-2 overflow-auto rounded-lg border bg-white p-4">
       <div className="flex items-center justify-between">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>

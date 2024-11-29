@@ -2,12 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
+import { Pencil } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import { DashboardGridItemGoogleAnalytics } from "./DashboardGridItemGoogleAnalytics";
 import {
   type DashboardGridItemType,
   type DashboardType,
 } from "./dashboardTypes";
+import { EditDashboardTitleDialog } from "./EditDashboardTitleDialog";
 import { type GridItem, GridStackContainer } from "./GridStackContainer";
 
 export default function Page({
@@ -43,6 +45,7 @@ export default function Page({
 const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
   const [editMode, setEditMode] = useState(false);
   const [localDashboard, setLocalDashboard] = useState(dashboard);
+  const [editTitleDialogOpen, setEditTitleDialogOpen] = useState(false);
 
   /*
     If the dashboard is updated externally we probably want to replace local state?
@@ -129,31 +132,45 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
 
   return (
     <div>
-      <div className="flex items-center gap-4 p-10 pt-20">
-        <h1 className="text-2xl font-bold">{dashboard.title}</h1>
-        {!editMode ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setEditMode(true)}
-          >
-            Enter Edit Mode
-          </Button>
-        ) : (
-          <>
-            <Button variant="secondary" size="sm" onClick={handleCancel}>
-              Cancel
-            </Button>
+      <div className="flex items-center justify-between p-10 pt-20">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">{localDashboard.title}</h1>
+          {editMode && (
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
-              onClick={handleSave}
-              loading={updateDashboardMutation.isPending}
+              className="h-6 w-6 p-0"
+              onClick={() => setEditTitleDialogOpen(true)}
             >
-              Save
+              <Pencil className="h-4 w-4" />
             </Button>
-          </>
-        )}
+          )}
+        </div>
+        <div className="flex gap-4">
+          {!editMode ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setEditMode(true)}
+            >
+              Edit Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" size="sm" onClick={handleCancel}>
+                Discard Changes
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSave}
+                loading={updateDashboardMutation.isPending}
+              >
+                Save Changes
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       <div className="min-h-[800px] w-full border bg-[#efefef] p-8">
         <GridStackContainer
@@ -175,6 +192,18 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
           }}
         />
       </div>
+
+      <EditDashboardTitleDialog
+        open={editTitleDialogOpen}
+        onOpenChange={setEditTitleDialogOpen}
+        currentTitle={localDashboard.title}
+        onSave={(newTitle) => {
+          setLocalDashboard((prev) => ({
+            ...prev,
+            title: newTitle,
+          }));
+        }}
+      />
     </div>
   );
 };
