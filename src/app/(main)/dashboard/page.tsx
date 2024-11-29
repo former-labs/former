@@ -7,20 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { PATH_DASHBOARD_SINGLE } from "@/lib/paths";
 import { api } from "@/trpc/react";
 import { BarChart, Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { NewDashboardDialog } from "./components/NewDashboardDialog";
 
 export default function DashboardPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -75,44 +67,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-const NewDashboardDialog = ({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) => {
-  const router = useRouter();
-  const createDashboard = api.dashboard.createDashboard.useMutation({
-    onSuccess: (data) => {
-      router.push(PATH_DASHBOARD_SINGLE(data.dashboardId));
-    },
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create New Dashboard</DialogTitle>
-          <DialogDescription>
-            Create a new dashboard to store your GA4 reports.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              createDashboard.mutate();
-            }}
-            loading={createDashboard.isPending}
-          >
-            Create
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};

@@ -9,24 +9,28 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 export const dashboardRouter = createTRPCRouter({
-  createDashboard: workspaceProtectedProcedure.mutation(async ({ ctx }) => {
-    const [dashboard] = await ctx.db
-      .insert(dashboardTable)
-      .values({
-        workspaceId: ctx.activeWorkspaceId,
-        title: "Untitled dashboard",
-        description: null,
-      })
-      .returning();
+  createDashboard: workspaceProtectedProcedure
+    .input(z.object({
+      dashboardTitle: z.string().min(1, "Dashboard title is required")
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [dashboard] = await ctx.db
+        .insert(dashboardTable)
+        .values({
+          workspaceId: ctx.activeWorkspaceId,
+          title: input.dashboardTitle,
+          description: null,
+        })
+        .returning();
 
-    if (!dashboard) {
-      throw new Error("Failed to create dashboard");
-    }
+      if (!dashboard) {
+        throw new Error("Failed to create dashboard");
+      }
 
-    return {
-      dashboardId: dashboard.id,
-    };
-  }),
+      return {
+        dashboardId: dashboard.id,
+      };
+    }),
 
   listDashboards: workspaceProtectedProcedure.query(async ({ ctx }) => {
     const dashboards = await ctx.db
