@@ -1,19 +1,19 @@
 "use client";
 
+import { GoogleAnalyticsConnectButton } from "@/components/analytics/google-analytics-connect-button";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { LogoVerve } from "@/components/utils/LogoVerve";
 import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { PATH_CONVERSATION_SINGLE } from "@/lib/paths";
 import { api } from "@/trpc/react";
-import { MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SearchBar } from "./chat/[conversationId]/components/SearchBar";
-import { GoogleAnalyticsConnectButton } from "@/components/analytics/google-analytics-connect-button";
 
 export default function ChatPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -45,13 +45,18 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <MessageSquare className="h-12 w-12 text-gray-400" />
-        <h1 className="text-2xl font-bold">Chat</h1>
-        <p className="text-gray-500">Start a new conversation</p>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center">
+      <div className="mb-10 flex w-full max-w-screen-lg flex-col items-center gap-4 px-4">
+        <div className="z-10 mb-2">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-md">
+            <LogoVerve className="h-10 w-10" />
+          </div>
+        </div>
+        <h1 className="mb-4 text-2xl font-semibold">
+          Ask a question of your Google Analytics data
+        </h1>
 
-        <div className="w-[50rem]">
+        <div className="w-full max-w-screen-lg">
           <SearchBar
             placeholder="Ask a question..."
             value={searchValue}

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { cn } from "@/lib/utils";
-import { Stars } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { useOnClickOutside } from "usehooks-ts";
 
@@ -80,8 +80,7 @@ export const SearchBar = ({
         onClick={handleSearchSubmit}
         disabled={isLoading || !activeProperty}
       >
-        <Stars className="mr-2 h-4 w-4" />
-        Search
+        <ArrowRight className="h-4 w-4" />
       </Button>
     </div>
   );
