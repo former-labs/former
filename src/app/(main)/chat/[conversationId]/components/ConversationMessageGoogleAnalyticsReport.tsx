@@ -91,7 +91,22 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   const [isEditingReport, setIsEditingReport] = useRightSidebarLock(report.id);
 
   const executeReportMutation =
-    api.googleAnalytics.executeGoogleAnalyticsReport.useMutation();
+    api.googleAnalytics.executeGoogleAnalyticsReport.useMutation({
+      onSuccess: (response) => {
+        if (response.success) {
+          setReportResult(response.data);
+          setError(null);
+        } else {
+          setReportResult(null);
+          setError(response.error);
+        }
+      },
+      onError: (err) => {
+        console.error("Error executing GA4 report:", err);
+        setReportResult(null);
+        setError(err.message);
+      },
+    });
 
   useEffect(() => {
     scrollToBottom();
@@ -104,23 +119,10 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
       return;
     }
 
-    try {
-      const response = await executeReportMutation.mutateAsync({
-        googleAnalyticsReportId: report.id,
-        propertyId: activeProperty.propertyId,
-      });
-      if (response.success) {
-        setReportResult(response.data);
-        setError(null);
-      } else {
-        setReportResult(null);
-        setError(response.error);
-      }
-    } catch (err) {
-      console.error("Error executing GA4 report:", err);
-      setReportResult(null);
-      setError(err instanceof Error ? err.message : "Unknown error occurred");
-    }
+    await executeReportMutation.mutateAsync({
+      googleAnalyticsReportId: report.id,
+      propertyId: activeProperty.propertyId,
+    });
   };
 
   useEffect(() => {

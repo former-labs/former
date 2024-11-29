@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
+import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { getDebugMode } from "@/lib/debugMode";
 import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
 import type { GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
@@ -21,7 +22,7 @@ import { useEffect, useState } from "react";
 import { type DashboardGridItemType } from "./dashboardTypes";
 
 type GoogleAnalyticsReportResultType =
-  RouterOutputs["dashboard"]["executeGoogleAnalyticsReport"]["data"];
+  RouterOutputs["googleAnalytics"]["executeGoogleAnalyticsReportDirect"]["data"];
 
 export const DashboardGridItemGoogleAnalytics = ({
   item,
@@ -63,6 +64,7 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
   onUpdateItem: (item: DashboardGridItemType) => void;
   editMode: boolean;
 }) => {
+  const { activeProperty } = useGoogleAnalytics();
   const [activeTab, setActiveTab] = useState<string>(
     item.plotView?.viewData ? "visualisation" : "resultTable",
   );
@@ -73,8 +75,8 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
     item.localId,
   );
 
-  const executeReportMutation =
-    api.dashboard.executeGoogleAnalyticsReport.useMutation({
+  const executeReportDirectMutation =
+    api.googleAnalytics.executeGoogleAnalyticsReportDirect.useMutation({
       onSuccess: (response) => {
         if (response.success) {
           setReportResult(response.data);
@@ -92,18 +94,25 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
     });
 
   const handleRunReport = async () => {
-    if (!item.googleAnalyticsReport) return;
+    if (!item.googleAnalyticsReport || !activeProperty) {
+      setError("Please select a Google Analytics property first");
+      setReportResult(null);
+      return;
+    }
 
-    await executeReportMutation.mutateAsync({
+    await executeReportDirectMutation.mutateAsync({
       reportParameters: item.googleAnalyticsReport.reportParameters,
+      propertyId: activeProperty.propertyId,
     });
   };
 
   useEffect(() => {
-    if (item.googleAnalyticsReport) {
+    if (item.googleAnalyticsReport && activeProperty) {
       void handleRunReport();
+    } else {
+      setReportResult(null);
     }
-  }, [item.googleAnalyticsReport]);
+  }, [item.googleAnalyticsReport, activeProperty]);
 
   // Disable report editor when not in edit mode
   useEffect(() => {
@@ -206,10 +215,12 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
             variant="secondary"
             size="sm"
             onClick={handleRunReport}
-            disabled={executeReportMutation.isPending}
+            disabled={executeReportDirectMutation.isPending || !activeProperty}
           >
             <Play className="h-4 w-4" />
-            {executeReportMutation.isPending ? "Running..." : "Run Report"}
+            {executeReportDirectMutation.isPending
+              ? "Running..."
+              : "Run Report"}
           </Button>
           {editMode && (
             <Button variant="destructive" size="sm" onClick={onDelete}>
@@ -229,7 +240,7 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
       )}
 
       <div className="h-[500px] overflow-y-auto">
-        {executeReportMutation.isPending ? (
+        {executeReportDirectMutation.isPending ? (
           <div className="flex items-center justify-center p-4">
             <Loading />
           </div>

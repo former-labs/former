@@ -3,33 +3,15 @@ import { GoogleAnalyticsAccount } from "@/lib/googleAnalytics/googleAnalyticsTyp
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { googleAnalyticsReportTable, integrationTable } from "@/server/db/schema";
-import { executeGoogleAnalyticsReport, initializeAnalyticsDataClient, setOAuthCredentials } from "@/server/googleAnalytics/googleAnalytics";
+import {
+  executeGoogleAnalyticsReport,
+  initializeAnalyticsDataClient,
+  setOAuthCredentials
+} from "@/server/googleAnalytics/googleAnalytics";
 import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-
-async function refreshAccessToken(refreshToken: string) {
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      refresh_token: refreshToken,
-      client_id: env.GOOGLE_OAUTH_CLIENT_ID,
-      client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-      grant_type: "refresh_token",
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to refresh token");
-  }
-
-  const data = await response.json();
-  return data.access_token;
-}
 
 export const googleAnalyticsRouter = createTRPCRouter({
   getAccounts: workspaceProtectedProcedure.query(async ({ ctx }): Promise<GoogleAnalyticsAccount[]> => {
@@ -117,7 +99,10 @@ export const googleAnalyticsRouter = createTRPCRouter({
     }),
 
   executeGoogleAnalyticsReport: workspaceProtectedProcedure
-    .input(z.object({ propertyId: z.string(), googleAnalyticsReportId: z.string().uuid() }))
+    .input(z.object({
+      googleAnalyticsReportId: z.string().uuid(),
+      propertyId: z.string(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const report = await ctx.db.query.googleAnalyticsReportTable.findFirst({
         where: and(
@@ -130,44 +115,95 @@ export const googleAnalyticsRouter = createTRPCRouter({
         throw new Error(`Report not found for id: ${input.googleAnalyticsReportId}`);
       }
 
-      try {
-        const integration = await ctx.db.query.integrationTable.findFirst({
-          where: and(
-            eq(integrationTable.workspaceId, ctx.activeWorkspaceId),
-            eq(integrationTable.type, "google_analytics")
-          ),
-        });
+      return executeGoogleAnalyticsReportWithAuth({
+        ctx,
+        propertyId: input.propertyId,
+        reportParameters: report.reportParameters,
+      });
+    }),
 
-        if (!integration) {
-          throw new Error("No Google Analytics integration found for this workspace");
-        }
-
-
-        // Create OAuth2 client
-        let analyticsDataClient;
-        if (integration.credentials.refreshToken) {
-          setOAuthCredentials(integration.credentials.refreshToken);
-          analyticsDataClient = initializeAnalyticsDataClient(integration.credentials.refreshToken);
-        } else {
-          throw new Error("Google Analytics integration refresh token not found");
-        }
-
-        const result = await executeGoogleAnalyticsReport({
-          parameters: report.reportParameters,
-          propertyId: input.propertyId,
-          analyticsDataClient,
-        });
-        return {
-          success: true as const,
-          data: result,
-        };
-      } catch (error) {
-        console.log(error);
-        return {
-          success: false as const,
-          error:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        };
-      }
+  executeGoogleAnalyticsReportDirect: workspaceProtectedProcedure
+    .input(z.object({
+      reportParameters: googleAnalyticsReportParametersSchema,
+      propertyId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return executeGoogleAnalyticsReportWithAuth({
+        ctx,
+        propertyId: input.propertyId,
+        reportParameters: input.reportParameters,
+      });
     }),
 });
+
+async function executeGoogleAnalyticsReportWithAuth({
+  ctx,
+  propertyId,
+  reportParameters,
+}: {
+  ctx: { db: typeof db; activeWorkspaceId: string };
+  propertyId: string;
+  reportParameters: typeof googleAnalyticsReportParametersSchema._type;
+}) {
+  try {
+    const integration = await ctx.db.query.integrationTable.findFirst({
+      where: and(
+        eq(integrationTable.workspaceId, ctx.activeWorkspaceId),
+        eq(integrationTable.type, "google_analytics")
+      ),
+    });
+
+    if (!integration) {
+      throw new Error("No Google Analytics integration found for this workspace");
+    }
+
+    // Create OAuth2 client
+    let analyticsDataClient;
+    if (integration.credentials.refreshToken) {
+      setOAuthCredentials(integration.credentials.refreshToken);
+      analyticsDataClient = initializeAnalyticsDataClient(integration.credentials.refreshToken);
+    } else {
+      throw new Error("Google Analytics integration refresh token not found");
+    }
+
+    const result = await executeGoogleAnalyticsReport({
+      parameters: reportParameters,
+      propertyId,
+      analyticsDataClient,
+    });
+
+    return {
+      success: true as const,
+      data: result,
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      success: false as const,
+      error:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    };
+  }
+}
+
+async function refreshAccessToken(refreshToken: string) {
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      refresh_token: refreshToken,
+      client_id: env.GOOGLE_OAUTH_CLIENT_ID,
+      client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to refresh token");
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
