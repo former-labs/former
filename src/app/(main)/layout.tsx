@@ -22,7 +22,17 @@ export default function RootLayout({
   return (
     <SidebarRightProvider>
       <SidebarProvider>
-        <LayoutSidebar>{isLoading ? <Loading /> : children}</LayoutSidebar>
+        <LayoutSidebar>
+          <div className="h-full w-full pt-4">
+            {isLoading ? (
+              <div className="flex h-full w-full items-center justify-center">
+                <Loading />
+              </div>
+            ) : (
+              children
+            )}
+          </div>
+        </LayoutSidebar>
       </SidebarProvider>
     </SidebarRightProvider>
   );
