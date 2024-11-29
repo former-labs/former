@@ -92,7 +92,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     const executeReport = async () => {
       if (!activeProperty) {
         setError("Please select a Google Analytics property first");
-        setReportResult(null);
+        handleReportResultChange(null);
         return;
       }
 
@@ -102,15 +102,15 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           propertyId: activeProperty.propertyId,
         });
         if (response.success) {
-          setReportResult(response.data);
+          handleReportResultChange(response.data);
           setError(null);
         } else {
-          setReportResult(null);
+          handleReportResultChange(null);
           setError(response.error);
         }
       } catch (err) {
         console.error("Error executing GA4 report:", err);
-        setReportResult(null);
+        handleReportResultChange(null);
         setError(err instanceof Error ? err.message : "Unknown error occurred");
       }
     };
@@ -126,10 +126,19 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
     setIsEditingReport(true);
   };
 
+  const handleReportResultChange = (
+    result: GoogleAnalyticsReportResultType["data"] | null,
+  ) => {
+    setReportResult(result);
+    if (result?.rows.length === 1) {
+      setActiveTab("visualisation");
+    }
+  };
+
   const handleRunReport = async () => {
     if (!activeProperty) {
       setError("Please select a Google Analytics property first");
-      setReportResult(null);
+      handleReportResultChange(null);
       return;
     }
 
@@ -139,15 +148,15 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         propertyId: activeProperty.propertyId,
       });
       if (response.success) {
-        setReportResult(response.data);
+        handleReportResultChange(response.data);
         setError(null);
       } else {
-        setReportResult(null);
+        handleReportResultChange(null);
         setError(response.error);
       }
     } catch (err) {
       console.error("Error executing GA4 report:", err);
-      setReportResult(null);
+      handleReportResultChange(null);
       setError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   };
@@ -169,17 +178,6 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="shadow-xs flex flex-row items-center justify-between rounded-md bg-blue-100 px-3.5 py-2.5">
-        <div className="flex w-full flex-col">
-          <div className="w-fit text-xl font-semibold text-gray-900">
-            Google Analytics Report
-          </div>
-          <div className="text-md font-normal text-gray-600">
-            Report details and visualization
-          </div>
-        </div>
-      </div>
-
       <div className="flex flex-col gap-y-2 rounded-md bg-gray-200 p-4">
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
