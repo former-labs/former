@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { DashboardGridItemGoogleAnalytics } from "./DashboardGridItemGoogleAnalytics";
 import {
   type DashboardGridItemType,
@@ -43,6 +43,16 @@ export default function Page({
 const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
   const [editMode, setEditMode] = useState(false);
   const [localDashboard, setLocalDashboard] = useState(dashboard);
+
+  /*
+    If the dashboard is updated externally we probably want to replace local state?
+    One case being the user goes to a chat and adds an item and then comes back to dashboard.
+    This might have weird effects if the user is actively editing and someone else changes the 
+    dashboard, but that seems like an unlikely edge case.
+  */
+  useEffect(() => {
+    setLocalDashboard(dashboard);
+  }, [dashboard]);
 
   const updateDashboardMutation = api.dashboard.updateDashboard.useMutation();
 
@@ -119,7 +129,7 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
 
   return (
     <div>
-      <div className="flex items-center gap-4 p-8 pt-20">
+      <div className="flex items-center gap-4 p-10 pt-20">
         <h1 className="text-2xl font-bold">{dashboard.title}</h1>
         {!editMode ? (
           <Button
@@ -145,7 +155,7 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
           </>
         )}
       </div>
-      <div className="min-h-[800px] w-full border bg-[#d5d5d5]">
+      <div className="min-h-[800px] w-full border bg-[#efefef] p-8">
         <GridStackContainer
           key={
             // Swap the key out to force it to remount
