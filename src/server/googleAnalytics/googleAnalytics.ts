@@ -1,8 +1,9 @@
 import { env } from "@/env";
 import googleAnalyticsDefinitions from "@/lib/googleAnalytics/googleAnalyticsDefinitions.json";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import * as grpc from '@grpc/grpc-js';
 import { format, parse } from "date-fns";
-import { GoogleAuth } from "google-auth-library";
+import { GoogleAuth, OAuth2Client } from "google-auth-library";
 import { type GoogleAnalyticsReportParameters } from "./reportParametersSchema";
 
 // export enum GoogleAnalyticsDefinitionCategory {
@@ -32,6 +33,35 @@ export type GoogleAnalyticsDefinition = {
   };
   // category: GoogleAnalyticsDefinitionCategory;
 };
+
+export const oauth2Client = new OAuth2Client({
+  clientId: env.GOOGLE_OAUTH_CLIENT_ID,
+  clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
+});
+
+// Function to set credentials using refresh token
+export const setOAuthCredentials = (refreshToken: string) => {
+  oauth2Client.setCredentials({
+    refresh_token: refreshToken
+  });
+};
+
+// Analytics Data Client from refresh token
+export const initializeAnalyticsDataClient = (refreshToken: string) => {
+  oauth2Client.setCredentials({
+    refresh_token: refreshToken
+  });
+
+  const sslCreds = grpc.credentials.createSsl();
+  const credentials = grpc.credentials.combineChannelCredentials(
+    sslCreds,
+    grpc.credentials.createFromGoogleCredential(oauth2Client)
+  );
+  return new BetaAnalyticsDataClient({
+    sslCreds: credentials,
+  });
+}
+
 
 const serviceAccountCredentials = JSON.parse(
   Buffer.from(env.VERVE_GA4_SERVICE_ACCOUNT_JSON_BASE64, "base64").toString(),
