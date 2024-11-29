@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getDebugMode } from "@/lib/debugMode";
 import type { GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
-import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReportDateRangesSection } from "./ReportDateRangeSection";
 import { ReportDimensionsSection } from "./ReportDimensionsSection";
@@ -14,7 +13,6 @@ export const ReportEditor = ({
   report,
   onReportSave,
   isSaving,
-  onClose,
 }: {
   report: {
     title: string;
@@ -31,7 +29,6 @@ export const ReportEditor = ({
     reportParameters: GoogleAnalyticsReportParameters;
   }) => Promise<void>;
   isSaving: boolean;
-  onClose: () => void;
 }) => {
   const [localReport, setLocalReport] = useState(report);
 
@@ -194,18 +191,12 @@ export const ReportEditor = ({
   };
 
   return (
-    <div className="h-full space-y-4 overflow-y-auto p-4">
+    <div className="h-full space-y-4 overflow-y-auto px-6 pb-6 pt-0">
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">
             {report.title}
           </h2>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 hover:bg-gray-100"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
         </div>
         <p className="text-sm text-gray-600">{report.description}</p>
         {getDebugMode() && (
@@ -220,7 +211,7 @@ export const ReportEditor = ({
         )}
       </div>
 
-      <div className="space-y-4 rounded-md p-4">
+      <div className="space-y-4 rounded-md py-4">
         <ReportMetricsSection
           metrics={localReport.reportParameters.metrics}
           onMetricsChange={handleMetricsChange}

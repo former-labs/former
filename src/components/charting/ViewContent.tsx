@@ -1,15 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { type Data } from "plotly.js";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useResizeObserver } from "usehooks-ts";
 import {
   type ColumnDefinitions,
   type DataRow,
   type ViewData,
 } from "./chartTypes";
-import { DeleteViewDialog } from "./DeleteViewDialog";
 
 // Dynamically import Plot with no SSR to prevent 'self is not defined' error
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
@@ -18,39 +15,19 @@ export const ViewContent = ({
   view,
   data,
   columnDefinitions,
-  onEdit,
-  onDelete,
-  editMode,
 }: {
-  view: ViewData;
+  view: ViewData | null;
   data: DataRow[];
   columnDefinitions: ColumnDefinitions;
-  onEdit: () => void;
-  onDelete: () => void;
-  editMode: boolean;
 }) => {
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  if (!view) {
+    return null;
+  }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2">
         <h2 className="text-xl font-bold">{view.name}</h2>
-        {editMode && (
-          <div className="flex space-x-2">
-            <Button size="sm" onClick={onEdit}>
-              <Pencil className="h-4 w-4" />
-              Edit Chart
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          </div>
-        )}
       </div>
 
       {view.description && (
@@ -71,12 +48,6 @@ export const ViewContent = ({
           </div>
         )}
       </div>
-
-      <DeleteViewDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        onConfirm={onDelete}
-      />
     </div>
   );
 };

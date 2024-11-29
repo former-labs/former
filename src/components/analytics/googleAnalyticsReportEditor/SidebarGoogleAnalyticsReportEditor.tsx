@@ -5,10 +5,8 @@ import { api } from "@/trpc/react";
 
 export const SidebarGoogleAnalyticsReportEditor = ({
   googleAnalyticsReportId,
-  onClose,
 }: {
   googleAnalyticsReportId: string;
-  onClose: () => void;
 }) => {
   const { data: report, isLoading } =
     api.googleAnalytics.getGoogleAnalyticsReport.useQuery({
@@ -63,7 +61,6 @@ export const SidebarGoogleAnalyticsReportEditor = ({
       }}
       onReportSave={handleReportSave}
       isSaving={updateReportMutation.isPending}
-      onClose={onClose}
     />
   );
 };
