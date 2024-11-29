@@ -8,6 +8,12 @@ import {
   useRightSidebarLock,
 } from "@/components/navbar/right-sidebar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
 import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
@@ -18,7 +24,7 @@ import {
   type MessageSelect,
 } from "@/server/db/schema";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { Download, Pencil, Play, Save } from "lucide-react";
+import { Download, Pencil, RefreshCw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConversationMessageChartView } from "./ConversationMessageChartView";
 import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
@@ -180,41 +186,46 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
 
           <div className="flex gap-2">
             <Button
-              className="flex gap-x-2"
-              variant="secondary"
-              size="sm"
+              variant="outline"
+              size="icon"
               onClick={() => setIsSaveDialogOpen(true)}
+              title="Save to Dashboard"
             >
               <Save className="h-4 w-4" />
-              Save to Dashboard
             </Button>
             <Button
-              className="flex gap-x-2"
-              variant="secondary"
-              size="sm"
+              variant="outline"
+              size="icon"
               onClick={handleExportCsv}
+              title="Export CSV"
             >
               <Download className="h-4 w-4" />
-              Export CSV
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" title="Edit Options">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={handleEditReport}
+                  className="font-semibold"
+                >
+                  Edit Data Source
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
-              className="flex gap-x-2"
-              variant="secondary"
-              size="sm"
-              onClick={handleEditReport}
-            >
-              <Pencil className="h-4 w-4" />
-              Edit Report
-            </Button>
-            <Button
-              className="flex gap-x-2"
-              variant="secondary"
-              size="sm"
+              variant="outline"
+              size="icon"
               onClick={executeReport}
               disabled={executeReportMutation.isPending}
+              title="Refresh Data"
             >
-              <Play className="h-4 w-4" />
-              {executeReportMutation.isPending ? "Running..." : "Run Report"}
+              <RefreshCw
+                className={`h-4 w-4 ${executeReportMutation.isPending ? "animate-spin" : ""}`}
+              />
             </Button>
           </div>
         </div>
