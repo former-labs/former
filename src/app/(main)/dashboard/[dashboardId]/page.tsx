@@ -9,7 +9,7 @@ import {
   type DashboardGridItemType,
   type DashboardType,
 } from "./dashboardTypes";
-import { EditDashboardTitleDialog } from "./EditDashboardTitleDialog";
+import { EditDashboardMetadataDialog } from "./EditDashboardMetadataDialog";
 import { type GridItem, GridStackContainer } from "./GridStackContainer";
 
 export default function Page({
@@ -132,19 +132,24 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
 
   return (
     <div>
-      <div className="flex items-center justify-between p-10 pt-20">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">{localDashboard.title}</h1>
-          {editMode && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={() => setEditTitleDialogOpen(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
+      <div className="flex items-start justify-between p-10 pt-20">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{localDashboard.title}</h1>
+            {editMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => setEditTitleDialogOpen(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {localDashboard.description || "No description"}
+          </p>
         </div>
         <div className="flex gap-4">
           {!editMode ? (
@@ -193,14 +198,16 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
         />
       </div>
 
-      <EditDashboardTitleDialog
+      <EditDashboardMetadataDialog
         open={editTitleDialogOpen}
         onOpenChange={setEditTitleDialogOpen}
         currentTitle={localDashboard.title}
-        onSave={(newTitle) => {
+        currentDescription={localDashboard.description}
+        onSave={(newTitle, newDescription) => {
           setLocalDashboard((prev) => ({
             ...prev,
             title: newTitle,
+            description: newDescription,
           }));
         }}
       />

@@ -17,42 +17,47 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const titleFormSchema = z.object({
+const formSchema = z.object({
   title: z.string().min(1, "Dashboard title is required"),
+  description: z.string().optional(),
 });
 
-export const EditDashboardTitleDialog = ({
+export const EditDashboardMetadataDialog = ({
   open,
   onOpenChange,
   currentTitle,
+  currentDescription,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentTitle: string;
-  onSave: (newTitle: string) => void;
+  currentDescription?: string | null;
+  onSave: (newTitle: string, newDescription: string | null) => void;
 }) => {
-  const form = useForm<z.infer<typeof titleFormSchema>>({
-    resolver: zodResolver(titleFormSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: currentTitle,
+      description: currentDescription ?? "",
     },
   });
 
-  const handleSave = (values: z.infer<typeof titleFormSchema>) => {
-    onSave(values.title);
+  const handleSave = (values: z.infer<typeof formSchema>) => {
+    onSave(values.title, values.description || null);
     onOpenChange(false);
   };
 
   const handleOpenChange = (open: boolean) => {
-    console.log("handleOpenChange", open, currentTitle);
     if (!open) {
       form.reset({
         title: currentTitle,
+        description: currentDescription ?? "",
       });
     }
     onOpenChange(open);
@@ -62,9 +67,9 @@ export const EditDashboardTitleDialog = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Dashboard Title</DialogTitle>
+          <DialogTitle>Edit Dashboard Details</DialogTitle>
           <DialogDescription>
-            Change the title of your dashboard.
+            Change the title and description of your dashboard.
           </DialogDescription>
         </DialogHeader>
 
@@ -77,6 +82,23 @@ export const EditDashboardTitleDialog = ({
                 <FormItem>
                   <FormControl>
                     <Input {...field} placeholder="Enter dashboard title..." />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Enter dashboard description..."
+                      className="resize-none"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
