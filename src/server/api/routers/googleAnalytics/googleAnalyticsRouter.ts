@@ -3,7 +3,7 @@ import { GoogleAnalyticsAccount } from "@/lib/googleAnalytics/googleAnalyticsTyp
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { googleAnalyticsReportTable, integrationTable } from "@/server/db/schema";
-import { executeGoogleAnalyticsReport, verveGa4AnalyticsDataClient } from "@/server/googleAnalytics/googleAnalytics";
+import { executeGoogleAnalyticsReport, initializeAnalyticsDataClient, setOAuthCredentials } from "@/server/googleAnalytics/googleAnalytics";
 import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
@@ -117,7 +117,7 @@ export const googleAnalyticsRouter = createTRPCRouter({
     }),
 
   executeGoogleAnalyticsReport: workspaceProtectedProcedure
-    .input(z.object({ googleAnalyticsReportId: z.string().uuid() }))
+    .input(z.object({ propertyId: z.string(), googleAnalyticsReportId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const report = await ctx.db.query.googleAnalyticsReportTable.findFirst({
         where: and(
@@ -131,13 +131,31 @@ export const googleAnalyticsRouter = createTRPCRouter({
       }
 
       try {
-        // Hardcoded to ours for now
-        const propertyId = "447821713";
+        const integration = await ctx.db.query.integrationTable.findFirst({
+          where: and(
+            eq(integrationTable.workspaceId, ctx.activeWorkspaceId),
+            eq(integrationTable.type, "google_analytics")
+          ),
+        });
+
+        if (!integration) {
+          throw new Error("No Google Analytics integration found for this workspace");
+        }
+
+
+        // Create OAuth2 client
+        let analyticsDataClient;
+        if (integration.credentials.refreshToken) {
+          setOAuthCredentials(integration.credentials.refreshToken);
+          analyticsDataClient = initializeAnalyticsDataClient(integration.credentials.refreshToken);
+        } else {
+          throw new Error("Google Analytics integration refresh token not found");
+        }
 
         const result = await executeGoogleAnalyticsReport({
           parameters: report.reportParameters,
-          propertyId,
-          analyticsDataClient: verveGa4AnalyticsDataClient,
+          propertyId: input.propertyId,
+          analyticsDataClient,
         });
         return {
           success: true as const,

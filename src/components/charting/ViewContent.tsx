@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import googleAnalyticsDefinitions from "@/lib/googleAnalytics/googleAnalyticsDefinitions.json";
 import { Pencil, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { type Data } from "plotly.js";
@@ -58,7 +59,9 @@ export const ViewContent = ({
       )}
 
       <div className="flex flex-grow">
-        {isViewDataValid({ viewData: view, columnDefinitions }) ? (
+        {data[0] && data.length === 1 ? (
+          <SingleValueRenderer data={data[0]} />
+        ) : isViewDataValid({ viewData: view, columnDefinitions }) ? (
           <ChartRenderer
             view={view}
             filteredData={data}
@@ -80,6 +83,19 @@ export const ViewContent = ({
     </div>
   );
 };
+
+const SingleValueRenderer = ({ data }: { data: DataRow }) => (
+  <div className="flex h-full w-full flex-col items-center justify-center">
+    <div className="flex h-full w-full flex-col items-center justify-center rounded-lg bg-white p-8 shadow-md">
+      <div className="text-6xl font-bold">{Object.values(data)[0]}</div>
+      <div className="mt-4 text-xl text-gray-500">
+        {googleAnalyticsDefinitions.metrics.find(
+          (metric) => metric.name === Object.keys(data)[0],
+        )?.displayName || Object.keys(data)[0]}
+      </div>
+    </div>
+  </div>
+);
 
 const ChartRenderer = ({
   view,

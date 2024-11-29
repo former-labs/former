@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loading } from "@/components/utils/Loading";
+import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { getDebugMode } from "@/lib/debugMode";
 import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
 import {
@@ -73,6 +74,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   message: MessageSelect;
   report: GoogleAnalyticsReportSelect;
 }) => {
+  const { activeProperty } = useGoogleAnalytics();
   const [activeTab, setActiveTab] = useState<string>(
     message.plotViewId ? "visualisation" : "resultTable",
   );
@@ -88,9 +90,16 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
 
   useEffect(() => {
     const executeReport = async () => {
+      if (!activeProperty) {
+        setError("Please select a Google Analytics property first");
+        setReportResult(null);
+        return;
+      }
+
       try {
         const response = await executeReportMutation.mutateAsync({
           googleAnalyticsReportId: report.id,
+          propertyId: activeProperty.propertyId,
         });
         if (response.success) {
           setReportResult(response.data);
@@ -118,9 +127,16 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   };
 
   const handleRunReport = async () => {
+    if (!activeProperty) {
+      setError("Please select a Google Analytics property first");
+      setReportResult(null);
+      return;
+    }
+
     try {
       const response = await executeReportMutation.mutateAsync({
         googleAnalyticsReportId: report.id,
+        propertyId: activeProperty.propertyId,
       });
       if (response.success) {
         setReportResult(response.data);

@@ -76,9 +76,9 @@ export const Conversation = ({
         </div>
       </div>
 
-      <div className="sticky bottom-0 w-full">
-        <div className="flex w-full justify-center pb-16 pt-8">
-          <div className="w-[50rem]">
+      <div className="sticky bottom-0 w-full bg-background">
+        <div className="flex w-full justify-center px-4 pb-10 pt-2">
+          <div className="w-full max-w-screen-lg">
             <SearchBar
               placeholder="Ask a question..."
               value={searchValue}
