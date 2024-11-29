@@ -24,7 +24,7 @@ import {
   type MessageSelect,
 } from "@/server/db/schema";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { Download, Pencil, RefreshCw, Save } from "lucide-react";
+import { BarChart3, Download, Pencil, RefreshCw, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConversationMessageChartView } from "./ConversationMessageChartView";
 import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
@@ -94,7 +94,12 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [isEditingReport, setIsEditingReport] = useRightSidebarLock(report.id);
+  const [isEditingMessage, setIsEditingMessage] = useRightSidebarLock(
+    `edit-message-${message.id}`,
+  );
+  const [sidebarTab, setSidebarTab] = useState<"dataSource" | "visualisation">(
+    "dataSource",
+  );
 
   const executeReportMutation =
     api.googleAnalytics.executeGoogleAnalyticsReport.useMutation({
@@ -152,7 +157,13 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   };
 
   const handleEditReport = () => {
-    setIsEditingReport(true);
+    setIsEditingMessage(true);
+    setSidebarTab("dataSource");
+  };
+
+  const handleEditVisualization = () => {
+    setIsEditingMessage(true);
+    setSidebarTab("visualisation");
   };
 
   const columnDefinitions = reportResult
@@ -212,7 +223,15 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
                   onClick={handleEditReport}
                   className="font-semibold"
                 >
+                  <Pencil className="h-4 w-4 cursor-pointer" />
                   Edit Data Source
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleEditVisualization}
+                  className="font-semibold"
+                >
+                  <BarChart3 className="h-4 w-4 cursor-pointer" />
+                  Edit Visualization
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -259,14 +278,40 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
         messageId={message.id}
       />
 
-      {isEditingReport && (
+      {isEditingMessage && (
         <RightSidebarPortal>
-          <SidebarGoogleAnalyticsReportEditor
-            googleAnalyticsReportId={report.id}
-            onClose={() => {
-              setIsEditingReport(false);
-            }}
-          />
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between p-4">
+              <Tabs
+                value={sidebarTab}
+                onValueChange={(value) =>
+                  setSidebarTab(value as "dataSource" | "visualisation")
+                }
+              >
+                <TabsList>
+                  <TabsTrigger value="dataSource">Data Source</TabsTrigger>
+                  <TabsTrigger value="visualisation">Visualisation</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="p-0"
+                onClick={() => setIsEditingMessage(false)}
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {sidebarTab === "dataSource" && (
+                <SidebarGoogleAnalyticsReportEditor
+                  googleAnalyticsReportId={report.id}
+                />
+              )}
+              {sidebarTab === "visualisation" && <div>hello</div>}
+            </div>
+          </div>
         </RightSidebarPortal>
       )}
     </div>
