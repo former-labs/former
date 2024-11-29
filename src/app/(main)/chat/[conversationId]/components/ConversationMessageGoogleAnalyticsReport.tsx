@@ -25,8 +25,10 @@ import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
 
 export const ConversationMessageGoogleAnalyticsReport = ({
   message,
+  scrollToBottom,
 }: {
   message: MessageSelect;
+  scrollToBottom: () => void;
 }) => {
   if (!message.googleAnalyticsReportId) {
     throw new Error("Message does not have a google analytics report id");
@@ -60,6 +62,7 @@ export const ConversationMessageGoogleAnalyticsReport = ({
     <ConversationMessageGoogleAnalyticsReportContent
       message={message}
       report={report}
+      scrollToBottom={scrollToBottom}
     />
   );
 };
@@ -70,9 +73,11 @@ type GoogleAnalyticsReportResultType =
 const ConversationMessageGoogleAnalyticsReportContent = ({
   message,
   report,
+  scrollToBottom,
 }: {
   message: MessageSelect;
   report: GoogleAnalyticsReportSelect;
+  scrollToBottom: () => void;
 }) => {
   const { activeProperty } = useGoogleAnalytics();
   const [activeTab, setActiveTab] = useState<string>(
@@ -87,6 +92,10 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
 
   const executeReportMutation =
     api.googleAnalytics.executeGoogleAnalyticsReport.useMutation();
+
+  useEffect(() => {
+    scrollToBottom();
+  }, []);
 
   const executeReport = async () => {
     if (!activeProperty) {

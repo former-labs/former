@@ -74,7 +74,11 @@ export const Conversation = ({
         <div className="mt-4 space-y-4">
           <div className="flex flex-col gap-4">
             {messages.map((message) => (
-              <ConversationMessage key={message.id} message={message} />
+              <ConversationMessage
+                key={message.id}
+                message={message}
+                scrollToBottom={scrollToBottom}
+              />
             ))}
             {pendingUserMessage && (
               <PendingConversationMessage
@@ -103,11 +107,22 @@ export const Conversation = ({
   );
 };
 
-const ConversationMessage = ({ message }: { message: MessageSelect }) => {
+const ConversationMessage = ({
+  message,
+  scrollToBottom,
+}: {
+  message: MessageSelect;
+  scrollToBottom: () => void;
+}) => {
   if (message.role === "user") {
     return <ConversationMessageUser messageText={message.text ?? ""} />;
   } else if (message.role === "assistant") {
-    return <ConversationMessageGoogleAnalyticsReport message={message} />;
+    return (
+      <ConversationMessageGoogleAnalyticsReport
+        message={message}
+        scrollToBottom={scrollToBottom}
+      />
+    );
   }
   const _exhaustiveCheck: never = message.role;
 };
