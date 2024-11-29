@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-import { NavPages } from "@/components/navbar/nav-projects";
+import { NavPages } from "@/components/navbar/nav-pages";
 import { NavUser } from "@/components/navbar/nav-user";
 import { WorkspaceSwitcher } from "@/components/navbar/workspace-switcher";
 import {

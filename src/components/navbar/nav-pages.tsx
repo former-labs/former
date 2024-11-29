@@ -23,8 +23,10 @@ export function NavPages({
   const pathname = usePathname();
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Features</SidebarGroupLabel>
+    <SidebarGroup>
+      <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
+        Features
+      </SidebarGroupLabel>
       <SidebarMenu>
         {pages.map((item) => (
           <SidebarMenuItem
@@ -34,7 +36,9 @@ export function NavPages({
             <SidebarMenuButton asChild>
               <Link href={item.url}>
                 <item.icon />
-                <span>{item.name}</span>
+                <span className="group-data-[collapsible=icon]:hidden">
+                  {item.name}
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
