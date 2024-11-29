@@ -49,7 +49,7 @@ export const EditDashboardMetadataDialog = ({
   });
 
   const handleSave = (values: z.infer<typeof formSchema>) => {
-    onSave(values.title, values.description || null);
+    onSave(values.title, values.description ?? null);
     onOpenChange(false);
   };
 
