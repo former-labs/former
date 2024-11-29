@@ -25,8 +25,10 @@ import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
 
 export const ConversationMessageGoogleAnalyticsReport = ({
   message,
+  scrollToBottom,
 }: {
   message: MessageSelect;
+  scrollToBottom: () => void;
 }) => {
   if (!message.googleAnalyticsReportId) {
     throw new Error("Message does not have a google analytics report id");
@@ -60,6 +62,7 @@ export const ConversationMessageGoogleAnalyticsReport = ({
     <ConversationMessageGoogleAnalyticsReportContent
       message={message}
       report={report}
+      scrollToBottom={scrollToBottom}
     />
   );
 };
@@ -70,9 +73,11 @@ type GoogleAnalyticsReportResultType =
 const ConversationMessageGoogleAnalyticsReportContent = ({
   message,
   report,
+  scrollToBottom,
 }: {
   message: MessageSelect;
   report: GoogleAnalyticsReportSelect;
+  scrollToBottom: () => void;
 }) => {
   const { activeProperty } = useGoogleAnalytics();
   const [activeTab, setActiveTab] = useState<string>(
@@ -86,21 +91,8 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   const [isEditingReport, setIsEditingReport] = useRightSidebarLock(report.id);
 
   const executeReportMutation =
-    api.googleAnalytics.executeGoogleAnalyticsReport.useMutation();
-
-  useEffect(() => {
-    const executeReport = async () => {
-      if (!activeProperty) {
-        setError("Please select a Google Analytics property first");
-        setReportResult(null);
-        return;
-      }
-
-      try {
-        const response = await executeReportMutation.mutateAsync({
-          googleAnalyticsReportId: report.id,
-          propertyId: activeProperty.propertyId,
-        });
+    api.googleAnalytics.executeGoogleAnalyticsReport.useMutation({
+      onSuccess: (response) => {
         if (response.success) {
           setReportResult(response.data);
           setError(null);
@@ -108,15 +100,38 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           setReportResult(null);
           setError(response.error);
         }
-      } catch (err) {
+      },
+      onError: (err) => {
         console.error("Error executing GA4 report:", err);
         setReportResult(null);
-        setError(err instanceof Error ? err.message : "Unknown error occurred");
-      }
-    };
+        setError(err.message);
+      },
+    });
 
-    void executeReport();
-  }, [report]); // Reactively listen for entire report to change, not just ID
+  useEffect(() => {
+    scrollToBottom();
+  }, []);
+
+  const executeReport = async () => {
+    if (!activeProperty) {
+      setError("Please select a Google Analytics property first");
+      setReportResult(null);
+      return;
+    }
+
+    await executeReportMutation.mutateAsync({
+      googleAnalyticsReportId: report.id,
+      propertyId: activeProperty.propertyId,
+    });
+  };
+
+  useEffect(() => {
+    if (activeProperty) {
+      void executeReport();
+    } else {
+      setReportResult(null);
+    }
+  }, [report, activeProperty]); // Reactively listen for entire report to change, not just ID
 
   const handleExportCsv = () => {
     exportGoogleAnalyticsToCsv(reportResult);
@@ -124,32 +139,6 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
 
   const handleEditReport = () => {
     setIsEditingReport(true);
-  };
-
-  const handleRunReport = async () => {
-    if (!activeProperty) {
-      setError("Please select a Google Analytics property first");
-      setReportResult(null);
-      return;
-    }
-
-    try {
-      const response = await executeReportMutation.mutateAsync({
-        googleAnalyticsReportId: report.id,
-        propertyId: activeProperty.propertyId,
-      });
-      if (response.success) {
-        setReportResult(response.data);
-        setError(null);
-      } else {
-        setReportResult(null);
-        setError(response.error);
-      }
-    } catch (err) {
-      console.error("Error executing GA4 report:", err);
-      setReportResult(null);
-      setError(err instanceof Error ? err.message : "Unknown error occurred");
-    }
   };
 
   const columnDefinitions = reportResult
@@ -224,7 +213,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
               className="flex gap-x-2"
               variant="secondary"
               size="sm"
-              onClick={handleRunReport}
+              onClick={executeReport}
               disabled={executeReportMutation.isPending}
             >
               <Play className="h-4 w-4" />
@@ -251,7 +240,6 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
               messageId={message.id}
               columnDefinitions={columnDefinitions}
               data={reportResult?.rows ?? null}
-              isLoadingData={executeReportMutation.isPending}
             />
           )}
         </div>

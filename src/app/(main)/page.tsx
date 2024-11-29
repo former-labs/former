@@ -1,6 +1,7 @@
 "use client";
 
 import { GoogleAnalyticsConnectButton } from "@/components/analytics/google-analytics-connect-button";
+import { NewConversationSearchBar } from "@/components/chat/NewConversationSearchBar";
 import {
   Card,
   CardDescription,
@@ -9,25 +10,9 @@ import {
 } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
 import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
-import {
-  PATH_CONVERSATION_PENDING,
-  PATH_CONVERSATION_SINGLE,
-} from "@/lib/paths";
-import { api } from "@/trpc/react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { SearchBar } from "./chat/[conversationId]/components/SearchBar";
-import { usePendingMessageStore } from "./chat/usePendingMessageStore";
 
 export default function ChatPage() {
-  const [searchValue, setSearchValue] = useState("");
-  const router = useRouter();
   const { accounts } = useGoogleAnalytics();
-  const { setPendingUserMessage, clearPendingUserMessage } =
-    usePendingMessageStore();
-
-  const createConversationMutation =
-    api.conversation.createConversation.useMutation({});
 
   if (accounts.length === 0) {
     return (
@@ -59,23 +44,7 @@ export default function ChatPage() {
         </h1>
 
         <div className="w-full max-w-screen-lg">
-          <SearchBar
-            placeholder="Ask a question..."
-            value={searchValue}
-            onChangeValue={setSearchValue}
-            onSearch={async () => {
-              // Temporarily redirect to show the pending conversation
-              setPendingUserMessage(searchValue);
-              router.push(PATH_CONVERSATION_PENDING);
-              const data = await createConversationMutation.mutateAsync({
-                initialUserMessage: searchValue,
-              });
-              setSearchValue("");
-              router.push(PATH_CONVERSATION_SINGLE(data.conversationId));
-              clearPendingUserMessage();
-            }}
-            isLoading={createConversationMutation.isPending}
-          />
+          <NewConversationSearchBar />
         </div>
       </div>
     </div>

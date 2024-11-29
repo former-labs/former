@@ -91,7 +91,7 @@ const SingleValueRenderer = ({ data }: { data: DataRow }) => (
       <div className="mt-4 text-xl text-gray-500">
         {googleAnalyticsDefinitions.metrics.find(
           (metric) => metric.name === Object.keys(data)[0],
-        )?.displayName || Object.keys(data)[0]}
+        )?.displayName ?? Object.keys(data)[0]}
       </div>
     </div>
   </div>
