@@ -2,7 +2,7 @@ import {
   type ColumnDefinitions,
   type DataRow,
 } from "@/components/charting/chartTypes";
-import { ChartView } from "@/components/charting/ChartView";
+import { ViewContent } from "@/components/charting/ViewContent";
 import googleAnalyticsDefinitions from "@/lib/googleAnalytics/googleAnalyticsDefinitions.json";
 import { api } from "@/trpc/react";
 
@@ -38,10 +38,10 @@ export const ConversationMessageChartView = ({
       {data[0] && data.length === 1 ? (
         <SingleValueRenderer data={data[0]} />
       ) : (
-        <ChartView
-          viewData={plotView?.viewData ?? null}
-          columnDefinitions={columnDefinitions}
+        <ViewContent
+          view={plotView?.viewData ?? null}
           data={data}
+          columnDefinitions={columnDefinitions}
         />
       )}
     </>

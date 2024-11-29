@@ -16,10 +16,14 @@ export const ViewContent = ({
   data,
   columnDefinitions,
 }: {
-  view: ViewData;
+  view: ViewData | null;
   data: DataRow[];
   columnDefinitions: ColumnDefinitions;
 }) => {
+  if (!view) {
+    return null;
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className="mb-2">

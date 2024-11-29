@@ -3,8 +3,8 @@ import {
   type ColumnDefinitions,
   type ViewData,
 } from "@/components/charting/chartTypes";
-import { ChartView } from "@/components/charting/ChartView";
 import { TableDataView } from "@/components/charting/TableDataView";
+import { ViewContent } from "@/components/charting/ViewContent";
 import { ViewForm } from "@/components/charting/ViewForm";
 import {
   RightSidebarPortal,
@@ -298,8 +298,8 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
                     <Loading />
                   </div>
                 ) : (
-                  <ChartView
-                    viewData={item.plotView?.viewData ?? null}
+                  <ViewContent
+                    view={item.plotView?.viewData ?? null}
                     columnDefinitions={columnDefinitions}
                     data={reportResult.rows}
                   />
