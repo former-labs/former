@@ -20,7 +20,9 @@ export const GridStackContainer = ({
 }: {
   items: GridItem[];
   onItemsChange: (items: GridItem[]) => void;
-  options: GridStackOptions;
+
+  // See the gridstack.scss file for why we force 20 columns
+  options: Omit<GridStackOptions, "column"> & { column: 20 };
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [grid, setGrid] = useState<GridStack | null>(null);

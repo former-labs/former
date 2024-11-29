@@ -119,8 +119,8 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-4">
-        <div>Dashboard ID: {dashboard.id}</div>
+      <div className="flex items-center gap-4 p-8 pt-20">
+        <h1 className="text-2xl font-bold">{dashboard.title}</h1>
         {!editMode ? (
           <Button
             variant="secondary"
@@ -148,6 +148,7 @@ const DashboardContent = ({ dashboard }: { dashboard: DashboardType }) => {
       <div className="min-h-[800px] w-full border bg-[#d5d5d5]">
         <GridStackContainer
           key={
+            // Swap the key out to force it to remount
             editMode ? "grid-stack-container-edit" : "grid-stack-container-view"
           }
           items={gridItems}
