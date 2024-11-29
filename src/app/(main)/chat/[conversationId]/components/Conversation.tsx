@@ -3,7 +3,7 @@
 import { Loading } from "@/components/utils/Loading";
 import { type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePendingMessageStore } from "../../../../../components/chat/usePendingMessageStore";
 import { ConversationMessageGoogleAnalyticsReport } from "./ConversationMessageGoogleAnalyticsReport";
 import { SearchBar } from "./SearchBar";
@@ -17,6 +17,7 @@ export const Conversation = ({
   const utils = api.useUtils();
   const { pendingUserMessage, setPendingUserMessage, clearPendingUserMessage } =
     usePendingMessageStore();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: conversation, error: conversationError } =
     api.conversation.getConversation.useQuery({
@@ -36,6 +37,14 @@ export const Conversation = ({
       });
     },
   });
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, pendingUserMessage]);
 
   const handleSendMessage = async () => {
     const searchValueTemp = searchValue;
@@ -72,6 +81,7 @@ export const Conversation = ({
                 pendingChatMessage={pendingUserMessage}
               />
             )}
+            <div ref={messagesEndRef} />
           </div>
         </div>
       </div>

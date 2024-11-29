@@ -9,12 +9,10 @@ export const ConversationMessageChartView = ({
   messageId,
   columnDefinitions,
   data,
-  isLoadingData,
 }: {
   messageId: string;
   columnDefinitions: ColumnDefinitions | null;
   data: DataRow[] | null;
-  isLoadingData: boolean;
 }) => {
   const utils = api.useUtils();
 
@@ -38,12 +36,8 @@ export const ConversationMessageChartView = ({
     return <div>Error loading plot.</div>;
   }
 
-  if (isLoadingData) {
-    return <div>Loading data...</div>;
-  }
-
   if (!columnDefinitions || !data) {
-    throw new Error("Data or column definitions missing");
+    return <div>Loading data...</div>;
   }
 
   return (
