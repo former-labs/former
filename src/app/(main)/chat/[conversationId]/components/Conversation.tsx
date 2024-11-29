@@ -4,7 +4,7 @@ import { Loading } from "@/components/utils/Loading";
 import { type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { useState } from "react";
-import { usePendingMessageStore } from "../../usePendingMessageStore";
+import { usePendingMessageStore } from "../../../../../components/chat/usePendingMessageStore";
 import { ConversationMessageGoogleAnalyticsReport } from "./ConversationMessageGoogleAnalyticsReport";
 import { SearchBar } from "./SearchBar";
 
