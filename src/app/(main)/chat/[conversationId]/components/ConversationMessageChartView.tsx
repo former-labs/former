@@ -35,7 +35,7 @@ export const ConversationMessageChartView = ({
 
   // Case 1: Single row with single key
   if (data[0] && Object.keys(data[0]).length === 1) {
-    return <SingleValueRenderer data={data[0]} otherData={data} />;
+    return <SingleValueRenderer data={data[0]} />;
   }
 
   // Case 2: Single row with multiple keys
@@ -57,8 +57,7 @@ export const ConversationMessageChartView = ({
           {metricsInData.map((metricKey) => (
             <SingleValueRenderer
               key={metricKey}
-              data={{ [metricKey]: data[0][metricKey] }}
-              otherData={data}
+              data={{ [metricKey]: data[0]![metricKey]! }}
             />
           ))}
         </div>
