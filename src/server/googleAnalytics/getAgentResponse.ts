@@ -74,8 +74,8 @@ FOLLOW THESE STEPS:
 
 -----------------------------------------------------------------------
 
-##GUIDANCE
-###Metrics Guidance
+## GUIDANCE
+### Metrics Guidance
  - "activeUsers" is typically preferred over "totalUsers"
  - Only use an expression if you want to calculate a metric based on others (e.g. "activeUsers/totalUsers").
  - The "expression" MUST NEVER BE THE SAME AS THE METRIC NAME. Set expression to null instead of setting it to the metric name.
@@ -83,7 +83,7 @@ FOLLOW THESE STEPS:
  - When someone is asking for 'engagedSessions', it's often helpful to also show them 'sessions' as well.
  - If asked for a percentage or ratio based on different dimension values, do not use an expression. Instead, add the dimension so it can be calculated by the user.
 
-###Dimension Guidance
+### Dimension Guidance
  - Err on the side of including dimensions to provide more context unless specified otherwise.
  - If you need to segment returning or new users, use "newVsReturning"
  - Comparing day-on-day or daily trends, use the "date" dimension
@@ -91,7 +91,7 @@ FOLLOW THESE STEPS:
  - Comparing month-on-month or monthly trends, use the "yearMonth" dimension
  - Comparing year-on-year or yearly trends, use the "year" dimension
 
- ###Date Guidance
+ ### Date Guidance
  - For start dates it's generally best to use absolute dates "YYYY-MM-DD" instead of relative dates unless the date range the user is asking for isn't specified, in that case use relative dates that make sense.
  - For end dates, use "today" instead of "yesterday" in most cases, use "YYYY-MM-DD" for most other cases, unless otherwise specified.
  - "30daysAgo" is 30 days ago from today (works for N days ago)
@@ -102,14 +102,14 @@ FOLLOW THESE STEPS:
  - If a date dimension is used, you should use orderBys to sort by date in descending order unless specified otherwise.
  - When metrics based on traffic hours, use the "hour" dimension and sort by hour in descending order with 'NUMERIC' orderType unless specified otherwise.
  
- ####Date Comparisons
+ #### Date Comparisons
  - If comparing by day, week, month, or year, don't use multiple date ranges, instead use date, week, yearMonth, or year dimensions to separate the data, unless specified otherwise.
  - 'Last X days' is from (X - 1) days ago to today.
 
-###Filters Guidance
+### Filters Guidance
  - For caseSensitive filters, set caseSensitive to false unless specified otherwise.
 
-###Dimension Filters Guidance
+### Dimension Filters Guidance
  - Do not provide a dimensionFilter unless you certaintly need it as the other values shown will provide more context. That is, usually don't apply dimension filters for the following dimensions:
   - browser (e.g. "How many mobile users visited our site?")
   - continent (e.g. "How many users in the Americas visited our site?")
@@ -123,7 +123,7 @@ FOLLOW THESE STEPS:
   - medium
   - mobileDeviceBranding
   - mobileDeviceModel
-  - newVsReturning
+  - newVsReturning (use "new" for new users and "returning" for returning users, both lowercase)
   - operatingSystem
   - platform
   - platformDeviceCategory
@@ -141,7 +141,7 @@ FOLLOW THESE STEPS:
   - userGender
   - visible
 
-###Order By Guidance
+### Order By Guidance
  - When ordering by dimension, use orderBys.dimension.dimensionName, e.g. "orderBys.dimension.dimensionName = 'date'"
  - If a time-based metric is used as a dimension (e.g. "date", "weekMonth", "yearMonth", "year", etc.), always sort by in descending order with 'ALPHANUMERIC' orderType unless specified otherwise.
  - When ordering by metric, use orderBys.metric.metricName, e.g. "orderBys.metric.metricName = 'activeUsers'"
@@ -152,15 +152,15 @@ FOLLOW THESE STEPS:
 
 -----------------------------------------------------------------------
 
-##For reference, below are definitions for all the available metrics and dimensions:
+## For reference, below are definitions for all the available metrics and dimensions:
 
-###Metrics Definitions
+### Metrics Definitions
 ${googleAnalyticsDefinitions.metrics
   .filter((m) => m.visible)
   .map((m) => `- ${m.name}: ${m.description}`)
   .join("\n")}
 
-###Dimensions Definitions
+### Dimensions Definitions
 ${googleAnalyticsDefinitions.dimensions
   .filter((d) => d.visible)
   .map((d) => `- ${d.name}: ${d.description}`)
