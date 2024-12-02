@@ -23,7 +23,7 @@ export default function RootLayout({
     <SidebarRightProvider>
       <SidebarProvider>
         <LayoutSidebar>
-          <div className="h-full w-full pt-4">
+          <div className="h-full w-full px-8 pt-8">
             {isLoading ? (
               <div className="flex h-full w-full items-center justify-center">
                 <Loading />
