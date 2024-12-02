@@ -60,6 +60,10 @@ export default function OnboardingPage() {
         setError(error.message);
         setIsLoading(false);
       },
+      onSuccess: (data) => {
+        window.location.href = data.redirectUrl;
+        setIsLoading(false);
+      },
     });
   const createWorkspace = api.onboarding.createWorkspace.useMutation();
 
@@ -100,16 +104,7 @@ export default function OnboardingPage() {
     }
 
     // Send them to Google Analytics
-    const { redirectUrl } = await connectGoogleAnalytics.mutateAsync({
-      workspaceId: role.workspaceId,
-    });
-
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
-    } else {
-      setError("Failed to connect Google Analytics");
-      setIsLoading(false);
-    }
+    await connectGoogleAnalytics.mutateAsync();
   };
 
   return (

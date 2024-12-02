@@ -13,12 +13,12 @@ export default async function AdminLayout({
 
   if (!user?.email || !isAdminEmail(user?.email)) {
     return (
-      <div>
+      <div className="h-full w-full pt-8">
         <div>You are not admin.</div>
         <div>Email: {user?.email}</div>
       </div>
     );
   }
 
-  return <>{children}</>;
+  return <div className="h-full w-full pt-8">{children}</div>;
 }
