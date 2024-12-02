@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { type ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { z } from "zod";
+import { AGENT_EXAMPLE_1, AGENT_EXAMPLE_2, AGENT_EXAMPLE_3, AGENT_EXAMPLE_4 } from "./agentPromptExamples";
 import {
   type GoogleAnalyticsReportParameters,
   googleAnalyticsReportParametersSchema,
@@ -37,9 +38,11 @@ type AiResponse = z.infer<typeof aiResponseSchema>;
 export async function getAgentResponse({
   formattedConversationHistory,
   prompt,
+  currentDate,
 }: {
   formattedConversationHistory: ChatCompletionMessageParam[];
   prompt: string;
+  currentDate: Date;
 }): Promise<AiResponse> {
   const client = new OpenAI({
     apiKey: env.OPENAI_API_KEY,
@@ -66,16 +69,16 @@ ${prompt}
 
 FOLLOW THESE STEPS:
 1. Carefully read the user request and think step by step about what they are asking for.
-2. Read through the ###Metrics Definitions and ###Dimensions Definitions to understand the different metrics and dimensions available.
-3. Read through the ##GUIDANCE section for special cases and rules to follow.
-4. Identify the dateRange(s) we should use based on the user request. Pay special attention to the ###Date Guidance section.
+2. Read through the "### Metrics Definitions" and "### Dimensions Definitions" to understand the different metrics and dimensions available.
+3. Read through the "## GUIDANCE" section for special cases and rules to follow.
+4. Identify the dateRange(s) we should use based on the user request. Pay special attention to the "### Date Guidance" section.
 5. Generate the appropriate GA4 report parameters. The parameters should include dateRanges, dimensions, metrics, orderBys, limit, and the optional use of different filter types (AND/OR/NOT expressions).
 6. If the particular user request is the kind that should include a visualization, set includeVisualization to true. This will often be the case.
 
 -----------------------------------------------------------------------
 
-##GUIDANCE
-###Metrics Guidance
+## GUIDANCE
+### Metrics Guidance
  - "activeUsers" is typically preferred over "totalUsers"
  - Only use an expression if you want to calculate a metric based on others (e.g. "activeUsers/totalUsers").
  - The "expression" MUST NEVER BE THE SAME AS THE METRIC NAME. Set expression to null instead of setting it to the metric name.
@@ -83,7 +86,7 @@ FOLLOW THESE STEPS:
  - When someone is asking for 'engagedSessions', it's often helpful to also show them 'sessions' as well.
  - If asked for a percentage or ratio based on different dimension values, do not use an expression. Instead, add the dimension so it can be calculated by the user.
 
-###Dimension Guidance
+### Dimension Guidance
  - Err on the side of including dimensions to provide more context unless specified otherwise.
  - If you need to segment returning or new users, use "newVsReturning"
  - Comparing day-on-day or daily trends, use the "date" dimension
@@ -91,25 +94,26 @@ FOLLOW THESE STEPS:
  - Comparing month-on-month or monthly trends, use the "yearMonth" dimension
  - Comparing year-on-year or yearly trends, use the "year" dimension
 
- ###Date Guidance
- - For start dates it's generally best to use absolute dates "YYYY-MM-DD" instead of relative dates unless the date range the user is asking for isn't specified, in that case use relative dates that make sense.
+ ### Date Guidance
+ - For state dates, try to use relative dates (e.g. "30daysAgo") if the user is requesting data relative to the current date. If the user is requesting data and has specified a particular date that is not relative, use absolute dates (e.g. "YYYY-MM-DD").
+ - For start dates it's generally best to use relative dates (e.g. "30daysAgo") instead of absolute dates (e.g. "YYYY-MM-DD") unless the user is asking for a specific date (e.g. "give me data from April 2023").
  - For end dates, use "today" instead of "yesterday" in most cases, use "YYYY-MM-DD" for most other cases, unless otherwise specified.
- - "30daysAgo" is 30 days ago from today (works for N days ago)
- - "today" is the current date, ${new Date().toLocaleString("en-US", { weekday: "long" })}, ${new Date().toISOString().split("T")[0]}
+ - "30daysAgo" is 30 days ago from "today" (works for N days ago)
+ - "today" is the current date, ${currentDate.toLocaleString("en-US", { weekday: "long" })}, ${currentDate.toISOString().split("T")[0]}
  - If date range is 7daysAgo, use "date" dimension instead of "week" dimension unless specified otherwise.
  - Used "dayOfWeekName" dimension instead of "dayOfWeek" dimension when possible.
  - When specifying the start or end of a month, use "YYYY-MM-DD" notation.
  - If a date dimension is used, you should use orderBys to sort by date in descending order unless specified otherwise.
  - When metrics based on traffic hours, use the "hour" dimension and sort by hour in descending order with 'NUMERIC' orderType unless specified otherwise.
  
- ####Date Comparisons
+ #### Date Comparisons
  - If comparing by day, week, month, or year, don't use multiple date ranges, instead use date, week, yearMonth, or year dimensions to separate the data, unless specified otherwise.
  - 'Last X days' is from (X - 1) days ago to today.
 
-###Filters Guidance
+### Filters Guidance
  - For caseSensitive filters, set caseSensitive to false unless specified otherwise.
 
-###Dimension Filters Guidance
+### Dimension Filters Guidance
  - Do not provide a dimensionFilter unless you certaintly need it as the other values shown will provide more context. That is, usually don't apply dimension filters for the following dimensions:
   - browser (e.g. "How many mobile users visited our site?")
   - continent (e.g. "How many users in the Americas visited our site?")
@@ -123,7 +127,7 @@ FOLLOW THESE STEPS:
   - medium
   - mobileDeviceBranding
   - mobileDeviceModel
-  - newVsReturning
+  - newVsReturning (use "new" for new users and "returning" for returning users, both lowercase)
   - operatingSystem
   - platform
   - platformDeviceCategory
@@ -141,7 +145,8 @@ FOLLOW THESE STEPS:
   - userGender
   - visible
 
-###Order By Guidance
+### Order By Guidance
+ - If we are not ordering by any dimensions or metrics, set orderBys object to null.
  - When ordering by dimension, use orderBys.dimension.dimensionName, e.g. "orderBys.dimension.dimensionName = 'date'"
  - If a time-based metric is used as a dimension (e.g. "date", "weekMonth", "yearMonth", "year", etc.), always sort by in descending order with 'ALPHANUMERIC' orderType unless specified otherwise.
  - When ordering by metric, use orderBys.metric.metricName, e.g. "orderBys.metric.metricName = 'activeUsers'"
@@ -152,20 +157,40 @@ FOLLOW THESE STEPS:
 
 -----------------------------------------------------------------------
 
-##For reference, below are definitions for all the available metrics and dimensions:
+## For reference, below are definitions for all the available metrics and dimensions:
 
-###Metrics Definitions
+### Metrics Definitions
 ${googleAnalyticsDefinitions.metrics
   .filter((m) => m.visible)
   .map((m) => `- ${m.name}: ${m.description}`)
   .join("\n")}
 
-###Dimensions Definitions
+### Dimensions Definitions
 ${googleAnalyticsDefinitions.dimensions
   .filter((d) => d.visible)
   .map((d) => `- ${d.name}: ${d.description}`)
   .join("\n")}
-`,
+
+
+## Examples
+Some example queries and responses are included below:
+
+<EXAMPLE_1>
+${AGENT_EXAMPLE_1}
+</EXAMPLE_1>
+
+<EXAMPLE_2>
+${AGENT_EXAMPLE_2}
+</EXAMPLE_2>
+
+<EXAMPLE_3>
+${AGENT_EXAMPLE_3}
+</EXAMPLE_3>
+
+<EXAMPLE_4>
+${AGENT_EXAMPLE_4}
+</EXAMPLE_4>
+  `,
       },
       ...formattedConversationHistory,
       {
@@ -182,6 +207,8 @@ ${googleAnalyticsDefinitions.dimensions
     const errorMessage = messageFlattened?.refusal ?? "No response from model";
     throw new Error(errorMessage);
   }
+
+  console.log("agent repsonse!", JSON.stringify(messageFlattened.parsed.googleAnalyticsReportParameters, null, 2))
 
   const googleAnalyticsReportParameters = unflattenGoogleAnalyticsParameters({
     flattenedParams: messageFlattened.parsed.googleAnalyticsReportParameters,

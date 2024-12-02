@@ -111,7 +111,9 @@ export const googleAnalyticsReportParametersSchemaFlattened = z.object({
   dimensionFilterNotExpression: FilterFlattened.nullable().describe(
     "For a dimension filter that needs to be negated",
   ),
-  orderBys: OrderByExpression.nullable().describe("Optional sort order"),
+  orderBys: OrderByExpression.nullable().describe(
+    "Optional sort order. This enter object should be null if we are not ordering by any dimensions or metrics."
+  ),
   limit: z
     .number()
     .nullable()

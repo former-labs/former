@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/trpc/react";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -15,25 +14,24 @@ export const GoogleAnalyticsConnectButton = ({
   onError?: (error: string) => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { activeRole } = useAuth();
   const connectGoogleAnalytics =
     api.integration.connectGoogleAnalytics.useMutation({
       onError: (error) => {
         setIsLoading(false);
         onError?.(error.message);
       },
+      onSuccess: ({ redirectUrl }) => {
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          setIsLoading(false);
+        }
+      },
     });
 
   const handleConnectGoogleAnalytics = async () => {
     setIsLoading(true);
-    const { redirectUrl } = await connectGoogleAnalytics.mutateAsync({
-      workspaceId: activeRole?.workspaceId ?? "",
-    });
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
-    } else {
-      setIsLoading(false);
-    }
+    await connectGoogleAnalytics.mutateAsync();
   };
 
   return (

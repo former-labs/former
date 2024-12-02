@@ -273,9 +273,26 @@ export const getGoogleAnalyticsDefinition = ({
   type: "metrics" | "dimensions";
   name: string;
 }) => {
+  if (type === "dimensions" && name === "dateRange") {
+    /*
+      This is a special case where "dateRange" is provided as a dimension which occurs if
+      a date range is provided in the parameters. Possibly this occurs only when it is named
+      or only when more than one range exists, I'm not sure.
+
+      In this case we just return it as a dimension.
+    */
+    return {
+      name: "dateRange",
+      displayName: "Date range",
+      description: "The date range for the report.",
+      visible: true,
+    };
+  }
+
   const definition = googleAnalyticsDefinitions[type].find(
     (def) => def.name === name,
   );
+
   if (!definition) {
     throw new Error(
       `Google Analytics definition not found for ${type} ${name}`,

@@ -40,6 +40,7 @@ export const createGoogleAnalyticsResponse = async ({
   const agentResponse = await getAgentResponse({
     formattedConversationHistory: formattedMessages,
     prompt: userMessage,
+    currentDate: new Date(),
   });
 
   console.log('agentResponse', agentResponse);

@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Settings2,
   SquareTerminal,
+  Plug,
 } from "lucide-react";
 import * as React from "react";
 
@@ -146,6 +147,11 @@ const data = {
       name: "Dashboards",
       url: PATH_DASHBOARD,
       icon: BarChart,
+    },
+    {
+      name: "Integrations",
+      url: "/integrations",
+      icon: Plug,
     },
   ],
 };
