@@ -2,6 +2,13 @@
 
 import { TableDataView } from "@/components/charting/TableDataView";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { type EvalApiTest } from "@/server/api/routers/eval/evalTestListAndFilter";
 import { type GoogleAnalyticsReportParameters } from "@/server/googleAnalytics/reportParametersSchema";
 import { api, type RouterOutputs } from "@/trpc/react";
@@ -30,6 +37,7 @@ export default function Page() {
   >({});
 
   const [minIndex, setMinIndex] = useState<number>(0);
+  const [filterType, setFilterType] = useState<"all" | "not_passed">("all");
 
   const handleRunTest = async (evalId: string) => {
     // setTestResults((prev) => ({
@@ -86,12 +94,23 @@ export default function Page() {
     // Filter evals to only include those above minIndex
     const filteredEvals = evals.filter((_, index) => index >= minIndex);
 
-    for (const evalTest of filteredEvals) {
-      await handleRunTest(evalTest.id);
+    // Process in batches
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < filteredEvals.length; i += BATCH_SIZE) {
+      const batch = filteredEvals.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map((evalTest) => handleRunTest(evalTest.id)));
     }
   };
 
   const isAnyTestRunning = Object.values(evalTestLoading).some(Boolean);
+
+  const filteredEvals = evals?.filter((evalTest, index) => {
+    if (index < minIndex) return false;
+    if (filterType === "not_passed") {
+      return !testResults[evalTest.id]?.success;
+    }
+    return true;
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-screen-lg flex-col">
@@ -109,6 +128,20 @@ export default function Page() {
           >
             {isAnyTestRunning ? "Running..." : "Run All Tests"}
           </Button>
+          <Select
+            value={filterType}
+            onValueChange={(value) =>
+              setFilterType(value as "all" | "not_passed")
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter evals" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All evals</SelectItem>
+              <SelectItem value="not_passed">Not passed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex flex-col items-start">
           <div className="font-semi text-sm text-gray-700">Min Eval #</div>
@@ -132,20 +165,18 @@ export default function Page() {
         <div className="flex items-center justify-center p-8">
           <p className="text-gray-500">Loading evaluation tests...</p>
         </div>
-      ) : evals && evals.length > 0 ? (
+      ) : filteredEvals && filteredEvals.length > 0 ? (
         <div className="flex flex-col gap-4">
-          {evals
-            .filter((_, index) => index >= minIndex)
-            .map((evalTest, index) => (
-              <EvalTestComponent
-                key={evalTest.title}
-                evalTest={evalTest}
-                onRun={() => handleRunTest(evalTest.id)}
-                isRunning={evalTestLoading[evalTest.id] ?? false}
-                result={testResults[evalTest.id]}
-                index={index + minIndex}
-              />
-            ))}
+          {filteredEvals.map((evalTest, index) => (
+            <EvalTestComponent
+              key={evalTest.title}
+              evalTest={evalTest}
+              onRun={() => handleRunTest(evalTest.id)}
+              isRunning={evalTestLoading[evalTest.id] ?? false}
+              result={testResults[evalTest.id]}
+              index={index + minIndex}
+            />
+          ))}
         </div>
       ) : (
         <div className="flex items-center justify-center p-8">

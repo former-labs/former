@@ -18,6 +18,8 @@ export type EvalApiTest = {
   notes?: string[];
 };
 
+export const evalTestDate = new Date("2024-11-03");
+
 export const evalTestList: EvalApiTest[] = [
   {
     id: "total-users-30-days",
@@ -143,16 +145,7 @@ export const evalTestList: EvalApiTest[] = [
       ],
       dateRanges: [
         {
-          startDate: (() => {
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const quarterStartMonth = Math.floor(currentMonth / 3) * 3;
-            return new Date(
-              now.getFullYear(),
-              quarterStartMonth,
-              1,
-            ).toLocaleDateString("en-CA");
-          })(),
+          startDate: "2024-10-01",
           endDate: "today",
         },
       ],
@@ -371,24 +364,12 @@ export const evalTestList: EvalApiTest[] = [
       dimensions: [],
       dateRanges: [
         {
-          startDate: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth() - 1,
-            1,
-          ).toLocaleDateString("en-CA"),
-          endDate: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            0,
-          ).toLocaleDateString("en-CA"),
+          startDate: "2024-10-01",
+          endDate: "2024-10-31",
           name: "lastMonth",
         },
         {
-          startDate: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            1,
-          ).toLocaleDateString("en-CA"),
+          startDate: "2024-11-01",
           endDate: "today",
           name: "thisMonth",
         },
@@ -770,6 +751,10 @@ export const evalTestList: EvalApiTest[] = [
           name: "yearMonth",
           optional: true,
         },
+        {
+          name: "year",
+          optional: true,
+        },
       ],
       dateRanges: [
         {
@@ -819,7 +804,7 @@ export const evalTestList: EvalApiTest[] = [
     id: "sessions-on-weekend",
     title: "Weekend Sessions",
     description: "Number of sessions that occurred during weekends.",
-    inputPrompt: "How many sessions occurred on the weekend?",
+    inputPrompt: "How many sessions occurred on the weekend? Use in list filter.",
     tags: ["Date and Time"],
     targetParameters: {
       metrics: [
@@ -1021,13 +1006,13 @@ export const evalTestList: EvalApiTest[] = [
       dimensions: [],
       dateRanges: [
         {
-          startDate: "2024-11-18",
+          startDate: "2024-10-27",
           endDate: "today",
           name: "This Week",
         },
         {
-          startDate: "2024-11-11",
-          endDate: "2024-11-17",
+          startDate: "2024-10-20",
+          endDate: "2024-10-26",
           name: "Last Week",
         },
       ],
@@ -2128,7 +2113,7 @@ export const evalTestList: EvalApiTest[] = [
     inputPrompt: "What is the session key event rate?",
     tags: ["User Behavior"],
     targetParameters: {
-      metrics: [{ name: "eventPerSession" }],
+      metrics: [{ name: "sessionKeyEventRate" }],
       dimensions: [],
       dateRanges: [
         {
@@ -2145,7 +2130,7 @@ export const evalTestList: EvalApiTest[] = [
     inputPrompt: "What is the user key event rate?",
     tags: ["User Behavior"],
     targetParameters: {
-      metrics: [{ name: "eventPerUser" }],
+      metrics: [{ name: "userKeyEventRate" }],
       dimensions: [],
       dateRanges: [
         {

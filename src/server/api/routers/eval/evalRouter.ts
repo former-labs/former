@@ -7,7 +7,7 @@ import {
 } from "@/server/googleAnalytics/googleAnalytics";
 import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
 import { z } from "zod";
-import { evalTestList } from "./evalTestListAndFilter";
+import { evalTestDate, evalTestList } from "./evalTestListAndFilter";
 import { verifyEvalResponse } from "./verifyEvalResponse";
 
 export const evalRouter = createTRPCRouter({
@@ -33,6 +33,7 @@ export const evalRouter = createTRPCRouter({
       const agentResponse = await getAgentResponse({
         formattedConversationHistory: [],
         prompt: evalTest.inputPrompt,
+        currentDate: evalTestDate,
       });
 
       console.log(agentResponse.googleAnalyticsReportParameters);
@@ -59,6 +60,8 @@ export const evalRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       try {
+        console.log("executeGoogleAnalyticsReport", input.parameters);
+
         // Hardcoded to ours for now
         const propertyId = "447821713";
 

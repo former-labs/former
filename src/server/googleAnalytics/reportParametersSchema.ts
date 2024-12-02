@@ -7,7 +7,7 @@ export const OrderByExpression = z
         metricName: z.string(),
       })
       .nullable()
-      .describe("For ordering metrics such as activeUsers, bounceRate, etc."),
+      .describe("For ordering metrics such as activeUsers, bounceRate, etc. If you include this then the dimension should be null."),
     dimension: z
       .object({
         dimensionName: z.string(),
@@ -19,22 +19,24 @@ export const OrderByExpression = z
       })
       .nullable()
       .describe(
-        "For ordering dimensions such as date, yearMonth, country, etc.",
+        "For ordering dimensions such as date, yearMonth, country, etc. If you include this then the metric should be null.",
       ),
     desc: z.boolean().nullable(),
   })
-  .refine(
-    (data) => {
-      const hasOneKey =
-        ["metric", "dimension"].filter(
-          (key) => data[key as keyof typeof data] !== null,
-        ).length === 1;
-      return hasOneKey;
-    },
-    {
-      message: "OrderBy must specify exactly one of 'metric', 'dimension'.",
-    },
-  );
+  .superRefine((data, ctx) => {
+    const hasOneKey =
+      ["metric", "dimension"].filter(
+        (key) => data[key as keyof typeof data] !== null,
+      ).length === 1;
+    if (!hasOneKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `OrderBy must specify exactly one of 'metric', 'dimension'. Got: ${JSON.stringify(
+          data,
+        )}`,
+      });
+    }
+  });
 
 const Filter = z.object({
   fieldName: z.string(),
