@@ -20,16 +20,18 @@ export const GoogleAnalyticsConnectButton = ({
         setIsLoading(false);
         onError?.(error.message);
       },
+      onSuccess: ({ redirectUrl }) => {
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          setIsLoading(false);
+        }
+      },
     });
 
   const handleConnectGoogleAnalytics = async () => {
     setIsLoading(true);
-    const { redirectUrl } = await connectGoogleAnalytics.mutateAsync();
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
-    } else {
-      setIsLoading(false);
-    }
+    await connectGoogleAnalytics.mutateAsync();
   };
 
   return (
