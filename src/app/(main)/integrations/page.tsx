@@ -111,7 +111,7 @@ export default function IntegrationsPage() {
   );
 }
 
-export const AddIntegrationCard = () => {
+const AddIntegrationCard = () => {
   const { toast } = useToast();
 
   const connectGoogleAnalytics =
