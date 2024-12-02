@@ -154,10 +154,10 @@ export const AddIntegrationCard = () => {
   );
 };
 
-export function IntegrationCard({
+const IntegrationCard = ({
   integration,
   onDisconnect,
-}: IntegrationCardProps) {
+}: IntegrationCardProps) => {
   return (
     <Card className="space-y-4 p-6">
       <div className="flex items-start justify-between">
@@ -202,4 +202,4 @@ export function IntegrationCard({
       <p className="text-sm text-muted-foreground">{integration.description}</p>
     </Card>
   );
-}
+};
