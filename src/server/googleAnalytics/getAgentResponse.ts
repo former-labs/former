@@ -38,7 +38,7 @@ type AiResponse = z.infer<typeof aiResponseSchema>;
 export async function getAgentResponse({
   formattedConversationHistory,
   prompt,
-  currentDate = new Date(),
+  currentDate,
 }: {
   formattedConversationHistory: ChatCompletionMessageParam[];
   prompt: string;
