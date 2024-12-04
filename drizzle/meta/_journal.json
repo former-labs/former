@@ -127,6 +127,20 @@
       "when": 1732774212621,
       "tag": "0017_sad_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1733292579995,
+      "tag": "0018_hesitant_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1733302685110,
+      "tag": "0019_lame_pet_avengers",
+      "breakpoints": true
     }
   ]
 }

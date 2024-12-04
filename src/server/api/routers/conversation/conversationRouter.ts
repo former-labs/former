@@ -1,8 +1,8 @@
 import { viewDataSchema } from "@/components/charting/chartTypes";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
-import { conversationTable, dashboardItemsTable, googleAnalyticsReportTable, messageTable, plotViewTable } from "@/server/db/schema";
-import { and, eq } from "drizzle-orm";
+import { conversationTable, dashboardItemsTable, googleAnalyticsReportTable, messageItemsTable, messageTable, plotViewTable } from "@/server/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { createGoogleAnalyticsResponse } from "./createGoogleAnalyticsResponse";
 
@@ -66,7 +66,17 @@ export const conversationRouter = createTRPCRouter({
         ))
         .orderBy(messageTable.createdAt);
 
-      return messages;
+      const messageItems = await ctx.db
+        .select()
+        .from(messageItemsTable)
+        .where(
+          inArray(messageItemsTable.messageId, messages.map(m => m.id))
+        );
+
+      return messages.map(message => ({
+        message,
+        messageItems: messageItems.filter(item => item.messageId === message.id)
+      }));
     }),
 
   addMessage: workspaceProtectedProcedure
@@ -94,79 +104,72 @@ export const conversationRouter = createTRPCRouter({
       };
     }),
 
-  getMessagePlotView: workspaceProtectedProcedure
-    .input(z.object({ messageId: z.string().uuid() }))
+  getMessageItemPlotView: workspaceProtectedProcedure
+    .input(z.object({ messageItemId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const plotViews = await ctx.db
         .select({
           plotView: plotViewTable,
         })
-        .from(messageTable)
+        .from(messageItemsTable)
         .innerJoin(
           plotViewTable,
-          eq(messageTable.plotViewId, plotViewTable.id)
+          eq(messageItemsTable.plotViewId, plotViewTable.id)
         )
         .where(and(
           eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
-          eq(messageTable.id, input.messageId),
-          eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+          eq(messageItemsTable.id, input.messageItemId),
         ))
         .limit(1);
 
       return plotViews[0]?.plotView ?? null;
     }),
 
-  setMessagePlotView: workspaceProtectedProcedure
+  setMessageItemPlotView: workspaceProtectedProcedure
     .input(
       z.object({
-        messageId: z.string().uuid(),
+        messageItemId: z.string().uuid(),
         viewData: viewDataSchema.nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Get current message to check if it has a plotViewId
-      const [message] = await db
+      // Get current message item to check if it has a plotViewId
+      const [messageItem] = await db
         .select()
-        .from(messageTable)
-        .where(and(
-          eq(messageTable.id, input.messageId),
-          eq(messageTable.workspaceId, ctx.activeWorkspaceId),
-        ));
+        .from(messageItemsTable)
+        .where(eq(messageItemsTable.id, input.messageItemId));
 
-      if (!message) {
-        throw new Error("Message not found");
+      if (!messageItem) {
+        throw new Error("Message item not found");
       }
 
       // If viewData is null, we want to remove the plot view
       if (input.viewData === null) {
-        if (message.plotViewId) {
-          // Update message to remove reference
+        if (messageItem.plotViewId) {
+          // Update message item to remove reference
           await db
-            .update(messageTable)
+            .update(messageItemsTable)
             .set({ plotViewId: null })
-            .where(and(
-              eq(messageTable.id, input.messageId),
-              eq(messageTable.workspaceId, ctx.activeWorkspaceId),
-            ));
+            .where(eq(messageItemsTable.id, input.messageItemId));
 
           // Delete the existing plot view
           await db
             .delete(plotViewTable)
             .where(and(
-              eq(plotViewTable.id, message.plotViewId),
+              eq(plotViewTable.id, messageItem.plotViewId),
               eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
             ));
         }
         return null;
       }
 
-      if (message.plotViewId) {
+      if (messageItem.plotViewId) {
         // Update existing plot view
         const [updatedPlotView] = await db
           .update(plotViewTable)
           .set({ viewData: input.viewData })
           .where(and(
-            eq(plotViewTable.id, message.plotViewId),
+            eq(plotViewTable.id, messageItem.plotViewId),
             eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
           ))
           .returning();
@@ -186,41 +189,38 @@ export const conversationRouter = createTRPCRouter({
           throw new Error("Failed to create plot view");
         }
 
-        // Update message with new plot view reference
+        // Update message item with new plot view reference
         await db
-          .update(messageTable)
+          .update(messageItemsTable)
           .set({ plotViewId: newPlotView.id })
-          .where(and(
-            eq(messageTable.id, input.messageId),
-            eq(messageTable.workspaceId, ctx.activeWorkspaceId),
-          ));
+          .where(eq(messageItemsTable.id, input.messageItemId));
 
         return newPlotView;
       }
     }),
 
-  saveMessageToDashboard: workspaceProtectedProcedure
+  saveMessageItemToDashboard: workspaceProtectedProcedure
     .input(
       z.object({
-        messageId: z.string().uuid(),
+        messageItemId: z.string().uuid(),
         dashboardId: z.string().uuid(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Get message with its references
-      const [message] = await db
+      // Get message item with its references
+      const [messageItem] = await db
         .select()
-        .from(messageTable)
+        .from(messageItemsTable)
         .where(and(
-          eq(messageTable.id, input.messageId),
-          eq(messageTable.workspaceId, ctx.activeWorkspaceId),
+          eq(messageItemsTable.id, input.messageItemId),
+          // eq(messageItemsTable.workspaceId, ctx.activeWorkspaceId),
         ));
 
-      if (!message) {
+      if (!messageItem) {
         throw new Error("Message not found");
       }
 
-      if (!message.plotViewId || !message.googleAnalyticsReportId) {
+      if (!messageItem.plotViewId || !messageItem.googleAnalyticsReportId) {
         throw new Error("Message must have both a plot view and Google Analytics report");
       }
 
@@ -229,7 +229,7 @@ export const conversationRouter = createTRPCRouter({
         .select()
         .from(plotViewTable)
         .where(and(
-          eq(plotViewTable.id, message.plotViewId),
+          eq(plotViewTable.id, messageItem.plotViewId),
           eq(plotViewTable.workspaceId, ctx.activeWorkspaceId),
         ));
 
@@ -242,7 +242,7 @@ export const conversationRouter = createTRPCRouter({
         .select()
         .from(googleAnalyticsReportTable)
         .where(and(
-          eq(googleAnalyticsReportTable.id, message.googleAnalyticsReportId),
+          eq(googleAnalyticsReportTable.id, messageItem.googleAnalyticsReportId),
           eq(googleAnalyticsReportTable.workspaceId, ctx.activeWorkspaceId),
         ));
 

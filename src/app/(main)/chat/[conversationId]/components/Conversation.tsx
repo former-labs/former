@@ -1,11 +1,11 @@
 "use client";
 
 import { Loading } from "@/components/utils/Loading";
-import { type MessageSelect } from "@/server/db/schema";
+import { MessageItemSelect, type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { useEffect, useRef, useState } from "react";
 import { usePendingMessageStore } from "../../../../../components/chat/usePendingMessageStore";
-import { ConversationMessageGoogleAnalyticsReport } from "./ConversationMessageGoogleAnalyticsReport";
+import { ConversationMessageAssistant } from "./ConversationMessageGoogleAnalyticsReport";
 import { SearchBar } from "./SearchBar";
 
 export const Conversation = ({
@@ -73,10 +73,10 @@ export const Conversation = ({
       <div className="mx-auto w-full max-w-screen-lg flex-1 overflow-y-auto p-4">
         <div className="mt-4 space-y-4">
           <div className="flex flex-col gap-4">
-            {messages.map((message) => (
+            {messages.map((messageWithItems) => (
               <ConversationMessage
-                key={message.id}
-                message={message}
+                key={messageWithItems.message.id}
+                messageWithItems={messageWithItems}
                 scrollToBottom={scrollToBottom}
               />
             ))}
@@ -108,18 +108,22 @@ export const Conversation = ({
 };
 
 const ConversationMessage = ({
-  message,
+  messageWithItems,
   scrollToBottom,
 }: {
-  message: MessageSelect;
+  messageWithItems: {
+    message: MessageSelect;
+    messageItems: MessageItemSelect[];
+  };
   scrollToBottom: () => void;
 }) => {
+  const { message } = messageWithItems;
   if (message.role === "user") {
     return <ConversationMessageUser messageText={message.text ?? ""} />;
   } else if (message.role === "assistant") {
     return (
-      <ConversationMessageGoogleAnalyticsReport
-        message={message}
+      <ConversationMessageAssistant
+        messageWithItems={messageWithItems}
         scrollToBottom={scrollToBottom}
       />
     );

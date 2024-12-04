@@ -2,9 +2,12 @@ import { db } from "@/server/db";
 import {
   conversationTable,
   googleAnalyticsReportTable,
+  messageItemsTable,
   messageTable,
   plotViewTable,
+  type ConversationSelect,
   type GoogleAnalyticsReportSelect,
+  type MessageItemSelect,
   type MessageSelect,
 } from "@/server/db/schema";
 import { getAgentResponse } from "@/server/googleAnalytics/getAgentResponse";
@@ -91,13 +94,24 @@ export const createGoogleAnalyticsResponse = async ({
       workspaceId,
       conversationId,
       role: "assistant",
-      googleAnalyticsReportId: newGoogleAnalyticsReport.id,
-      plotViewId
     })
     .returning();
 
   if (!newAssistantMessage) {
     throw new Error("Failed to create assistant message");
+  }
+
+  const [ newMessageItem ] = await db.insert(messageItemsTable)
+    .values({
+      workspaceId,
+      messageId: newAssistantMessage.id,
+      googleAnalyticsReportId: newGoogleAnalyticsReport.id,
+      plotViewId
+    })
+    .returning();
+
+  if (!newMessageItem) {
+    throw new Error("Failed to create message item");
   }
 
   return {
@@ -114,8 +128,17 @@ const getConversationDetails = async ({
 }: {
   workspaceId: string;
   conversationId: string;
-}) => {
-  const [conversation, messagesDetails] = await Promise.all([
+}): Promise<{
+  conversation: ConversationSelect;
+  messages: {
+    message: MessageSelect;
+    messageItems: {
+      messageItem: MessageItemSelect;
+      googleAnalyticsReport: GoogleAnalyticsReportSelect | null;
+    }[];
+  }[];
+}> => {
+  const [conversation, messages] = await Promise.all([
     db.query.conversationTable.findFirst({
       where: and(
         eq(conversationTable.workspaceId, workspaceId),
@@ -124,15 +147,9 @@ const getConversationDetails = async ({
     }),
     db.select({
       message: messageTable,
-      googleAnalyticsReport: googleAnalyticsReportTable,
     })
       .from(messageTable)
-      .leftJoin(
-        googleAnalyticsReportTable,
-        eq(messageTable.googleAnalyticsReportId, googleAnalyticsReportTable.id)
-      )
       .where(and(
-        eq(googleAnalyticsReportTable.workspaceId, workspaceId),
         eq(messageTable.workspaceId, workspaceId),
         eq(messageTable.conversationId, conversationId),
       ))
@@ -143,9 +160,29 @@ const getConversationDetails = async ({
     throw new Error("Conversation not found");
   }
 
+  const messagesWithItems = await Promise.all(
+    messages.map(async ({ message }) => {
+      const messageItems = await db.select({
+        messageItem: messageItemsTable,
+        googleAnalyticsReport: googleAnalyticsReportTable,
+      })
+        .from(messageItemsTable)
+        .leftJoin(
+          googleAnalyticsReportTable,
+          eq(messageItemsTable.googleAnalyticsReportId, googleAnalyticsReportTable.id)
+        )
+        .where(eq(messageItemsTable.messageId, message.id));
+
+      return {
+        message,
+        messageItems,
+      };
+    })
+  );
+
   return {
     conversation,
-    messages: messagesDetails
+    messages: messagesWithItems
   };
 }
 
@@ -155,7 +192,10 @@ const formatConversationHistory = ({
 }: {
   messages: {
     message: MessageSelect,
-    googleAnalyticsReport: GoogleAnalyticsReportSelect | null,
+    messageItems: {
+      messageItem: MessageItemSelect;
+      googleAnalyticsReport: GoogleAnalyticsReportSelect | null;
+    }[];
   }[]
 }): ChatCompletionMessageParam[] => {
 
@@ -167,7 +207,7 @@ const formatConversationHistory = ({
       }
     }
 
-    const report = messageDetails.googleAnalyticsReport;
+    const report = messageDetails.messageItems[0]?.googleAnalyticsReport;
 
     return {
       role: messageDetails.message.role,
