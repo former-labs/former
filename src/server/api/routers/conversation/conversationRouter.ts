@@ -8,7 +8,10 @@ import { createGoogleAnalyticsResponse } from "./createGoogleAnalyticsResponse";
 
 export const conversationRouter = createTRPCRouter({
   createConversation: workspaceProtectedProcedure
-    .input(z.object({ initialUserMessage: z.string() }))
+    .input(z.object({
+      initialUserMessage: z.string(),
+      propertyId: z.string(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const [conversation] = await ctx.db
         .insert(conversationTable)
@@ -28,6 +31,7 @@ export const conversationRouter = createTRPCRouter({
         suggestedUserResponses,
       } = await createGoogleAnalyticsResponse({
         workspaceId: ctx.activeWorkspaceId,
+        propertyId: input.propertyId,
         conversationId: conversation.id,
         userMessage: input.initialUserMessage,
       });
@@ -84,6 +88,7 @@ export const conversationRouter = createTRPCRouter({
       z.object({
         conversationId: z.string().uuid(),
         text: z.string(),
+        propertyId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -93,6 +98,7 @@ export const conversationRouter = createTRPCRouter({
         suggestedUserResponses,
       } = await createGoogleAnalyticsResponse({
         workspaceId: ctx.activeWorkspaceId,
+        propertyId: input.propertyId,
         conversationId: input.conversationId,
         userMessage: input.text,
       });

@@ -2,6 +2,7 @@
 
 import { SearchBar } from "@/app/(main)/chat/[conversationId]/components/SearchBar";
 import { usePendingMessageStore } from "@/components/chat/usePendingMessageStore";
+import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import {
   PATH_CONVERSATION_PENDING,
   PATH_CONVERSATION_SINGLE,
@@ -12,6 +13,7 @@ import { useState } from "react";
 import { SuggestionsSection } from "./SuggestionsSection";
 
 export const NewConversationSearchBar = () => {
+  const { activeProperty } = useGoogleAnalytics();
   const [searchValue, setSearchValue] = useState("");
   const router = useRouter();
   const { setPendingUserMessage, clearPendingUserMessage } =
@@ -21,11 +23,16 @@ export const NewConversationSearchBar = () => {
     api.conversation.createConversation.useMutation({});
 
   const handleSearch = async (searchText: string) => {
+    if (!activeProperty) {
+      return;
+    }
+
     // Temporarily redirect to show the pending conversation
     setPendingUserMessage(searchText);
     router.push(PATH_CONVERSATION_PENDING);
     const data = await createConversationMutation.mutateAsync({
       initialUserMessage: searchText,
+      propertyId: activeProperty.propertyId,
     });
     setSearchValue("");
     router.push(PATH_CONVERSATION_SINGLE(data.conversationId));

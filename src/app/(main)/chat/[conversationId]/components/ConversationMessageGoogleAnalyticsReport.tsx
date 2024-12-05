@@ -43,9 +43,13 @@ export const ConversationMessageAssistant = ({
 }) => {
   return (
     <div className="flex flex-col gap-4">
+      {messageWithItems.message.text && (
+        <div className="text-base text-gray-500">
+          {messageWithItems.message.text}
+        </div>
+      )}
       {messageWithItems.messageItems.map((item, idx) => (
         <div key={item.id}>
-          <div>{idx}</div>
           <ConversationMessageGoogleAnalyticsReport
             key={item.id}
             message={messageWithItems.message}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Loading } from "@/components/utils/Loading";
+import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { MessageItemSelect, type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +14,7 @@ export const Conversation = ({
 }: {
   conversationId: string;
 }) => {
+  const { activeProperty } = useGoogleAnalytics();
   const [searchValue, setSearchValue] = useState("");
   const utils = api.useUtils();
   const { pendingUserMessage, setPendingUserMessage, clearPendingUserMessage } =
@@ -47,12 +49,17 @@ export const Conversation = ({
   }, [messages, pendingUserMessage]);
 
   const handleSendMessage = async () => {
+    if (!activeProperty) {
+      return;
+    }
+
     const searchValueTemp = searchValue;
     setSearchValue("");
     setPendingUserMessage(searchValueTemp);
     await addMessageMutation.mutateAsync({
       conversationId,
       text: searchValueTemp,
+      propertyId: activeProperty.propertyId,
     });
   };
 
