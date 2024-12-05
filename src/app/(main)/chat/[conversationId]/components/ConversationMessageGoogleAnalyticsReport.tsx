@@ -26,7 +26,16 @@ import {
   type MessageSelect,
 } from "@/server/db/schema";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { BarChart3, Download, Pencil, RefreshCw, Save, X } from "lucide-react";
+import {
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Pencil,
+  RefreshCw,
+  Save,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConversationMessageChartView } from "./ConversationMessageChartView";
 import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
@@ -41,6 +50,18 @@ export const ConversationMessageAssistant = ({
   };
   scrollToBottom: () => void;
 }) => {
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
+
+  const handlePrevious = () => {
+    setCurrentItemIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentItemIndex((prev) =>
+      Math.min(messageWithItems.messageItems.length - 1, prev + 1),
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {messageWithItems.message.text && (
@@ -48,16 +69,41 @@ export const ConversationMessageAssistant = ({
           {messageWithItems.message.text}
         </div>
       )}
-      {messageWithItems.messageItems.map((item, idx) => (
-        <div key={item.id}>
+      {messageWithItems.messageItems.length > 0 && (
+        <div className="flex flex-col gap-4">
+          {messageWithItems.messageItems.length > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevious}
+                disabled={currentItemIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-gray-500">
+                {currentItemIndex + 1} of {messageWithItems.messageItems.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNext}
+                disabled={
+                  currentItemIndex === messageWithItems.messageItems.length - 1
+                }
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <ConversationMessageGoogleAnalyticsReport
-            key={item.id}
+            key={messageWithItems.messageItems[currentItemIndex]!.id}
             message={messageWithItems.message}
-            messageItem={item}
+            messageItem={messageWithItems.messageItems[currentItemIndex]!}
             scrollToBottom={scrollToBottom}
           />
         </div>
-      ))}
+      )}
     </div>
   );
 };
@@ -280,6 +326,35 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
                 className={`h-4 w-4 ${executeReportMutation.isPending ? "animate-spin" : ""}`}
               />
             </Button>
+          </div>
+        </div>
+
+        <div className="mt-2 rounded-md bg-white p-3 text-sm">
+          <div className="flex flex-wrap gap-12">
+            <div>
+              <div className="font-semibold">Metrics:</div>
+              <div className="text-gray-600">
+                {report.reportParameters.metrics.map((m) => m.name).join(", ")}
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold">Dimensions:</div>
+              <div className="text-gray-600">
+                {report.reportParameters.dimensions
+                  .map((d) => d.name)
+                  .join(", ")}
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold">Date Ranges:</div>
+              <div className="text-gray-600">
+                {report.reportParameters.dateRanges
+                  .map((d) =>
+                    d.name ? d.name : `${d.startDate} - ${d.endDate}`,
+                  )
+                  .join(", ")}
+              </div>
+            </div>
           </div>
         </div>
 

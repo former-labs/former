@@ -13,6 +13,12 @@ import { executeGoogleAnalyticsReportWithAuth } from "../googleAnalytics/execute
 import { getFormattedConversation } from "./getFormattedConversation";
 import { getVisualizationResponse } from "./getVisualizationResponse";
 
+const SEGMENTATION_DIMENSION_ARRAY = [
+  "country",
+  "deviceCategory",
+  "sessionDefaultChannelGroup",
+] as const;
+
 export const createGoogleAnalyticsSegmentationResponse = async ({
   workspaceId,
   propertyId,
@@ -46,16 +52,12 @@ export const createGoogleAnalyticsSegmentationResponse = async ({
 
   console.log('agentSegmentationResponse', agentSegmentationResponse);
 
-  const segmentedReportParameters = [
+  const segmentedReportParameters = SEGMENTATION_DIMENSION_ARRAY.map(dimension =>
     getSegmentedReport({
       segmentationResponse: agentSegmentationResponse,
-      dimension: "country"
-    }),
-    getSegmentedReport({
-      segmentationResponse: agentSegmentationResponse,
-      dimension: "deviceCategory"
+      dimension
     })
-  ];
+  );
 
   const segmentedReportResults = await Promise.all(
     segmentedReportParameters.map(reportParameters => 
@@ -92,24 +94,18 @@ export const createGoogleAnalyticsSegmentationResponse = async ({
     throw new Error("Failed to create assistant message");
   }
 
-  await Promise.all([
-    createSegmentationAnalysis({
-      workspaceId,
-      messageId: newAssistantMessage.id,
-      formattedMessages,
-      userMessage,
-      reportParameters: segmentedReportParameters[0]!,
-      dimension: "country"
-    }),
-    createSegmentationAnalysis({
-      workspaceId,
-      messageId: newAssistantMessage.id,
-      formattedMessages,
-      userMessage,
-      reportParameters: segmentedReportParameters[1]!,
-      dimension: "deviceCategory"
-    })
-  ]);
+  await Promise.all(
+    SEGMENTATION_DIMENSION_ARRAY.map((dimension, index) =>
+      createSegmentationAnalysis({
+        workspaceId,
+        messageId: newAssistantMessage.id,
+        formattedMessages,
+        userMessage,
+        reportParameters: segmentedReportParameters[index]!,
+        dimension
+      })
+    )
+  );
 
   return {
     newUserMessage,
@@ -126,7 +122,7 @@ const getSegmentedReport = ({
     metrics: { name: string }[];
     dateRanges: { startDate: string; endDate: string; name?: string }[];
   };
-  dimension: string;
+  dimension: typeof SEGMENTATION_DIMENSION_ARRAY[number];
 }): GoogleAnalyticsReportParameters => {
   const reportParameters = {
     metrics: segmentationResponse.metrics,
@@ -151,7 +147,7 @@ const createSegmentationAnalysis = async ({
   formattedMessages: any[];
   userMessage: string;
   reportParameters: GoogleAnalyticsReportParameters;
-  dimension: string;
+  dimension: typeof SEGMENTATION_DIMENSION_ARRAY[number];
 }) => {
   const [ newGoogleAnalyticsReport ] = await db
     .insert(googleAnalyticsReportTable)
