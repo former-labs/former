@@ -16,6 +16,9 @@ export const Conversation = ({
 }) => {
   const { activeProperty } = useGoogleAnalytics();
   const [searchValue, setSearchValue] = useState("");
+  const [questionType, setQuestionType] = useState<"report" | "segmentation">(
+    "report",
+  );
   const utils = api.useUtils();
   const { pendingUserMessage, setPendingUserMessage, clearPendingUserMessage } =
     usePendingMessageStore();
@@ -60,6 +63,7 @@ export const Conversation = ({
       conversationId,
       text: searchValueTemp,
       propertyId: activeProperty.propertyId,
+      questionType,
     });
   };
 
@@ -106,6 +110,8 @@ export const Conversation = ({
               onChangeValue={setSearchValue}
               onSearch={handleSendMessage}
               isLoading={addMessageMutation.isPending}
+              searchTypeValue={questionType}
+              onSearchTypeValueChange={setQuestionType}
             />
           </div>
         </div>

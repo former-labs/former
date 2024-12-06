@@ -15,6 +15,9 @@ import { SuggestionsSection } from "./SuggestionsSection";
 export const NewConversationSearchBar = () => {
   const { activeProperty } = useGoogleAnalytics();
   const [searchValue, setSearchValue] = useState("");
+  const [questionType, setQuestionType] = useState<"report" | "segmentation">(
+    "report",
+  );
   const router = useRouter();
   const { setPendingUserMessage, clearPendingUserMessage } =
     usePendingMessageStore();
@@ -33,6 +36,7 @@ export const NewConversationSearchBar = () => {
     const data = await createConversationMutation.mutateAsync({
       initialUserMessage: searchText,
       propertyId: activeProperty.propertyId,
+      questionType,
     });
     setSearchValue("");
     router.push(PATH_CONVERSATION_SINGLE(data.conversationId));
@@ -53,6 +57,8 @@ export const NewConversationSearchBar = () => {
         onChangeValue={setSearchValue}
         onSearch={() => handleSearch(searchValue)}
         isLoading={createConversationMutation.isPending}
+        searchTypeValue={questionType}
+        onSearchTypeValueChange={setQuestionType}
       />
       <div className="mt-8 w-full">
         <SuggestionsSection

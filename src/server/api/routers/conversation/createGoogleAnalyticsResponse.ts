@@ -6,13 +6,15 @@ export const createGoogleAnalyticsResponse = async ({
   propertyId,
   conversationId,
   userMessage,
+  questionType,
 }: {
   workspaceId: string;
   propertyId: string;
   conversationId: string;
   userMessage: string;
+  questionType: "report" | "segmentation";
 }) => {
-  if (true) {
+  if (questionType === "report") {
     return createGoogleAnalyticsReportResponse({
       workspaceId,
       conversationId,

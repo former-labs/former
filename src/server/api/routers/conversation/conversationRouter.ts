@@ -11,6 +11,7 @@ export const conversationRouter = createTRPCRouter({
     .input(z.object({
       initialUserMessage: z.string(),
       propertyId: z.string(),
+      questionType: z.enum(["report", "segmentation"]),
     }))
     .mutation(async ({ ctx, input }) => {
       const [conversation] = await ctx.db
@@ -34,6 +35,7 @@ export const conversationRouter = createTRPCRouter({
         propertyId: input.propertyId,
         conversationId: conversation.id,
         userMessage: input.initialUserMessage,
+        questionType: input.questionType,
       });
 
       return {
@@ -89,6 +91,7 @@ export const conversationRouter = createTRPCRouter({
         conversationId: z.string().uuid(),
         text: z.string(),
         propertyId: z.string(),
+        questionType: z.enum(["report", "segmentation"]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -101,6 +104,7 @@ export const conversationRouter = createTRPCRouter({
         propertyId: input.propertyId,
         conversationId: input.conversationId,
         userMessage: input.text,
+        questionType: input.questionType,
       });
 
       return {
