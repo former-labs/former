@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConversationMessageChartView } from "./ConversationMessageChartView";
+import { ReportSummary } from "./ReportSummary";
 import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
 
 export const ConversationMessageAssistant = ({
@@ -329,34 +330,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           </div>
         </div>
 
-        <div className="mt-2 rounded-md bg-white p-3 text-sm">
-          <div className="flex flex-wrap gap-12">
-            <div>
-              <div className="font-semibold">Metrics:</div>
-              <div className="text-gray-600">
-                {report.reportParameters.metrics.map((m) => m.name).join(", ")}
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold">Dimensions:</div>
-              <div className="text-gray-600">
-                {report.reportParameters.dimensions
-                  .map((d) => d.name)
-                  .join(", ")}
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold">Date Ranges:</div>
-              <div className="text-gray-600">
-                {report.reportParameters.dateRanges
-                  .map((d) =>
-                    d.name ? d.name : `${d.startDate} - ${d.endDate}`,
-                  )
-                  .join(", ")}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ReportSummary report={report} onClick={handleEditReport} />
 
         {error && <div className="mb-4 text-red-500">Error: {error}</div>}
 
