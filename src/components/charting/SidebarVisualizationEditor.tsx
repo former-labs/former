@@ -9,10 +9,10 @@ import { api } from "@/trpc/react";
 import { Loader2 } from "lucide-react";
 
 export const SidebarVisualizationEditor = ({
-  messageId,
+  messageItemId,
   columnDefinitions,
 }: {
-  messageId: string;
+  messageItemId: string;
   columnDefinitions: ColumnDefinitions;
 }) => {
   const utils = api.useUtils();
@@ -21,13 +21,16 @@ export const SidebarVisualizationEditor = ({
     data: plotView,
     isLoading: isLoadingPlotView,
     isError: isErrorPlotView,
-  } = api.conversation.getMessagePlotView.useQuery({ messageId });
+  } = api.conversation.getMessageItemPlotView.useQuery({ messageItemId });
 
-  const setMessagePlotView = api.conversation.setMessagePlotView.useMutation({
-    onSuccess: async () => {
-      await utils.conversation.getMessagePlotView.invalidate({ messageId });
-    },
-  });
+  const setMessagePlotView =
+    api.conversation.setMessageItemPlotView.useMutation({
+      onSuccess: async () => {
+        await utils.conversation.getMessageItemPlotView.invalidate({
+          messageItemId,
+        });
+      },
+    });
 
   if (isLoadingPlotView) {
     return (
@@ -48,14 +51,14 @@ export const SidebarVisualizationEditor = ({
   const handleSetView = async (view: ViewData | null) => {
     // Optimistic update
     if (view && plotView) {
-      utils.conversation.getMessagePlotView.setData(
-        { messageId },
+      utils.conversation.getMessageItemPlotView.setData(
+        { messageItemId: messageItemId },
         { ...plotView, viewData: view },
       );
     }
 
     await setMessagePlotView.mutateAsync({
-      messageId,
+      messageItemId,
       viewData: view,
     });
   };

@@ -1,17 +1,13 @@
 import { env } from "@/env";
-import { GoogleAnalyticsAccount } from "@/lib/googleAnalytics/googleAnalyticsTypes";
+import { type GoogleAnalyticsAccount } from "@/lib/googleAnalytics/googleAnalyticsTypes";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { googleAnalyticsReportTable, integrationTable } from "@/server/db/schema";
-import {
-  executeGoogleAnalyticsReport,
-  initializeAnalyticsDataClient,
-  setOAuthCredentials
-} from "@/server/googleAnalytics/googleAnalytics";
 import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { executeGoogleAnalyticsReportWithAuth } from "./executeGoogleAnalyticsReportWithAuth";
 
 export const googleAnalyticsRouter = createTRPCRouter({
   getAccounts: workspaceProtectedProcedure.query(async ({ ctx }): Promise<GoogleAnalyticsAccount[]> => {
@@ -116,7 +112,7 @@ export const googleAnalyticsRouter = createTRPCRouter({
       }
 
       return executeGoogleAnalyticsReportWithAuth({
-        ctx,
+        workspaceId: ctx.activeWorkspaceId,
         propertyId: input.propertyId,
         reportParameters: report.reportParameters,
       });
@@ -129,62 +125,13 @@ export const googleAnalyticsRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       return executeGoogleAnalyticsReportWithAuth({
-        ctx,
+        workspaceId: ctx.activeWorkspaceId,
         propertyId: input.propertyId,
         reportParameters: input.reportParameters,
       });
     }),
 });
 
-async function executeGoogleAnalyticsReportWithAuth({
-  ctx,
-  propertyId,
-  reportParameters,
-}: {
-  ctx: { db: typeof db; activeWorkspaceId: string };
-  propertyId: string;
-  reportParameters: typeof googleAnalyticsReportParametersSchema._type;
-}) {
-  try {
-    const integration = await ctx.db.query.integrationTable.findFirst({
-      where: and(
-        eq(integrationTable.workspaceId, ctx.activeWorkspaceId),
-        eq(integrationTable.type, "google_analytics")
-      ),
-    });
-
-    if (!integration) {
-      throw new Error("No Google Analytics integration found for this workspace");
-    }
-
-    // Create OAuth2 client
-    let analyticsDataClient;
-    if (integration.credentials.refreshToken) {
-      setOAuthCredentials(integration.credentials.refreshToken);
-      analyticsDataClient = initializeAnalyticsDataClient(integration.credentials.refreshToken);
-    } else {
-      throw new Error("Google Analytics integration refresh token not found");
-    }
-
-    const result = await executeGoogleAnalyticsReport({
-      parameters: reportParameters,
-      propertyId,
-      analyticsDataClient,
-    });
-
-    return {
-      success: true as const,
-      data: result,
-    };
-  } catch (error) {
-    console.log(error);
-    return {
-      success: false as const,
-      error:
-        error instanceof Error ? error.message : "Unknown error occurred",
-    };
-  }
-}
 
 async function refreshAccessToken(refreshToken: string) {
   const response = await fetch("https://oauth2.googleapis.com/token", {

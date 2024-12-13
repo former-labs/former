@@ -2,6 +2,7 @@
 
 import { SidebarGoogleAnalyticsReportEditor } from "@/components/analytics/googleAnalyticsReportEditor/SidebarGoogleAnalyticsReportEditor";
 import { type ColumnDefinitions } from "@/components/charting/chartTypes";
+import { SidebarVisualizationEditor } from "@/components/charting/SidebarVisualizationEditor";
 import { TableDataView } from "@/components/charting/TableDataView";
 import {
   RightSidebarPortal,
@@ -21,33 +22,112 @@ import { getDebugMode } from "@/lib/debugMode";
 import { exportGoogleAnalyticsToCsv } from "@/lib/googleAnalytics/exportGoogleAnalytics";
 import {
   type GoogleAnalyticsReportSelect,
+  type MessageItemSelect,
   type MessageSelect,
 } from "@/server/db/schema";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { BarChart3, Download, Pencil, RefreshCw, Save, X } from "lucide-react";
+import {
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Pencil,
+  RefreshCw,
+  Save,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { SidebarVisualizationEditor } from "../../../../../components/charting/SidebarVisualizationEditor";
 import { ConversationMessageChartView } from "./ConversationMessageChartView";
+import { ReportSummary } from "./ReportSummary";
 import { SaveToDashboardDialog } from "./SaveToDashboardDialog";
 
-export const ConversationMessageGoogleAnalyticsReport = ({
+export const ConversationMessageAssistant = ({
+  messageWithItems,
+  scrollToBottom,
+}: {
+  messageWithItems: {
+    message: MessageSelect;
+    messageItems: MessageItemSelect[];
+  };
+  scrollToBottom: () => void;
+}) => {
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
+
+  const handlePrevious = () => {
+    setCurrentItemIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentItemIndex((prev) =>
+      Math.min(messageWithItems.messageItems.length - 1, prev + 1),
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {messageWithItems.message.text && (
+        <div className="text-base text-gray-500">
+          {messageWithItems.message.text}
+        </div>
+      )}
+      {messageWithItems.messageItems.length > 0 && (
+        <div className="flex flex-col gap-4">
+          {messageWithItems.messageItems.length > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevious}
+                disabled={currentItemIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-gray-500">
+                {currentItemIndex + 1} of {messageWithItems.messageItems.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNext}
+                disabled={
+                  currentItemIndex === messageWithItems.messageItems.length - 1
+                }
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          <ConversationMessageGoogleAnalyticsReport
+            key={messageWithItems.messageItems[currentItemIndex]!.id}
+            message={messageWithItems.message}
+            messageItem={messageWithItems.messageItems[currentItemIndex]!}
+            scrollToBottom={scrollToBottom}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+type GoogleAnalyticsReportResultType =
+  RouterOutputs["googleAnalytics"]["executeGoogleAnalyticsReport"];
+
+const ConversationMessageGoogleAnalyticsReport = ({
   message,
+  messageItem,
   scrollToBottom,
 }: {
   message: MessageSelect;
+  messageItem: MessageItemSelect;
   scrollToBottom: () => void;
 }) => {
-  if (!message.googleAnalyticsReportId) {
-    throw new Error("Message does not have a google analytics report id");
-  }
-
   const { data: report, isLoading } =
     api.googleAnalytics.getGoogleAnalyticsReport.useQuery(
       {
-        googleAnalyticsReportId: message.googleAnalyticsReportId,
+        googleAnalyticsReportId: messageItem.googleAnalyticsReportId!,
       },
       {
-        enabled: !!message.googleAnalyticsReportId,
+        enabled: !!messageItem.googleAnalyticsReportId,
       },
     );
 
@@ -68,27 +148,27 @@ export const ConversationMessageGoogleAnalyticsReport = ({
   return (
     <ConversationMessageGoogleAnalyticsReportContent
       message={message}
+      messageItem={messageItem}
       report={report}
       scrollToBottom={scrollToBottom}
     />
   );
 };
 
-type GoogleAnalyticsReportResultType =
-  RouterOutputs["googleAnalytics"]["executeGoogleAnalyticsReport"];
-
 const ConversationMessageGoogleAnalyticsReportContent = ({
   message,
+  messageItem,
   report,
   scrollToBottom,
 }: {
   message: MessageSelect;
+  messageItem: MessageItemSelect;
   report: GoogleAnalyticsReportSelect;
   scrollToBottom: () => void;
 }) => {
   const { activeProperty } = useGoogleAnalytics();
   const [activeTab, setActiveTab] = useState<string>(
-    message.plotViewId ? "visualisation" : "resultTable",
+    messageItem.plotViewId ? "visualisation" : "resultTable",
   );
   const [reportResult, setReportResult] = useState<
     GoogleAnalyticsReportResultType["data"] | null
@@ -96,7 +176,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
   const [error, setError] = useState<string | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [isEditingMessage, setIsEditingMessage] = useRightSidebarLock(
-    `edit-message-${message.id}`,
+    `edit-message-${message.id}-${messageItem.id}`,
   );
   const [sidebarTab, setSidebarTab] = useState<"dataSource" | "visualisation">(
     "dataSource",
@@ -250,6 +330,8 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
           </div>
         </div>
 
+        <ReportSummary report={report} onClick={handleEditReport} />
+
         {error && <div className="mb-4 text-red-500">Error: {error}</div>}
 
         <div className="h-[500px] overflow-y-auto">
@@ -265,7 +347,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
 
           {activeTab === "visualisation" && (
             <ConversationMessageChartView
-              messageId={message.id}
+              messageItemId={messageItem.id}
               columnDefinitions={columnDefinitions}
               data={reportResult?.rows ?? null}
             />
@@ -276,7 +358,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
       <SaveToDashboardDialog
         open={isSaveDialogOpen}
         onOpenChange={setIsSaveDialogOpen}
-        messageId={message.id}
+        messageItemId={messageItem.id}
       />
 
       {isEditingMessage && (
@@ -312,7 +394,7 @@ const ConversationMessageGoogleAnalyticsReportContent = ({
               )}
               {sidebarTab === "visualisation" && columnDefinitions && (
                 <SidebarVisualizationEditor
-                  messageId={message.id}
+                  messageItemId={messageItem.id}
                   columnDefinitions={columnDefinitions}
                 />
               )}

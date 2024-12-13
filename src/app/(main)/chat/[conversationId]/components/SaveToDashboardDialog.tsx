@@ -17,11 +17,11 @@ import { useEffect, useState } from "react";
 export const SaveToDashboardDialog = ({
   open,
   onOpenChange,
-  messageId,
+  messageItemId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  messageId: string;
+  messageItemId: string;
 }) => {
   const router = useRouter();
   const { data: dashboards, error } = api.dashboard.listDashboards.useQuery();
@@ -38,7 +38,7 @@ export const SaveToDashboardDialog = ({
   }, [open]);
 
   const saveMessageToDashboardMutation =
-    api.conversation.saveMessageToDashboard.useMutation({
+    api.conversation.saveMessageItemToDashboard.useMutation({
       onSuccess: () => {
         setIsSuccess(true);
       },
@@ -112,7 +112,7 @@ export const SaveToDashboardDialog = ({
             onClick={() => {
               if (selectedDashboardId) {
                 saveMessageToDashboardMutation.mutate({
-                  messageId: messageId,
+                  messageItemId,
                   dashboardId: selectedDashboardId,
                 });
               }

@@ -88,6 +88,8 @@ export async function getVisualizationResponse({
     },
   });
 
+  console.log('reportparams for viz', agentResponse.googleAnalyticsReportParameters);
+
   const response = await client.beta.chat.completions.parse({
     model: "gpt-4o",
     messages: [{
@@ -117,6 +119,9 @@ ${JSON.stringify(agentResponse.googleAnalyticsReportParameters, null, 2)}
 </GA4_REPORT_DETAILS>
 
 Please pick the most relevant visualization type and create it based on the metrics and dimensions available in the request.
+
+If there is more than one item in dateRanges, then you can use "dateRange" (not plural) as a dimension. In that case, a clustered chart
+is often appropriate since there is more than one dimension.
 
 Consider:
 - Line charts for time-series data and trends

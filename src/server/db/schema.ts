@@ -123,6 +123,16 @@ export const messageTable = pgTable("message", {
     .references(() => conversationTable.id),
   role: text("role", { enum: ["user", "assistant"] }).notNull(),
   text: text("text"),
+});
+
+export const messageItemsTable = pgTable("message_item", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
+  messageId: uuid("message_id")
+    .notNull()
+    .references(() => messageTable.id),
   googleAnalyticsReportId: uuid("google_analytics_report_id").references(() => googleAnalyticsReportTable.id),
   plotViewId: uuid("plot_view_id").references(() => plotViewTable.id),
 });
@@ -175,6 +185,7 @@ export const dashboardItemsTable = pgTable("dashboard_item", {
 
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
+export type MessageItemSelect = typeof messageItemsTable.$inferSelect;
 export type GoogleAnalyticsReportSelect = typeof googleAnalyticsReportTable.$inferSelect;
 export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
 export type UserSelect = typeof userTable.$inferSelect;

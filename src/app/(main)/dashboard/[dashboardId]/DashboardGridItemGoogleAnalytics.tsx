@@ -33,6 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ReportSummary } from "../../chat/[conversationId]/components/ReportSummary";
 import { type DashboardGridItemType } from "./dashboardTypes";
 
 type GoogleAnalyticsReportResultType =
@@ -264,6 +265,13 @@ export const DashboardGridItemGoogleAnalyticsContent = ({
           )}
         </div>
       </div>
+
+      {editMode && (
+        <ReportSummary
+          report={item.googleAnalyticsReport}
+          onClick={handleEditReport}
+        />
+      )}
 
       {error && (
         <div className="text-error-500 mx-16 my-16 text-center">

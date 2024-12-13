@@ -7,11 +7,11 @@ import googleAnalyticsDefinitions from "@/lib/googleAnalytics/googleAnalyticsDef
 import { api } from "@/trpc/react";
 
 export const ConversationMessageChartView = ({
-  messageId,
+  messageItemId,
   columnDefinitions,
   data,
 }: {
-  messageId: string;
+  messageItemId: string;
   columnDefinitions: ColumnDefinitions | null;
   data: DataRow[] | null;
 }) => {
@@ -19,7 +19,9 @@ export const ConversationMessageChartView = ({
     data: plotView,
     isLoading: isLoadingPlotView,
     isError: isErrorPlotView,
-  } = api.conversation.getMessagePlotView.useQuery({ messageId: messageId });
+  } = api.conversation.getMessageItemPlotView.useQuery({
+    messageItemId,
+  });
 
   if (isLoadingPlotView) {
     return <div>Loading...</div>;
