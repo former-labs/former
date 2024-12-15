@@ -16,8 +16,6 @@ export default function Page() {
   const [renderSideBySide, setRenderSideBySide] = useState(false);
   const [diffWidgets, setDiffWidgets] = useState<editor.IContentWidget[]>([]);
 
-  console.log("editor content", [editorContent, editorContentPending]);
-
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
   };
@@ -27,8 +25,12 @@ export default function Page() {
 
     // Listen for diff updates instead of content changes
     editor.onDidUpdateDiff(() => {
-      console.log("editor.onDidUpdateDiff");
       updateDiffWidgets(editor);
+    });
+
+    const modifiedEditor = editor.getModifiedEditor();
+    modifiedEditor.onDidChangeModelContent(() => {
+      setEditorContentPending(modifiedEditor.getValue());
     });
 
     // Initial widget setup
@@ -51,7 +53,6 @@ export default function Page() {
 
     // Add new widgets for each change
     const changes = editor.getLineChanges();
-    console.log("changes", changes);
 
     changes?.forEach((change, index) => {
       const widget = new DiffWidget({
@@ -63,6 +64,9 @@ export default function Page() {
         diffEditor: editor,
         onApply: (newContent: string) => {
           setEditorContent(newContent);
+        },
+        onReject: (newContent: string) => {
+          setEditorContentPending(newContent);
         },
       });
       editor.getModifiedEditor().addContentWidget(widget);
@@ -103,7 +107,6 @@ export default function Page() {
     });
 
     console.log(diffEditorRef.current?.getLineChanges());
-    // console.log(diffEditorRef.current?.getOriginalEditor());
   };
 
   const setDecorations = () => {
@@ -131,11 +134,9 @@ export default function Page() {
   };
 
   const removeWidgets = () => {
-    console.log("removing diff widgets", diffWidgets);
     if (diffEditorRef.current) {
       const modifiedEditor = diffEditorRef.current.getModifiedEditor();
       diffWidgets.forEach((widget) => {
-        console.log("removing widget", widget);
         modifiedEditor.removeContentWidget(widget);
       });
       setDiffWidgets([]);
@@ -217,6 +218,7 @@ interface DiffWidgetProps {
   modifiedEndLineNumber: number;
   diffEditor: editor.IStandaloneDiffEditor;
   onApply: (newContent: string) => void;
+  onReject: (newContent: string) => void;
 }
 
 class DiffWidget implements editor.IContentWidget {
@@ -240,6 +242,7 @@ class DiffWidget implements editor.IContentWidget {
         modifiedStartLineNumber={props.modifiedStartLineNumber}
         modifiedEndLineNumber={props.modifiedEndLineNumber}
         onApply={props.onApply}
+        onReject={props.onReject}
       />,
     );
   }
@@ -278,6 +281,7 @@ const DiffWidgetButtons = ({
   modifiedStartLineNumber,
   modifiedEndLineNumber,
   onApply,
+  onReject,
 }: {
   diffEditor: editor.IStandaloneDiffEditor;
   originalStartLineNumber: number;
@@ -285,6 +289,7 @@ const DiffWidgetButtons = ({
   modifiedStartLineNumber: number;
   modifiedEndLineNumber: number;
   onApply: (newContent: string) => void;
+  onReject: (newContent: string) => void;
 }) => {
   const handleClick = () => {
     const changes = diffEditor.getLineChanges();
@@ -296,8 +301,6 @@ const DiffWidgetButtons = ({
         c.modifiedEndLineNumber === modifiedEndLineNumber,
     );
     if (!relevantChange) return;
-
-    console.log("applying diff", relevantChange);
 
     // Get both models
     const modifiedModel = diffEditor.getModel()?.modified;
@@ -312,8 +315,6 @@ const DiffWidgetButtons = ({
 
     // Handle deletion (when modifiedEndLineNumber is 0)
     if (relevantChange.modifiedEndLineNumber === 0) {
-      console.log("deleting lines only");
-      console.log("old", originalLines);
       // Remove the lines from original
       originalLines.splice(
         relevantChange.originalStartLineNumber - 1,
@@ -321,7 +322,6 @@ const DiffWidgetButtons = ({
           relevantChange.originalStartLineNumber +
           1,
       );
-      console.log("new", originalLines);
     } else {
       // Get the modified lines for this change
       const modifiedLines = modifiedContent.split("\n");
@@ -357,7 +357,77 @@ const DiffWidgetButtons = ({
   };
 
   const handleReject = () => {
-    console.log("Rejecting");
+    const changes = diffEditor.getLineChanges();
+    const relevantChange = changes?.find(
+      (c) =>
+        c.originalStartLineNumber === originalStartLineNumber &&
+        c.originalEndLineNumber === originalEndLineNumber &&
+        c.modifiedStartLineNumber === modifiedStartLineNumber &&
+        c.modifiedEndLineNumber === modifiedEndLineNumber,
+    );
+    if (!relevantChange) return;
+
+    // Get both models
+    const modifiedModel = diffEditor.getModel()?.modified;
+    const originalModel = diffEditor.getModel()?.original;
+    if (!modifiedModel || !originalModel) return;
+
+    // Get the full content of both models
+    const originalContent = originalModel.getValue();
+    const modifiedContent = modifiedModel.getValue();
+
+    const modifiedLines = modifiedContent.split("\n");
+
+    // Handle deletion (when modifiedEndLineNumber is 0)
+    if (relevantChange.modifiedEndLineNumber === 0) {
+      // Get the original lines for this change
+      const originalLines = originalContent.split("\n");
+      const changedContent = originalLines
+        .slice(
+          relevantChange.originalStartLineNumber - 1,
+          relevantChange.originalEndLineNumber,
+        )
+        .join("\n");
+
+      // Insert back the deleted lines
+      modifiedLines.splice(
+        relevantChange.modifiedStartLineNumber,
+        0,
+        changedContent,
+      );
+    } else {
+      // Get the original lines for this change
+      const originalLines = originalContent.split("\n");
+      const changedContent = originalLines
+        .slice(
+          relevantChange.originalStartLineNumber - 1,
+          relevantChange.originalEndLineNumber,
+        )
+        .join("\n");
+
+      // Handle insertion of new lines (when originalEndLineNumber is 0)
+      if (relevantChange.originalEndLineNumber === 0) {
+        // Remove the inserted lines
+        modifiedLines.splice(
+          relevantChange.modifiedStartLineNumber - 1,
+          relevantChange.modifiedEndLineNumber -
+            relevantChange.modifiedStartLineNumber +
+            1,
+        );
+      } else {
+        // Regular replacement
+        modifiedLines.splice(
+          relevantChange.modifiedStartLineNumber - 1,
+          relevantChange.modifiedEndLineNumber -
+            relevantChange.modifiedStartLineNumber +
+            1,
+          changedContent,
+        );
+      }
+    }
+
+    const newContent = modifiedLines.join("\n");
+    onReject(newContent);
   };
 
   return (
