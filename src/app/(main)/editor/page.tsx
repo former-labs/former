@@ -12,6 +12,7 @@ export default function Page() {
   const [editorContentPending, setEditorContentPending] = useState<
     string | null
   >(null);
+  const [renderSideBySide, setRenderSideBySide] = useState(false);
 
   console.log("editor content", [editorContent, editorContentPending]);
 
@@ -46,6 +47,33 @@ export default function Page() {
       editorContent,
       editorContentPending,
     });
+
+    console.log(diffEditorRef.current?.getLineChanges());
+    // console.log(diffEditorRef.current?.getOriginalEditor());
+  };
+
+  const setDecorations = () => {
+    // if (editorRef.current) {
+    //   const model = editorRef.current.getModel();
+    //   if (!model) return;
+    //   editorRef.current.deltaDecorations([], [
+    //     {
+    //       range: new model.getLineRange(1),
+    //       options: {
+    //         isWholeLine: true,
+    //         className: "myDecoration",
+    //       },
+    //     },
+    //   ]);
+    // }
+  };
+
+  const printDecorations = () => {
+    if (diffEditorRef.current) {
+      console.log(
+        diffEditorRef.current.getModel()?.modified.getAllDecorations(),
+      );
+    }
   };
 
   return (
@@ -55,6 +83,13 @@ export default function Page() {
         <Button onClick={startDiff}>Start diff</Button>
         <Button onClick={endDiff}>End diff</Button>
         <Button onClick={printContent}>Print editor content</Button>
+        <Button onClick={setDecorations}>Set decorations</Button>
+        <Button onClick={printDecorations}>Print decorations</Button>
+        {editorContentPending !== null && (
+          <Button onClick={() => setRenderSideBySide(!renderSideBySide)}>
+            {renderSideBySide ? "Inline View" : "Side by Side View"}
+          </Button>
+        )}
       </div>
       <div className="flex-1">
         {editorContentPending === null ? (
@@ -87,7 +122,7 @@ export default function Page() {
               // wordWrap: "on",
               automaticLayout: true,
               scrollBeyondLastLine: false,
-              renderSideBySide: false,
+              renderSideBySide,
             }}
           />
         )}
