@@ -24,29 +24,40 @@ export default function Page() {
   class DiffWidget implements editor.IContentWidget {
     private readonly domNode: HTMLElement;
     private readonly id: string;
-    private readonly lineNumber: number;
+    private readonly originalStartLineNumber: number;
+    private readonly originalEndLineNumber: number;
+    private readonly modifiedStartLineNumber: number;
+    private readonly modifiedEndLineNumber: number;
     private readonly diffEditor: editor.IStandaloneDiffEditor;
 
     constructor(
       id: string,
-      lineNumber: number,
+      originalStartLineNumber: number,
+      originalEndLineNumber: number,
+      modifiedStartLineNumber: number,
+      modifiedEndLineNumber: number,
       diffEditor: editor.IStandaloneDiffEditor,
     ) {
       this.id = id;
-      this.lineNumber = lineNumber;
+      this.originalStartLineNumber = originalStartLineNumber;
+      this.originalEndLineNumber = originalEndLineNumber;
+      this.modifiedStartLineNumber = modifiedStartLineNumber;
+      this.modifiedEndLineNumber = modifiedEndLineNumber;
       this.diffEditor = diffEditor;
 
       this.domNode = document.createElement("div");
       const button = document.createElement("button");
       button.innerText = "Apply";
       button.className =
-        "bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs";
+        "bg-blue-500 hover:bg-blue-700 text-white font-bold py-0.5 px-2 rounded-b text-xs";
       button.onclick = () => {
         const changes = this.diffEditor.getLineChanges();
         const relevantChange = changes?.find(
           (c) =>
-            c.modifiedStartLineNumber <= lineNumber &&
-            c.modifiedEndLineNumber >= lineNumber,
+            c.originalStartLineNumber === this.originalStartLineNumber &&
+            c.originalEndLineNumber === this.originalEndLineNumber &&
+            c.modifiedStartLineNumber === this.modifiedStartLineNumber &&
+            c.modifiedEndLineNumber === this.modifiedEndLineNumber,
         );
         if (!relevantChange) return;
 
@@ -61,33 +72,48 @@ export default function Page() {
         const originalContent = originalModel.getValue();
         const modifiedContent = modifiedModel.getValue();
 
-        // Get the modified lines for this change
-        const modifiedLines = modifiedContent.split("\n");
-        const changedContent = modifiedLines
-          .slice(
-            relevantChange.modifiedStartLineNumber - 1,
-            relevantChange.modifiedEndLineNumber,
-          )
-          .join("\n");
-
-        // Handle the special case where originalEndLineNumber is 0 (new line insertion)
         const originalLines = originalContent.split("\n");
-        if (relevantChange.originalEndLineNumber === 0) {
-          // Insert after the originalStartLineNumber
-          originalLines.splice(
-            relevantChange.originalStartLineNumber,
-            0,
-            changedContent,
-          );
-        } else {
-          // Regular replacement
+
+        // Handle deletion (when modifiedEndLineNumber is 0)
+        if (relevantChange.modifiedEndLineNumber === 0) {
+          console.log("deleting lines only");
+          console.log("old", originalLines);
+          // Remove the lines from original
           originalLines.splice(
             relevantChange.originalStartLineNumber - 1,
             relevantChange.originalEndLineNumber -
               relevantChange.originalStartLineNumber +
               1,
-            changedContent,
           );
+          console.log("new", originalLines);
+        } else {
+          // Get the modified lines for this change
+          const modifiedLines = modifiedContent.split("\n");
+          const changedContent = modifiedLines
+            .slice(
+              relevantChange.modifiedStartLineNumber - 1,
+              relevantChange.modifiedEndLineNumber,
+            )
+            .join("\n");
+
+          // Handle insertion of new lines (when originalEndLineNumber is 0)
+          if (relevantChange.originalEndLineNumber === 0) {
+            // Insert after the originalStartLineNumber
+            originalLines.splice(
+              relevantChange.originalStartLineNumber,
+              0,
+              changedContent,
+            );
+          } else {
+            // Regular replacement
+            originalLines.splice(
+              relevantChange.originalStartLineNumber - 1,
+              relevantChange.originalEndLineNumber -
+                relevantChange.originalStartLineNumber +
+                1,
+              changedContent,
+            );
+          }
         }
 
         const newContent = originalLines.join("\n");
@@ -105,12 +131,20 @@ export default function Page() {
     }
 
     getPosition(): editor.IContentWidgetPosition {
+      // Use dodgy logic to handle when the edit is a deletion only
       return {
         position: {
-          lineNumber: this.lineNumber,
+          lineNumber:
+            this.modifiedEndLineNumber === 0
+              ? this.modifiedStartLineNumber + 1
+              : this.modifiedEndLineNumber,
           column: 1,
         },
-        preference: [editor.ContentWidgetPositionPreference.BELOW],
+        preference: [
+          this.modifiedEndLineNumber === 0
+            ? editor.ContentWidgetPositionPreference.EXACT
+            : editor.ContentWidgetPositionPreference.BELOW,
+        ],
       };
     }
   }
@@ -149,6 +183,9 @@ export default function Page() {
     changes?.forEach((change, index) => {
       const widget = new DiffWidget(
         `${index}`,
+        change.originalStartLineNumber,
+        change.originalEndLineNumber,
+        change.modifiedStartLineNumber,
         change.modifiedEndLineNumber,
         editor,
       );
