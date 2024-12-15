@@ -23,7 +23,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { PATH_HOME } from "@/lib/paths";
+import { PATH_EDITOR, PATH_INTEGRATIONS } from "@/lib/paths";
 
 // This is sample data.
 const data = {
@@ -139,12 +139,12 @@ const data = {
   sections: [
     {
       name: "Editor",
-      url: PATH_HOME,
+      url: PATH_EDITOR,
       icon: Code,
     },
     {
       name: "Integrations",
-      url: "/integrations",
+      url: PATH_INTEGRATIONS,
       icon: Plug,
     },
   ],
