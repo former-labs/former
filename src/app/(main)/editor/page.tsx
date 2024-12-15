@@ -21,134 +21,6 @@ export default function Page() {
     editorRef.current = editor;
   };
 
-  class DiffWidget implements editor.IContentWidget {
-    private readonly domNode: HTMLElement;
-    private readonly id: string;
-    private readonly originalStartLineNumber: number;
-    private readonly originalEndLineNumber: number;
-    private readonly modifiedStartLineNumber: number;
-    private readonly modifiedEndLineNumber: number;
-    private readonly diffEditor: editor.IStandaloneDiffEditor;
-
-    constructor(
-      id: string,
-      originalStartLineNumber: number,
-      originalEndLineNumber: number,
-      modifiedStartLineNumber: number,
-      modifiedEndLineNumber: number,
-      diffEditor: editor.IStandaloneDiffEditor,
-    ) {
-      this.id = id;
-      this.originalStartLineNumber = originalStartLineNumber;
-      this.originalEndLineNumber = originalEndLineNumber;
-      this.modifiedStartLineNumber = modifiedStartLineNumber;
-      this.modifiedEndLineNumber = modifiedEndLineNumber;
-      this.diffEditor = diffEditor;
-
-      this.domNode = document.createElement("div");
-      const button = document.createElement("button");
-      button.innerText = "Apply";
-      button.className =
-        "bg-blue-500 hover:bg-blue-700 text-white font-bold py-0.5 px-2 rounded-b text-xs";
-      button.onclick = () => {
-        const changes = this.diffEditor.getLineChanges();
-        const relevantChange = changes?.find(
-          (c) =>
-            c.originalStartLineNumber === this.originalStartLineNumber &&
-            c.originalEndLineNumber === this.originalEndLineNumber &&
-            c.modifiedStartLineNumber === this.modifiedStartLineNumber &&
-            c.modifiedEndLineNumber === this.modifiedEndLineNumber,
-        );
-        if (!relevantChange) return;
-
-        console.log("applying diff", relevantChange);
-
-        // Get both models
-        const modifiedModel = this.diffEditor.getModel()?.modified;
-        const originalModel = this.diffEditor.getModel()?.original;
-        if (!modifiedModel || !originalModel) return;
-
-        // Get the full content of both models
-        const originalContent = originalModel.getValue();
-        const modifiedContent = modifiedModel.getValue();
-
-        const originalLines = originalContent.split("\n");
-
-        // Handle deletion (when modifiedEndLineNumber is 0)
-        if (relevantChange.modifiedEndLineNumber === 0) {
-          console.log("deleting lines only");
-          console.log("old", originalLines);
-          // Remove the lines from original
-          originalLines.splice(
-            relevantChange.originalStartLineNumber - 1,
-            relevantChange.originalEndLineNumber -
-              relevantChange.originalStartLineNumber +
-              1,
-          );
-          console.log("new", originalLines);
-        } else {
-          // Get the modified lines for this change
-          const modifiedLines = modifiedContent.split("\n");
-          const changedContent = modifiedLines
-            .slice(
-              relevantChange.modifiedStartLineNumber - 1,
-              relevantChange.modifiedEndLineNumber,
-            )
-            .join("\n");
-
-          // Handle insertion of new lines (when originalEndLineNumber is 0)
-          if (relevantChange.originalEndLineNumber === 0) {
-            // Insert after the originalStartLineNumber
-            originalLines.splice(
-              relevantChange.originalStartLineNumber,
-              0,
-              changedContent,
-            );
-          } else {
-            // Regular replacement
-            originalLines.splice(
-              relevantChange.originalStartLineNumber - 1,
-              relevantChange.originalEndLineNumber -
-                relevantChange.originalStartLineNumber +
-                1,
-              changedContent,
-            );
-          }
-        }
-
-        const newContent = originalLines.join("\n");
-        setEditorContent(newContent);
-      };
-      this.domNode.appendChild(button);
-    }
-
-    getId(): string {
-      return `diff-widget-${this.id}`;
-    }
-
-    getDomNode(): HTMLElement {
-      return this.domNode;
-    }
-
-    getPosition(): editor.IContentWidgetPosition {
-      // Use dodgy logic to handle when the edit is a deletion only
-      return {
-        position: {
-          lineNumber:
-            this.modifiedEndLineNumber === 0
-              ? this.modifiedStartLineNumber + 1
-              : this.modifiedEndLineNumber,
-          column: 1,
-        },
-        preference: [
-          this.modifiedEndLineNumber === 0
-            ? editor.ContentWidgetPositionPreference.EXACT
-            : editor.ContentWidgetPositionPreference.BELOW,
-        ],
-      };
-    }
-  }
-
   const handleDiffEditorDidMount = (editor: editor.IStandaloneDiffEditor) => {
     diffEditorRef.current = editor;
 
@@ -181,14 +53,17 @@ export default function Page() {
     console.log("changes", changes);
 
     changes?.forEach((change, index) => {
-      const widget = new DiffWidget(
-        `${index}`,
-        change.originalStartLineNumber,
-        change.originalEndLineNumber,
-        change.modifiedStartLineNumber,
-        change.modifiedEndLineNumber,
-        editor,
-      );
+      const widget = new DiffWidget({
+        id: `${index}`,
+        originalStartLineNumber: change.originalStartLineNumber,
+        originalEndLineNumber: change.originalEndLineNumber,
+        modifiedStartLineNumber: change.modifiedStartLineNumber,
+        modifiedEndLineNumber: change.modifiedEndLineNumber,
+        diffEditor: editor,
+        onApply: (newContent: string) => {
+          setEditorContent(newContent);
+        },
+      });
       editor.getModifiedEditor().addContentWidget(widget);
       currentWidgets.push(widget);
     });
@@ -331,4 +206,133 @@ export default function Page() {
       </div>
     </div>
   );
+}
+
+interface DiffWidgetProps {
+  id: string;
+  originalStartLineNumber: number;
+  originalEndLineNumber: number;
+  modifiedStartLineNumber: number;
+  modifiedEndLineNumber: number;
+  diffEditor: editor.IStandaloneDiffEditor;
+  onApply: (newContent: string) => void;
+}
+
+class DiffWidget implements editor.IContentWidget {
+  private readonly domNode: HTMLElement;
+  private readonly props: DiffWidgetProps;
+
+  constructor(props: DiffWidgetProps) {
+    this.props = props;
+
+    this.domNode = document.createElement("div");
+    this.domNode.style.width = `${this.props.diffEditor.getModifiedEditor().getLayoutInfo().width}px`;
+
+    const innerDiv = document.createElement("div");
+    innerDiv.style.display = "flex";
+    innerDiv.style.justifyContent = "flex-end";
+    innerDiv.style.width = "100%";
+
+    const button = document.createElement("button");
+    button.innerText = "Apply";
+    button.className =
+      "bg-blue-500 hover:bg-blue-700 text-white font-bold py-0.5 px-2 rounded-b text-xs";
+    button.onclick = () => {
+      const changes = this.props.diffEditor.getLineChanges();
+      const relevantChange = changes?.find(
+        (c) =>
+          c.originalStartLineNumber === this.props.originalStartLineNumber &&
+          c.originalEndLineNumber === this.props.originalEndLineNumber &&
+          c.modifiedStartLineNumber === this.props.modifiedStartLineNumber &&
+          c.modifiedEndLineNumber === this.props.modifiedEndLineNumber,
+      );
+      if (!relevantChange) return;
+
+      console.log("applying diff", relevantChange);
+
+      // Get both models
+      const modifiedModel = this.props.diffEditor.getModel()?.modified;
+      const originalModel = this.props.diffEditor.getModel()?.original;
+      if (!modifiedModel || !originalModel) return;
+
+      // Get the full content of both models
+      const originalContent = originalModel.getValue();
+      const modifiedContent = modifiedModel.getValue();
+
+      const originalLines = originalContent.split("\n");
+
+      // Handle deletion (when modifiedEndLineNumber is 0)
+      if (relevantChange.modifiedEndLineNumber === 0) {
+        console.log("deleting lines only");
+        console.log("old", originalLines);
+        // Remove the lines from original
+        originalLines.splice(
+          relevantChange.originalStartLineNumber - 1,
+          relevantChange.originalEndLineNumber -
+            relevantChange.originalStartLineNumber +
+            1,
+        );
+        console.log("new", originalLines);
+      } else {
+        // Get the modified lines for this change
+        const modifiedLines = modifiedContent.split("\n");
+        const changedContent = modifiedLines
+          .slice(
+            relevantChange.modifiedStartLineNumber - 1,
+            relevantChange.modifiedEndLineNumber,
+          )
+          .join("\n");
+
+        // Handle insertion of new lines (when originalEndLineNumber is 0)
+        if (relevantChange.originalEndLineNumber === 0) {
+          // Insert after the originalStartLineNumber
+          originalLines.splice(
+            relevantChange.originalStartLineNumber,
+            0,
+            changedContent,
+          );
+        } else {
+          // Regular replacement
+          originalLines.splice(
+            relevantChange.originalStartLineNumber - 1,
+            relevantChange.originalEndLineNumber -
+              relevantChange.originalStartLineNumber +
+              1,
+            changedContent,
+          );
+        }
+      }
+
+      const newContent = originalLines.join("\n");
+      this.props.onApply(newContent);
+    };
+    innerDiv.appendChild(button);
+    this.domNode.appendChild(innerDiv);
+  }
+
+  getId(): string {
+    return `diff-widget-${this.props.id}`;
+  }
+
+  getDomNode(): HTMLElement {
+    return this.domNode;
+  }
+
+  getPosition(): editor.IContentWidgetPosition {
+    // Use dodgy logic to handle when the edit is a deletion only
+    return {
+      position: {
+        lineNumber:
+          this.props.modifiedEndLineNumber === 0
+            ? this.props.modifiedStartLineNumber + 1
+            : this.props.modifiedEndLineNumber,
+        column: 1,
+      },
+      preference: [
+        this.props.modifiedEndLineNumber === 0
+          ? editor.ContentWidgetPositionPreference.EXACT
+          : editor.ContentWidgetPositionPreference.BELOW,
+      ],
+    };
+  }
 }
