@@ -21,7 +21,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
     <SidebarRightProvider>
       <SidebarProvider>
         <LayoutSidebar>
-          <div className="h-full w-full px-8 pt-8">
+          <div className="h-full w-full">
             {isLoading ? (
               <div className="flex h-full w-full items-center justify-center">
                 <Loading />

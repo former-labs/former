@@ -144,7 +144,7 @@ export const SqlEditor = () => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col pb-4 pt-4">
+    <div className="flex h-full w-full flex-col pt-4">
       <div className="mb-4 flex gap-2">
         <Button onClick={setInitialContent}>Set Initial Content</Button>
         <Button onClick={startDiff}>Start diff</Button>
