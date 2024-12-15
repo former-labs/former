@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DiffEditor, Editor } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 
 export default function Page() {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -221,6 +222,7 @@ interface DiffWidgetProps {
 class DiffWidget implements editor.IContentWidget {
   private readonly domNode: HTMLElement;
   private readonly props: DiffWidgetProps;
+  private readonly root: ReturnType<typeof createRoot>;
 
   constructor(props: DiffWidgetProps) {
     this.props = props;
@@ -228,86 +230,18 @@ class DiffWidget implements editor.IContentWidget {
     this.domNode = document.createElement("div");
     this.domNode.style.width = `${this.props.diffEditor.getModifiedEditor().getLayoutInfo().width}px`;
 
-    const innerDiv = document.createElement("div");
-    innerDiv.style.display = "flex";
-    innerDiv.style.justifyContent = "flex-end";
-    innerDiv.style.width = "100%";
-
-    const button = document.createElement("button");
-    button.innerText = "Apply";
-    button.className =
-      "bg-blue-500 hover:bg-blue-700 text-white font-bold py-0.5 px-2 rounded-b text-xs";
-    button.onclick = () => {
-      const changes = this.props.diffEditor.getLineChanges();
-      const relevantChange = changes?.find(
-        (c) =>
-          c.originalStartLineNumber === this.props.originalStartLineNumber &&
-          c.originalEndLineNumber === this.props.originalEndLineNumber &&
-          c.modifiedStartLineNumber === this.props.modifiedStartLineNumber &&
-          c.modifiedEndLineNumber === this.props.modifiedEndLineNumber,
-      );
-      if (!relevantChange) return;
-
-      console.log("applying diff", relevantChange);
-
-      // Get both models
-      const modifiedModel = this.props.diffEditor.getModel()?.modified;
-      const originalModel = this.props.diffEditor.getModel()?.original;
-      if (!modifiedModel || !originalModel) return;
-
-      // Get the full content of both models
-      const originalContent = originalModel.getValue();
-      const modifiedContent = modifiedModel.getValue();
-
-      const originalLines = originalContent.split("\n");
-
-      // Handle deletion (when modifiedEndLineNumber is 0)
-      if (relevantChange.modifiedEndLineNumber === 0) {
-        console.log("deleting lines only");
-        console.log("old", originalLines);
-        // Remove the lines from original
-        originalLines.splice(
-          relevantChange.originalStartLineNumber - 1,
-          relevantChange.originalEndLineNumber -
-            relevantChange.originalStartLineNumber +
-            1,
-        );
-        console.log("new", originalLines);
-      } else {
-        // Get the modified lines for this change
-        const modifiedLines = modifiedContent.split("\n");
-        const changedContent = modifiedLines
-          .slice(
-            relevantChange.modifiedStartLineNumber - 1,
-            relevantChange.modifiedEndLineNumber,
-          )
-          .join("\n");
-
-        // Handle insertion of new lines (when originalEndLineNumber is 0)
-        if (relevantChange.originalEndLineNumber === 0) {
-          // Insert after the originalStartLineNumber
-          originalLines.splice(
-            relevantChange.originalStartLineNumber,
-            0,
-            changedContent,
-          );
-        } else {
-          // Regular replacement
-          originalLines.splice(
-            relevantChange.originalStartLineNumber - 1,
-            relevantChange.originalEndLineNumber -
-              relevantChange.originalStartLineNumber +
-              1,
-            changedContent,
-          );
-        }
-      }
-
-      const newContent = originalLines.join("\n");
-      this.props.onApply(newContent);
-    };
-    innerDiv.appendChild(button);
-    this.domNode.appendChild(innerDiv);
+    // Create a new React root and render into it
+    this.root = createRoot(this.domNode);
+    this.root.render(
+      <DiffWidgetButtons
+        diffEditor={props.diffEditor}
+        originalStartLineNumber={props.originalStartLineNumber}
+        originalEndLineNumber={props.originalEndLineNumber}
+        modifiedStartLineNumber={props.modifiedStartLineNumber}
+        modifiedEndLineNumber={props.modifiedEndLineNumber}
+        onApply={props.onApply}
+      />,
+    );
   }
 
   getId(): string {
@@ -336,3 +270,110 @@ class DiffWidget implements editor.IContentWidget {
     };
   }
 }
+
+const DiffWidgetButtons = ({
+  diffEditor,
+  originalStartLineNumber,
+  originalEndLineNumber,
+  modifiedStartLineNumber,
+  modifiedEndLineNumber,
+  onApply,
+}: {
+  diffEditor: editor.IStandaloneDiffEditor;
+  originalStartLineNumber: number;
+  originalEndLineNumber: number;
+  modifiedStartLineNumber: number;
+  modifiedEndLineNumber: number;
+  onApply: (newContent: string) => void;
+}) => {
+  const handleClick = () => {
+    const changes = diffEditor.getLineChanges();
+    const relevantChange = changes?.find(
+      (c) =>
+        c.originalStartLineNumber === originalStartLineNumber &&
+        c.originalEndLineNumber === originalEndLineNumber &&
+        c.modifiedStartLineNumber === modifiedStartLineNumber &&
+        c.modifiedEndLineNumber === modifiedEndLineNumber,
+    );
+    if (!relevantChange) return;
+
+    console.log("applying diff", relevantChange);
+
+    // Get both models
+    const modifiedModel = diffEditor.getModel()?.modified;
+    const originalModel = diffEditor.getModel()?.original;
+    if (!modifiedModel || !originalModel) return;
+
+    // Get the full content of both models
+    const originalContent = originalModel.getValue();
+    const modifiedContent = modifiedModel.getValue();
+
+    const originalLines = originalContent.split("\n");
+
+    // Handle deletion (when modifiedEndLineNumber is 0)
+    if (relevantChange.modifiedEndLineNumber === 0) {
+      console.log("deleting lines only");
+      console.log("old", originalLines);
+      // Remove the lines from original
+      originalLines.splice(
+        relevantChange.originalStartLineNumber - 1,
+        relevantChange.originalEndLineNumber -
+          relevantChange.originalStartLineNumber +
+          1,
+      );
+      console.log("new", originalLines);
+    } else {
+      // Get the modified lines for this change
+      const modifiedLines = modifiedContent.split("\n");
+      const changedContent = modifiedLines
+        .slice(
+          relevantChange.modifiedStartLineNumber - 1,
+          relevantChange.modifiedEndLineNumber,
+        )
+        .join("\n");
+
+      // Handle insertion of new lines (when originalEndLineNumber is 0)
+      if (relevantChange.originalEndLineNumber === 0) {
+        // Insert after the originalStartLineNumber
+        originalLines.splice(
+          relevantChange.originalStartLineNumber,
+          0,
+          changedContent,
+        );
+      } else {
+        // Regular replacement
+        originalLines.splice(
+          relevantChange.originalStartLineNumber - 1,
+          relevantChange.originalEndLineNumber -
+            relevantChange.originalStartLineNumber +
+            1,
+          changedContent,
+        );
+      }
+    }
+
+    const newContent = originalLines.join("\n");
+    onApply(newContent);
+  };
+
+  const handleReject = () => {
+    console.log("Rejecting");
+  };
+
+  return (
+    <div className="flex w-full justify-end gap-1">
+      <button
+        onClick={handleClick}
+        className="rounded-b bg-blue-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-blue-700"
+      >
+        Accept
+      </button>
+      <button
+        onClick={handleReject}
+        className="rounded-b bg-red-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-red-700"
+      >
+        Reject
+      </button>
+    </div>
+  );
+};
