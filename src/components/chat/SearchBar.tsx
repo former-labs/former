@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useData } from "@/contexts/DataContext";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import React, { useRef, useState } from "react";
