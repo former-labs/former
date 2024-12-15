@@ -1,5 +1,5 @@
 import type { WarehouseMetadata } from "@/contexts/DataContext";
-import type { IntegrationSelect } from "@/server/db/schema";
+import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials } from "@/server/db/encryptedJsonFieldType";
 import { BigQuery } from "@google-cloud/bigquery";
 import { Client } from "pg";
 
@@ -38,18 +38,64 @@ export abstract class DatabaseConnection {
 
   abstract connect(): Promise<void>;
   abstract disconnect(): Promise<void>;
-  abstract fetchMetadata(): Promise<WarehouseMetadata>;
   abstract executeQuery(query: string): Promise<any[]>;
+  abstract fetchDatasets(pageToken?: string): Promise<{
+    datasets: Array<{ id: string; name: string }>;
+    nextPageToken?: string;
+  }>;
+  abstract fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
+    tables: Array<{
+      id: string;
+      name: string;
+      fields: Array<{
+        name: string;
+        type: string;
+        description?: string;
+      }>;
+    }>;
+    nextPageToken?: string;
+  }>;
+
+  abstract getProjectId(): string;
+  abstract getProjectName(): string;
+
+  async fetchMetadata(): Promise<WarehouseMetadata> {
+    const metadata: WarehouseMetadata = {
+      projects: [{
+        id: this.getProjectId(),
+        name: this.getProjectName(),
+        datasets: [],
+      }]
+    };
+
+    let datasetsPageToken: string | undefined;
+    do {
+      const { datasets, nextPageToken } = await this.fetchDatasets(datasetsPageToken);
+      const project = metadata.projects[0];
+      if (project) {
+        project.datasets.push(...datasets.map(d => ({
+          id: d.id,
+          name: d.name,
+          tables: []
+        })));
+      }
+      datasetsPageToken = nextPageToken;
+    } while (datasetsPageToken);
+
+    return metadata;
+  }
 }
 
 export class BigQueryConnection extends DatabaseConnection {
   private client: BigQuery;
+  private projectId: string;
 
-  constructor(credentials: any) {
+  constructor(credentials: BigQueryCredentials, projectId: string) {
     super(credentials);
+    this.projectId = projectId;
     this.client = new BigQuery({
       credentials: keysToSnakeCase(credentials, {}),
-      projectId: credentials.projectId,
+      projectId,
     });
   }
 
@@ -61,56 +107,68 @@ export class BigQueryConnection extends DatabaseConnection {
     // BigQuery client doesn't require explicit disconnection
   }
 
-  async fetchMetadata(): Promise<WarehouseMetadata> {
-    const metadata: WarehouseMetadata = { projects: [] };
+  async fetchDatasets(pageToken?: string): Promise<{
+    datasets: Array<{
+      id: string;
+      name: string;
+    }>;
+    nextPageToken?: string;
+  }> {
+    const MAX_RESULTS_PER_PAGE = 1000;
     
-    try {
-      // Get all datasets in the project
-      const [datasets] = await this.client.getDatasets();
-      
-      type Project = Required<WarehouseMetadata>['projects'][number];
-      type Dataset = Project['datasets'][number];
+    const [datasets, , response] = await this.client.getDatasets({
+      maxResults: MAX_RESULTS_PER_PAGE,
+      pageToken,
+    });
 
-      const project: Project = {
-        id: this.credentials.projectId,
-        name: this.credentials.projectId,
-        datasets: [],
-      };
+    return {
+      datasets: datasets.map(dataset => ({
+        id: dataset.id ?? 'unknown',
+        name: dataset.id ?? 'unknown',
+      })),
+      nextPageToken: response?.nextPageToken,
+    };
+  }
 
-      for (const dataset of datasets) {
-        const datasetInfo: Dataset = {
-          id: dataset.id ?? 'unknown',
-          name: dataset.id ?? 'unknown',
-          tables: [],
+  async fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
+    tables: Array<{
+      id: string;
+      name: string;
+      fields: Array<{
+        name: string;
+        type: string;
+        description?: string;
+      }>;
+    }>;
+    nextPageToken?: string;
+  }> {
+    const MAX_RESULTS_PER_PAGE = 1000;
+    const dataset = this.client.dataset(datasetId);
+    
+    const [tables, , response] = await dataset.getTables({
+      maxResults: MAX_RESULTS_PER_PAGE,
+      pageToken,
+    });
+
+    const tablesWithMetadata = await Promise.all(
+      tables.map(async (table) => {
+        const [metadata] = await table.getMetadata();
+        return {
+          id: table.id ?? 'unknown',
+          name: metadata.tableReference.tableId ?? 'unknown',
+          fields: metadata.schema.fields.map((field: any) => ({
+            name: field.name,
+            type: field.type,
+            description: field.description || undefined,
+          })),
         };
+      })
+    );
 
-        // Get all tables in the dataset
-        const [tables] = await dataset.getTables();
-        
-        for (const table of tables) {
-          const [metadata] = await table.getMetadata();
-          
-          datasetInfo.tables.push({
-            id: table.id ?? 'unknown',
-            name: metadata.tableReference.tableId ?? 'unknown',
-            fields: metadata.schema.fields.map((field: any) => ({
-              name: field.name,
-              type: field.type,
-              description: field.description || undefined,
-            })),
-          });
-        }
-
-        project.datasets.push(datasetInfo);
-      }
-
-      metadata.projects = [project];
-    } catch (error) {
-      console.error('Error fetching BigQuery metadata:', error);
-      throw error;
-    }
-
-    return metadata;
+    return {
+      tables: tablesWithMetadata,
+      nextPageToken: response?.nextPageToken,
+    };
   }
 
   async executeQuery(query: string): Promise<any[]> {
@@ -139,6 +197,14 @@ export class BigQueryConnection extends DatabaseConnection {
       return value.value.toString();
     }
     return value;
+  }
+
+  getProjectId(): string {
+    return this.projectId;
+  }
+
+  getProjectName(): string {
+    return this.projectId;
   }
 }
 
@@ -248,15 +314,96 @@ export class PostgresConnection extends DatabaseConnection {
       throw error;
     }
   }
+
+  async fetchDatasets(): Promise<{
+    datasets: Array<{ id: string; name: string }>;
+    nextPageToken?: string;
+  }> {
+    const result = await this.client.query(
+      `SELECT schema_name as id FROM information_schema.schemata 
+       WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`
+    );
+    return {
+      datasets: result.rows.map(row => ({ 
+        id: row.id, 
+        name: row.id 
+      })),
+      nextPageToken: undefined
+    };
+  }
+
+  async fetchTablesForDataset(datasetId: string): Promise<{
+    tables: Array<{
+      id: string;
+      name: string;
+      fields: Array<{
+        name: string;
+        type: string;
+        description?: string;
+      }>;
+    }>;
+    nextPageToken?: string;
+  }> {
+    const result = await this.client.query(
+      `SELECT 
+        t.table_name,
+        c.column_name,
+        c.data_type,
+        col_description(format('%I.%I', t.table_schema, t.table_name)::regclass::oid, c.ordinal_position) as description
+      FROM information_schema.tables t
+      JOIN information_schema.columns c 
+        ON t.table_schema = c.table_schema 
+        AND t.table_name = c.table_name
+      WHERE t.table_schema = $1`,
+      [datasetId]
+    );
+
+    const tables = new Map();
+    for (const row of result.rows) {
+      if (!tables.has(row.table_name)) {
+        tables.set(row.table_name, {
+          id: row.table_name,
+          name: row.table_name,
+          fields: []
+        });
+      }
+      tables.get(row.table_name).fields.push({
+        name: row.column_name,
+        type: row.data_type,
+        description: row.description
+      });
+    }
+
+    return {
+      tables: Array.from(tables.values()),
+      nextPageToken: undefined
+    };
+  }
+
+  getProjectId(): string {
+    return this.credentials.database;
+  }
+
+  getProjectName(): string {
+    return this.credentials.database;
+  }
 }
 
-export const createDatabaseConnection = (integration: IntegrationSelect): DatabaseConnection => {
-  switch (integration.type) {
+export const createDatabaseConnection = ({
+  credentials, 
+  projectId, 
+  type
+}: {
+  credentials: DatabaseCredentials, 
+  projectId: string | null,
+  type: string
+}): DatabaseConnection => {
+  switch (type) {
     case "bigquery":
-      return new BigQueryConnection(integration.credentials);
+      return new BigQueryConnection(credentials as BigQueryCredentials, projectId!);
     case "postgres":
-      return new PostgresConnection(integration.credentials);
+      return new PostgresConnection(credentials as PostgresCredentials);
     default:
-      throw new Error(`Unsupported database type: ${integration.type}`);
+      throw new Error(`Unsupported database type: ${type}`);
   }
 };

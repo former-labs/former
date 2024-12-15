@@ -16,7 +16,17 @@ export interface BigQueryCredentials {
   client_x509_cert_url: string;
 }
 
-export const encryptedJson = customType<{ data: BigQueryCredentials }>({
+export interface PostgresCredentials {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+}
+
+export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
+
+export const encryptedJson = customType<{ data: DatabaseCredentials }>({
   dataType() {
     return "text"
   },
@@ -37,7 +47,7 @@ export const encryptedJson = customType<{ data: BigQueryCredentials }>({
       throw error
     }
   },
-  toDriver(value: BigQueryCredentials) {
+  toDriver(value: DatabaseCredentials) {
     try {
       const jsonString = JSON.stringify(value)
       return CryptoJS.AES.encrypt(jsonString, env.DB_COLUMN_ENCRYPTION_SECRET).toString()

@@ -2,15 +2,14 @@
 
 import {
   AudioWaveform,
-  BarChart,
   BookOpen,
   Bot,
+  Code,
   Command,
   GalleryVerticalEnd,
-  MessageSquare,
+  Plug,
   Settings2,
   SquareTerminal,
-  Plug,
 } from "lucide-react";
 import * as React from "react";
 
@@ -24,7 +23,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { PATH_DASHBOARD, PATH_HOME } from "@/lib/paths";
+import { PATH_HOME } from "@/lib/paths";
 
 // This is sample data.
 const data = {
@@ -139,14 +138,9 @@ const data = {
   ],
   sections: [
     {
-      name: "Chat",
+      name: "Editor",
       url: PATH_HOME,
-      icon: MessageSquare,
-    },
-    {
-      name: "Dashboards",
-      url: PATH_DASHBOARD,
-      icon: BarChart,
+      icon: Code,
     },
     {
       name: "Integrations",

@@ -1,6 +1,7 @@
 "use client";
 
 import { BigQueryConnectModal } from "@/components/integrations/big-query-connect-modal";
+import { PostgresConnectModal } from "@/components/integrations/postgres-connect-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,76 +11,30 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { api } from "@/trpc/react";
+import { useData } from "@/contexts/DataContext";
 import { Power } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
-// Define the IntegrationCardProps type
-type IntegrationCardProps = {
-  integration: {
-    name: string;
-    displayName: string;
-    icon: string;
-    connected: boolean;
-    createdAt: string;
-    description?: string; // Add this if description is used
-  };
-  onDisconnect?: (id: string) => void;
-};
-
-// Define a map for integration types based on schema
-const integrationTypeMap: Record<
-  string,
-  {
-    name: string;
-    displayName: string;
-    icon: string;
-    description: string;
-  }
-> = {
+const integrationTypeMap = {
   bigquery: {
     name: "BigQuery",
     displayName: "BigQuery",
     icon: "https://storage.googleapis.com/verve-assets/logos/bigquery.svg",
     description: "Connect your BigQuery account to start analyzing your data.",
   },
-};
+  postgres: {
+    name: "PostgreSQL",
+    displayName: "PostgreSQL",
+    icon: "https://storage.googleapis.com/verve-assets/logos/postgresql.svg",
+    description: "Connect to your PostgreSQL database to analyze your data.",
+  },
+} as const;
 
 export default function IntegrationsPage() {
-  const { activeRole } = useAuth();
-  const workspaceId = activeRole?.workspaceId ?? "";
-
-  const { toast } = useToast();
-  const { data: integrations, refetch: refetchIntegrations } =
-    api.integration.listIntegrations.useQuery(undefined, {
-      enabled: !!workspaceId,
-    });
-
-  const deleteIntegrationMutation =
-    api.integration.deleteIntegration.useMutation({
-      onSuccess: () => {
-        toast({
-          title: "Integration deleted",
-          description: "The integration has been removed successfully.",
-        });
-        void refetchIntegrations();
-      },
-      onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
-
-  const handleDelete = (integrationId: string) => {
-    deleteIntegrationMutation.mutate({ integrationId });
-    void refetchIntegrations();
-  };
+  const { integrations, removeIntegration } = useData();
+  const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
+  const [openPostgresModal, setOpenPostgresModal] = useState(false);
 
   return (
     <div className="container mx-auto py-8">
@@ -88,45 +43,54 @@ export default function IntegrationsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {integrations?.map((integration) => {
-          const integrationConfig = integrationTypeMap[integration.type];
-          return (
-            <IntegrationCard
-              key={integration.id}
-              integration={{
-                name: integrationConfig?.name ?? integration.type,
-                displayName: integrationConfig?.displayName ?? integration.type,
-                icon: integrationConfig?.icon ?? "",
-                connected: true,
-                createdAt: integration.createdAt.toISOString(),
-                description: integrationConfig?.description,
-              }}
-              onDisconnect={() => handleDelete(integration.id)}
-            />
-          );
-        })}
+        {integrations.map((integration) => (
+          <IntegrationCard
+            key={integration.id}
+            integration={{
+              ...integration,
+              ...integrationTypeMap[integration.type],
+            }}
+            onDisconnect={() => removeIntegration(integration.id)}
+          />
+        ))}
 
-        <AddIntegrationCard />
+        <AddIntegrationCard
+          onSelectBigQuery={() => setOpenBigQueryModal(true)}
+          onSelectPostgres={() => setOpenPostgresModal(true)}
+        />
       </div>
+
+      <BigQueryConnectModal
+        open={openBigQueryModal}
+        onOpenChange={setOpenBigQueryModal}
+      />
+      <PostgresConnectModal
+        open={openPostgresModal}
+        onOpenChange={setOpenPostgresModal}
+      />
     </div>
   );
 }
 
-const AddIntegrationCard = () => {
-  const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
-
+const AddIntegrationCard = ({
+  onSelectBigQuery,
+  onSelectPostgres,
+}: {
+  onSelectBigQuery: () => void;
+  onSelectPostgres: () => void;
+}) => {
   return (
-    <>
+    <div className="grid gap-4 md:grid-cols-2">
       <Card
         className="flex cursor-pointer items-center justify-center p-6 transition-colors hover:bg-muted/50"
-        onClick={() => setOpenBigQueryModal(true)}
+        onClick={onSelectBigQuery}
         role="button"
         tabIndex={0}
       >
         <div className="flex max-w-xs flex-col items-center space-y-2">
-          <div className="relative flex h-4 w-4 flex-col">
+          <div className="relative flex h-8 w-8 flex-col">
             <Image
-              src="https://storage.googleapis.com/verve-assets/logos/bigquery.svg"
+              src={integrationTypeMap.bigquery.icon}
               alt="BigQuery logo"
               fill
               className="object-contain"
@@ -136,18 +100,44 @@ const AddIntegrationCard = () => {
         </div>
       </Card>
 
-      <BigQueryConnectModal
-        open={openBigQueryModal}
-        onOpenChange={setOpenBigQueryModal}
-      />
-    </>
+      <Card
+        className="flex cursor-pointer items-center justify-center p-6 transition-colors hover:bg-muted/50"
+        onClick={onSelectPostgres}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="flex max-w-xs flex-col items-center space-y-2">
+          <div className="relative flex h-8 w-8 flex-col">
+            <Image
+              src={integrationTypeMap.postgres.icon}
+              alt="PostgreSQL logo"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <p className="text-sm font-medium">Add PostgreSQL Integration</p>
+        </div>
+      </Card>
+    </div>
   );
 };
 
 const IntegrationCard = ({
   integration,
   onDisconnect,
-}: IntegrationCardProps) => {
+}: {
+  integration: {
+    id: string;
+    type: "bigquery" | "postgres";
+    name: string;
+    credentials: any;
+    createdAt: string;
+    displayName: string;
+    icon: string;
+    description: string;
+  };
+  onDisconnect: () => void;
+}) => {
   return (
     <Card className="space-y-4 p-6">
       <div className="flex items-start justify-between">
@@ -175,11 +165,7 @@ const IntegrationCard = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => onDisconnect?.(integration.name)}
-              >
+              <Button variant="destructive" size="icon" onClick={onDisconnect}>
                 <Power className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
