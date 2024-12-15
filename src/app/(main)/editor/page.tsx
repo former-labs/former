@@ -48,7 +48,50 @@ export default function Page() {
             c.modifiedStartLineNumber <= lineNumber &&
             c.modifiedEndLineNumber >= lineNumber,
         );
-        console.log("Apply change:", relevantChange);
+        if (!relevantChange) return;
+
+        console.log("applying diff", relevantChange);
+
+        // Get both models
+        const modifiedModel = this.diffEditor.getModel()?.modified;
+        const originalModel = this.diffEditor.getModel()?.original;
+        if (!modifiedModel || !originalModel) return;
+
+        // Get the full content of both models
+        const originalContent = originalModel.getValue();
+        const modifiedContent = modifiedModel.getValue();
+
+        // Get the modified lines for this change
+        const modifiedLines = modifiedContent.split("\n");
+        const changedContent = modifiedLines
+          .slice(
+            relevantChange.modifiedStartLineNumber - 1,
+            relevantChange.modifiedEndLineNumber,
+          )
+          .join("\n");
+
+        // Handle the special case where originalEndLineNumber is 0 (new line insertion)
+        const originalLines = originalContent.split("\n");
+        if (relevantChange.originalEndLineNumber === 0) {
+          // Insert after the originalStartLineNumber
+          originalLines.splice(
+            relevantChange.originalStartLineNumber,
+            0,
+            changedContent,
+          );
+        } else {
+          // Regular replacement
+          originalLines.splice(
+            relevantChange.originalStartLineNumber - 1,
+            relevantChange.originalEndLineNumber -
+              relevantChange.originalStartLineNumber +
+              1,
+            changedContent,
+          );
+        }
+
+        const newContent = originalLines.join("\n");
+        setEditorContent(newContent);
       };
       this.domNode.appendChild(button);
     }
@@ -117,12 +160,14 @@ export default function Page() {
     setDiffWidgets(currentWidgets);
   };
 
-  const setCheese = () => {
-    setEditorContent("SELECT\n    2;");
+  const setInitialContent = () => {
+    setEditorContent("SELECT\n    1 as foo,\n    2 as bar\nFROM table_c;");
   };
 
   const startDiff = () => {
-    setEditorContentPending("SELECT\n    1;");
+    setEditorContentPending(
+      "SELECT\n    1 as foo,\n    3 as zam\nFROM table_c;",
+    );
   };
 
   const endDiff = () => {
@@ -178,7 +223,7 @@ export default function Page() {
   return (
     <div className="flex h-full w-full flex-col pb-4 pt-4">
       <div className="mb-4 flex gap-2">
-        <Button onClick={setCheese}>Set to Cheese</Button>
+        <Button onClick={setInitialContent}>Set Initial Content</Button>
         <Button onClick={startDiff}>Start diff</Button>
         <Button onClick={endDiff}>End diff</Button>
         <Button onClick={printContent}>Print editor content</Button>
