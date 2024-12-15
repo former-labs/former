@@ -15,8 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
-import Image from "next/image";
+import { Loader2, PlusCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -41,6 +41,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
   const { handleWorkspaceSwitch } = useAuth();
 
   const formSchema = z.object({
@@ -54,17 +55,6 @@ export default function OnboardingPage() {
     },
   });
 
-  const connectGoogleAnalytics =
-    api.integration.connectGoogleAnalytics.useMutation({
-      onError: (error) => {
-        setError(error.message);
-        setIsLoading(false);
-      },
-      onSuccess: (data) => {
-        window.location.href = data.redirectUrl;
-        setIsLoading(false);
-      },
-    });
   const createWorkspace = api.onboarding.createWorkspace.useMutation();
 
   useEffect(() => {
@@ -103,8 +93,7 @@ export default function OnboardingPage() {
       await handleWorkspaceSwitch(role);
     }
 
-    // Send them to Google Analytics
-    await connectGoogleAnalytics.mutateAsync();
+    router.push("/");
   };
 
   return (
@@ -146,15 +135,9 @@ export default function OnboardingPage() {
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Image
-                    src="https://storage.googleapis.com/verve-assets/logos/google-analytics.svg"
-                    alt="Google Analytics"
-                    width={16}
-                    height={16}
-                    className="mr-2"
-                  />
+                  <PlusCircle className="mr-2 h-4 w-4" />
                 )}
-                Connect Google Analytics
+                Create Workspace
               </Button>
             </div>
           </form>

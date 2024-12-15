@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { createTRPCRouter, workspaceProtectedProcedure } from "../trpc";
+import { BigQuery } from '@google-cloud/bigquery';
 
 export const integrationRouter = createTRPCRouter({
   listIntegrations: workspaceProtectedProcedure
@@ -89,5 +90,87 @@ export const integrationRouter = createTRPCRouter({
           message: "Failed to connect Google Analytics",
         });
       }
+    }),
+
+  connectBigQuery: workspaceProtectedProcedure
+    .input(z.object({
+      credentials: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const credentials = JSON.parse(input.credentials);
+        // Validate the credentials format
+        // Store the credentials securely
+        // Create the integration record
+        
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid credentials format',
+        });
+      }
+    }),
+
+  getWarehouseMetadata: workspaceProtectedProcedure
+    .input(z.object({
+      integrationId: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const [integration] = await ctx.db
+        .select()
+        .from(integrationTable)
+        .where(and(
+          eq(integrationTable.id, input.integrationId),
+          eq(integrationTable.workspaceId, ctx.activeWorkspaceId),
+        ));
+
+      if (!integration) {
+        throw new Error("Integration not found");
+      }
+
+      if (integration.type === "bigquery") {
+        const credentials = integration.credentials as Record<string, unknown>;
+        const bigquery = new BigQuery({ credentials });
+        
+        const [projects] = await bigquery.getProjects();
+        const metadata = await Promise.all(
+          projects.map(async (project) => {
+            const [datasets] = await bigquery.getDatasets({ projectId: project.id });
+            const datasetsMetadata = await Promise.all(
+              datasets.map(async (dataset) => {
+                const [tables] = await dataset.getTables();
+                const tablesMetadata = await Promise.all(
+                  tables.map(async (table) => {
+                    const [metadata] = await table.getMetadata();
+                    return {
+                      id: table.id,
+                      name: table.id,
+                      fields: metadata.schema.fields.map(field => ({
+                        name: field.name,
+                        type: field.type,
+                        description: field.description,
+                      })),
+                    };
+                  })
+                );
+                return {
+                  id: dataset.id,
+                  name: dataset.id,
+                  tables: tablesMetadata,
+                };
+              })
+            );
+            return {
+              id: project.id,
+              name: project.id,
+              datasets: datasetsMetadata,
+            };
+          })
+        );
+        return { projects: metadata };
+      }
+
+      throw new Error(`Unsupported integration type: ${integration.type}`);
     }),
 });

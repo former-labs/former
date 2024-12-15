@@ -1,8 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conversationRouter } from "./routers/conversation/conversationRouter";
-import { dashboardRouter } from "./routers/dashboard/dashboardRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
-import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsRouter";
 import { integrationRouter } from "./routers/integrationRouter";
 import { onboardingRouter } from "./routers/onboardingRouter";
 import { userRouter } from "./routers/userRouter";
@@ -17,8 +15,6 @@ export const appRouter = createTRPCRouter({
   onboarding: onboardingRouter,
   integration: integrationRouter,
   eval: evalRouter,
-  googleAnalytics: googleAnalyticsRouter,
-  dashboard: dashboardRouter,
   user: userRouter,
 });
 

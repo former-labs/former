@@ -7,16 +7,14 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { SidebarRightProvider } from "@/components/ui/sidebar-right";
 import { Loading } from "@/components/utils/Loading";
 import { useAuth } from "@/contexts/AuthContext";
-import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
+import { useData } from "@/contexts/DataContext";
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  const { isLoadingGoogleAccounts, accounts } = useGoogleAnalytics();
+const MainLayout = ({ children }: { children: React.ReactNode }) => {
+  const { isLoadingIntegrations, integrations } = useData();
   const { isWorkspaceLoading, roles } = useAuth();
 
   const isLoading =
-    (isLoadingGoogleAccounts && accounts.length === 0) ||
+    (isLoadingIntegrations && integrations.length === 0) ||
     (isWorkspaceLoading && roles.length === 0);
 
   return (
@@ -36,4 +34,6 @@ export default function RootLayout({
       </SidebarProvider>
     </SidebarRightProvider>
   );
-}
+};
+
+export default MainLayout;

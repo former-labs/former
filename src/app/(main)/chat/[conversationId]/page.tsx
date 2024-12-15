@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { Conversation } from "./components/Conversation";
+import { Conversation } from "../../../../components/chat/Conversation";
 
 export default function Page({
   params,

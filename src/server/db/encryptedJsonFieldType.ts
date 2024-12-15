@@ -2,8 +2,21 @@ import { env } from "@/env";
 import CryptoJS from "crypto-js";
 import { customType } from "drizzle-orm/pg-core";
 
+export interface BigQueryCredentials {
+  // Service account key file contents
+  type: string;
+  project_id: string;
+  private_key_id: string;
+  private_key: string;
+  client_email: string;
+  client_id: string;
+  auth_uri: string;
+  token_uri: string;
+  auth_provider_x509_cert_url: string;
+  client_x509_cert_url: string;
+}
 
-export const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
+export const encryptedJson = customType<{ data: BigQueryCredentials }>({
   dataType() {
     return "text"
   },
@@ -24,7 +37,7 @@ export const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
       throw error
     }
   },
-  toDriver(value: GoogleAnalyticsCredentials) {
+  toDriver(value: BigQueryCredentials) {
     try {
       const jsonString = JSON.stringify(value)
       return CryptoJS.AES.encrypt(jsonString, env.DB_COLUMN_ENCRYPTION_SECRET).toString()
@@ -34,10 +47,3 @@ export const encryptedJson = customType<{ data: GoogleAnalyticsCredentials }>({
     }
   },
 });
-
-// Types
-type GoogleAnalyticsCredentials = {
-  scopes: string[];
-  accessToken: string;
-  refreshToken: string;
-};

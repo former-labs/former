@@ -1,24 +1,18 @@
 "use client";
 
 import { Loading } from "@/components/utils/Loading";
-import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
-import { MessageItemSelect, type MessageSelect } from "@/server/db/schema";
+import { type MessageSelect } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { useEffect, useRef, useState } from "react";
-import { usePendingMessageStore } from "../../../../../components/chat/usePendingMessageStore";
-import { ConversationMessageAssistant } from "./ConversationMessageGoogleAnalyticsReport";
 import { SearchBar } from "./SearchBar";
+import { usePendingMessageStore } from "./usePendingMessageStore";
 
 export const Conversation = ({
   conversationId,
 }: {
   conversationId: string;
 }) => {
-  const { activeProperty } = useGoogleAnalytics();
   const [searchValue, setSearchValue] = useState("");
-  const [questionType, setQuestionType] = useState<"report" | "segmentation">(
-    "report",
-  );
   const utils = api.useUtils();
   const { pendingUserMessage, setPendingUserMessage, clearPendingUserMessage } =
     usePendingMessageStore();
@@ -52,18 +46,12 @@ export const Conversation = ({
   }, [messages, pendingUserMessage]);
 
   const handleSendMessage = async () => {
-    if (!activeProperty) {
-      return;
-    }
-
     const searchValueTemp = searchValue;
     setSearchValue("");
     setPendingUserMessage(searchValueTemp);
     await addMessageMutation.mutateAsync({
       conversationId,
       text: searchValueTemp,
-      propertyId: activeProperty.propertyId,
-      questionType,
     });
   };
 
@@ -84,12 +72,8 @@ export const Conversation = ({
       <div className="mx-auto w-full max-w-screen-lg flex-1 overflow-y-auto p-4">
         <div className="mt-4 space-y-4">
           <div className="flex flex-col gap-4">
-            {messages.map((messageWithItems) => (
-              <ConversationMessage
-                key={messageWithItems.message.id}
-                messageWithItems={messageWithItems}
-                scrollToBottom={scrollToBottom}
-              />
+            {messages.map((message) => (
+              <ConversationMessage key={message.id} message={message} />
             ))}
             {pendingUserMessage && (
               <PendingConversationMessage
@@ -110,8 +94,6 @@ export const Conversation = ({
               onChangeValue={setSearchValue}
               onSearch={handleSendMessage}
               isLoading={addMessageMutation.isPending}
-              searchTypeValue={questionType}
-              onSearchTypeValueChange={setQuestionType}
             />
           </div>
         </div>
@@ -120,26 +102,11 @@ export const Conversation = ({
   );
 };
 
-const ConversationMessage = ({
-  messageWithItems,
-  scrollToBottom,
-}: {
-  messageWithItems: {
-    message: MessageSelect;
-    messageItems: MessageItemSelect[];
-  };
-  scrollToBottom: () => void;
-}) => {
-  const { message } = messageWithItems;
+const ConversationMessage = ({ message }: { message: MessageSelect }) => {
   if (message.role === "user") {
     return <ConversationMessageUser messageText={message.text ?? ""} />;
   } else if (message.role === "assistant") {
-    return (
-      <ConversationMessageAssistant
-        messageWithItems={messageWithItems}
-        scrollToBottom={scrollToBottom}
-      />
-    );
+    return <ConversationMessageAssistant messageText={message.text ?? ""} />;
   }
   const _exhaustiveCheck: never = message.role;
 };
@@ -148,6 +115,18 @@ const ConversationMessageUser = ({ messageText }: { messageText: string }) => {
   return (
     <div className="flex w-auto gap-x-4 self-end rounded bg-orange-50 px-4 pb-4 pt-4">
       <div className="flex flex-col text-gray-900">{messageText}</div>
+    </div>
+  );
+};
+
+const ConversationMessageAssistant = ({
+  messageText,
+}: {
+  messageText: string;
+}) => {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="text-base text-gray-500">{messageText}</div>
     </div>
   );
 };
@@ -170,3 +149,40 @@ export const PendingConversationMessage = ({
     </>
   );
 };
+
+
+let [bigQueryResp, pagination] = await this.client
+      .dataset(dataset)
+      .getTables({ maxResults: 10, pageToken: offset });
+
+    for (const table of bigQueryResp) {
+      const [metadata] = await table.getMetadata();
+
+      detailedTables.push({
+        name: metadata.tableReference.tableId,
+        displayName: metadata.friendlyName || "",
+        description: metadata.description || "",
+        columns: metadata.schema.fields,
+        platformMetadata: {
+          kind: metadata.kind,
+          id: metadata.id,
+          displayName: metadata.friendlyName || "",
+          tableReference: metadata.tableReference,
+          fields: metadata.schema.fields.map((field: BigQueryField) => {
+            return {
+              name: field.name,
+              type: field.type,
+            };
+          }),
+          description: metadata.description || "",
+          labels: metadata.labels || [],
+          creationTime: metadata.creationTime,
+          lastModifiedTime: metadata.lastModifiedTime,
+          expirationTime: metadata.expirationTime || "",
+          location: metadata.location,
+          numRows: metadata.numRows,
+          numBytes: metadata.numBytes,
+          numLongTermBytes: metadata.numLongTermBytes,
+        } as BigQueryTable,
+      });
+    }

@@ -1,8 +1,8 @@
 "use client";
 
-import { SearchBar } from "@/app/(main)/chat/[conversationId]/components/SearchBar";
+import { SearchBar } from "@/components/chat/SearchBar";
 import { usePendingMessageStore } from "@/components/chat/usePendingMessageStore";
-import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
+import { useData } from "@/contexts/DataContext";
 import {
   PATH_CONVERSATION_PENDING,
   PATH_CONVERSATION_SINGLE,
@@ -13,30 +13,26 @@ import { useState } from "react";
 import { SuggestionsSection } from "./SuggestionsSection";
 
 export const NewConversationSearchBar = () => {
-  const { activeProperty } = useGoogleAnalytics();
+  const { activeIntegration, warehouseMetadata } = useData();
   const [searchValue, setSearchValue] = useState("");
-  const [questionType, setQuestionType] = useState<"report" | "segmentation">(
-    "report",
-  );
   const router = useRouter();
-  const { setPendingUserMessage, clearPendingUserMessage } =
-    usePendingMessageStore();
+  const { clearPendingUserMessage } = usePendingMessageStore();
 
   const createConversationMutation =
-    api.conversation.createConversation.useMutation({});
+    api.conversation.createConversation.useMutation({
+      onSuccess: (data) => {
+        router.push(PATH_CONVERSATION_SINGLE(data.conversationId));
+      },
+    });
 
   const handleSearch = async (searchText: string) => {
-    if (!activeProperty) {
-      return;
-    }
+    if (!activeIntegration || !warehouseMetadata) return;
 
-    // Temporarily redirect to show the pending conversation
-    setPendingUserMessage(searchText);
     router.push(PATH_CONVERSATION_PENDING);
     const data = await createConversationMutation.mutateAsync({
       initialUserMessage: searchText,
-      propertyId: activeProperty.propertyId,
-      questionType,
+      integrationId: activeIntegration.id,
+      warehouseMetadata,
     });
     setSearchValue("");
     router.push(PATH_CONVERSATION_SINGLE(data.conversationId));
@@ -57,8 +53,6 @@ export const NewConversationSearchBar = () => {
         onChangeValue={setSearchValue}
         onSearch={() => handleSearch(searchValue)}
         isLoading={createConversationMutation.isPending}
-        searchTypeValue={questionType}
-        onSearchTypeValueChange={setQuestionType}
       />
       <div className="mt-8 w-full">
         <SuggestionsSection

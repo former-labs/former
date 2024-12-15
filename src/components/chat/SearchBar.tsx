@@ -1,13 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import React, { useRef, useState } from "react";
@@ -22,8 +14,6 @@ export const SearchBar = ({
   suggestedBoxComponent,
   suggestedBoxOrientation = "below",
   isLoading = false,
-  searchTypeValue,
-  onSearchTypeValueChange,
 }: {
   onSearch: () => Promise<void>;
   value: string;
@@ -33,12 +23,10 @@ export const SearchBar = ({
   suggestedBoxComponent?: React.ReactNode;
   suggestedBoxOrientation?: "above" | "below";
   isLoading?: boolean;
-  searchTypeValue?: "report" | "segmentation";
-  onSearchTypeValueChange?: (value: "report" | "segmentation") => void;
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const { activeProperty } = useGoogleAnalytics();
+  const { activeIntegration } = useData();
 
   useOnClickOutside(containerRef, () => setIsFocused(false));
 
@@ -63,23 +51,7 @@ export const SearchBar = ({
       )}
       ref={containerRef}
     >
-      {searchTypeValue !== undefined && onSearchTypeValueChange && (
-        <Select
-          value={searchTypeValue}
-          onValueChange={(value) =>
-            onSearchTypeValueChange(value as "report" | "segmentation")
-          }
-        >
-          <SelectTrigger className="w-[140px] bg-white">
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="report">Report</SelectItem>
-            <SelectItem value="segmentation">Segmentation</SelectItem>
-          </SelectContent>
-        </Select>
-      )}
-      <div className="relative flex flex-grow">
+      <div className="relative flex-grow">
         <div className="relative flex-grow">
           <Input
             value={value}
@@ -105,7 +77,7 @@ export const SearchBar = ({
       </div>
       <Button
         onClick={handleSearchSubmit}
-        disabled={isLoading || !activeProperty}
+        disabled={isLoading || !activeIntegration}
       >
         <ArrowRight className="h-4 w-4" />
       </Button>

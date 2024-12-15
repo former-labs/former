@@ -1,6 +1,6 @@
 "use client";
 
-import { PropertySwitcher } from "@/components/analytics/property-switcher";
+import { IntegrationSwitcher } from "@/components/integrations/integration-switcher";
 import { SidebarInset, SidebarTrigger } from "../ui/sidebar";
 import { LeftSidebar } from "./left-sidebar";
 import { RightAppSidebar } from "./right-sidebar";
@@ -13,7 +13,7 @@ export function LayoutSidebar({ children }: { children: React.ReactNode }) {
         <header className="fixed z-10 flex h-12 w-full shrink-0 items-center justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-10">
           <div className="flex items-center gap-2 rounded-lg px-4">
             <SidebarTrigger className="-ml-1 bg-background p-4" />
-            <PropertySwitcher />
+            <IntegrationSwitcher />
             {/* <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>

@@ -1,5 +1,6 @@
 "use client";
 
+import { BigQueryConnectModal } from "@/components/integrations/big-query-connect-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { Power } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 
 // Define the IntegrationCardProps type
 type IntegrationCardProps = {
@@ -38,12 +40,11 @@ const integrationTypeMap: Record<
     description: string;
   }
 > = {
-  google_analytics: {
-    name: "Google Analytics",
-    displayName: "Google Analytics (GA4)",
-    icon: "https://storage.googleapis.com/verve-assets/logos/google-analytics.svg",
-    description:
-      "Connect your Google Analytics 4 property to analyze your website traffic and user behavior.",
+  bigquery: {
+    name: "BigQuery",
+    displayName: "BigQuery",
+    icon: "https://storage.googleapis.com/verve-assets/logos/bigquery.svg",
+    description: "Connect your BigQuery account to start analyzing your data.",
   },
 };
 
@@ -112,45 +113,34 @@ export default function IntegrationsPage() {
 }
 
 const AddIntegrationCard = () => {
-  const { toast } = useToast();
-
-  const connectGoogleAnalytics =
-    api.integration.connectGoogleAnalytics.useMutation({
-      onSuccess: (data) => {
-        window.location.href = data.redirectUrl;
-      },
-      onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
-
-  const handleConnectGA = () => {
-    connectGoogleAnalytics.mutate();
-  };
+  const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
 
   return (
-    <Card
-      className="flex cursor-pointer items-center justify-center p-6 transition-colors hover:bg-muted/50"
-      onClick={handleConnectGA}
-      role="button"
-      tabIndex={0}
-    >
-      <div className="flex max-w-xs flex-col items-center space-y-2">
-        <div className="relative flex h-4 w-4 flex-col">
-          <Image
-            src="https://storage.googleapis.com/verve-assets/logos/google-analytics.svg"
-            alt="Google Analytics logo"
-            fill
-            className="object-contain"
-          />
+    <>
+      <Card
+        className="flex cursor-pointer items-center justify-center p-6 transition-colors hover:bg-muted/50"
+        onClick={() => setOpenBigQueryModal(true)}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="flex max-w-xs flex-col items-center space-y-2">
+          <div className="relative flex h-4 w-4 flex-col">
+            <Image
+              src="https://storage.googleapis.com/verve-assets/logos/bigquery.svg"
+              alt="BigQuery logo"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <p className="text-sm font-medium">Add BigQuery Integration</p>
         </div>
-        <p className="text-sm font-medium">Add Google Analytics Integration</p>
-      </div>
-    </Card>
+      </Card>
+
+      <BigQueryConnectModal
+        open={openBigQueryModal}
+        onOpenChange={setOpenBigQueryModal}
+      />
+    </>
   );
 };
 

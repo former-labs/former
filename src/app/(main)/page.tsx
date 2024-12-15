@@ -1,7 +1,7 @@
 "use client";
 
-import { GoogleAnalyticsConnectButton } from "@/components/analytics/google-analytics-connect-button";
 import { NewConversationSearchBar } from "@/components/chat/NewConversationSearchBar";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
@@ -9,22 +9,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
-import { useGoogleAnalytics } from "@/contexts/GoogleAnalyticsContext";
+import { useData } from "@/contexts/DataContext";
 
 export default function ChatPage() {
-  const { accounts } = useGoogleAnalytics();
+  const { integrations } = useData();
 
-  if (accounts.length === 0) {
+  if (integrations.length === 0) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
         <Card className="w-[400px]">
           <CardHeader>
-            <CardTitle>No Google Analytics Account</CardTitle>
+            <CardTitle>No Integrations Connected</CardTitle>
             <CardDescription className="mb-4">
-              Please connect a Google Analytics account before starting a
-              conversation.
+              Please connect an integration before starting a conversation.
             </CardDescription>
-            <GoogleAnalyticsConnectButton />
+            <Button
+              onClick={() => (window.location.href = "/integrations")}
+              className="w-full"
+              size="lg"
+            >
+              Go to Integrations
+            </Button>
           </CardHeader>
         </Card>
       </div>
@@ -40,7 +45,7 @@ export default function ChatPage() {
           </div>
         </div>
         <h1 className="mb-4 text-2xl font-semibold">
-          Ask a question of your Google Analytics data
+          Ask a question of your data
         </h1>
 
         <div className="w-full max-w-screen-lg">
