@@ -1,7 +1,7 @@
 import type { WarehouseMetadata } from "@/contexts/DataContext";
-import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials } from "@/server/db/encryptedJsonFieldType";
-import { BigQuery } from "@google-cloud/bigquery";
-import { Client } from "pg";
+import type { DatabaseCredentials } from "@/server/db/encryptedJsonFieldType";
+// import { BigQuery } from "@google-cloud/bigquery";
+// import { Client } from "pg";
 
 // Helper function to convert object keys to snake_case
 const toSnakeCase = (str: string): string => {
@@ -86,127 +86,127 @@ export abstract class DatabaseConnection {
   }
 }
 
-export class BigQueryConnection extends DatabaseConnection {
-  private client: BigQuery;
-  private projectId: string;
+// export class BigQueryConnection extends DatabaseConnection {
+//   private client: BigQuery;
+//   private projectId: string;
 
-  constructor(credentials: BigQueryCredentials, projectId: string) {
-    super(credentials);
-    this.projectId = projectId;
-    this.client = new BigQuery({
-      credentials: keysToSnakeCase(credentials, {}),
-      projectId,
-    });
-  }
+//   constructor(credentials: BigQueryCredentials, projectId: string) {
+//     super(credentials);
+//     this.projectId = projectId;
+//     this.client = new BigQuery({
+//       credentials: keysToSnakeCase(credentials, {}),
+//       projectId,
+//     });
+//   }
 
-  async connect(): Promise<void> {
-    // BigQuery client doesn't require explicit connection
-  }
+//   async connect(): Promise<void> {
+//     // BigQuery client doesn't require explicit connection
+//   }
 
-  async disconnect(): Promise<void> {
-    // BigQuery client doesn't require explicit disconnection
-  }
+//   async disconnect(): Promise<void> {
+//     // BigQuery client doesn't require explicit disconnection
+//   }
 
-  async fetchDatasets(pageToken?: string): Promise<{
-    datasets: Array<{
-      id: string;
-      name: string;
-    }>;
-    nextPageToken?: string;
-  }> {
-    const MAX_RESULTS_PER_PAGE = 1000;
+//   async fetchDatasets(pageToken?: string): Promise<{
+//     datasets: Array<{
+//       id: string;
+//       name: string;
+//     }>;
+//     nextPageToken?: string;
+//   }> {
+//     const MAX_RESULTS_PER_PAGE = 1000;
     
-    const [datasets, , response] = await this.client.getDatasets({
-      maxResults: MAX_RESULTS_PER_PAGE,
-      pageToken,
-    });
+//     const [datasets, , response] = await this.client.getDatasets({
+//       maxResults: MAX_RESULTS_PER_PAGE,
+//       pageToken,
+//     });
 
-    return {
-      datasets: datasets.map(dataset => ({
-        id: dataset.id ?? 'unknown',
-        name: dataset.id ?? 'unknown',
-      })),
-      nextPageToken: response?.nextPageToken,
-    };
-  }
+//     return {
+//       datasets: datasets.map(dataset => ({
+//         id: dataset.id ?? 'unknown',
+//         name: dataset.id ?? 'unknown',
+//       })),
+//       nextPageToken: response?.nextPageToken,
+//     };
+//   }
 
-  async fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
-    tables: Array<{
-      id: string;
-      name: string;
-      fields: Array<{
-        name: string;
-        type: string;
-        description?: string;
-      }>;
-    }>;
-    nextPageToken?: string;
-  }> {
-    const MAX_RESULTS_PER_PAGE = 1000;
-    const dataset = this.client.dataset(datasetId);
+//   async fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
+//     tables: Array<{
+//       id: string;
+//       name: string;
+//       fields: Array<{
+//         name: string;
+//         type: string;
+//         description?: string;
+//       }>;
+//     }>;
+//     nextPageToken?: string;
+//   }> {
+//     const MAX_RESULTS_PER_PAGE = 1000;
+//     const dataset = this.client.dataset(datasetId);
     
-    const [tables, , response] = await dataset.getTables({
-      maxResults: MAX_RESULTS_PER_PAGE,
-      pageToken,
-    });
+//     const [tables, , response] = await dataset.getTables({
+//       maxResults: MAX_RESULTS_PER_PAGE,
+//       pageToken,
+//     });
 
-    const tablesWithMetadata = await Promise.all(
-      tables.map(async (table) => {
-        const [metadata] = await table.getMetadata();
-        return {
-          id: table.id ?? 'unknown',
-          name: metadata.tableReference.tableId ?? 'unknown',
-          fields: metadata.schema.fields.map((field: any) => ({
-            name: field.name,
-            type: field.type,
-            description: field.description || undefined,
-          })),
-        };
-      })
-    );
+//     const tablesWithMetadata = await Promise.all(
+//       tables.map(async (table) => {
+//         const [metadata] = await table.getMetadata();
+//         return {
+//           id: table.id ?? 'unknown',
+//           name: metadata.tableReference.tableId ?? 'unknown',
+//           fields: metadata.schema.fields.map((field: any) => ({
+//             name: field.name,
+//             type: field.type,
+//             description: field.description || undefined,
+//           })),
+//         };
+//       })
+//     );
 
-    return {
-      tables: tablesWithMetadata,
-      nextPageToken: response?.nextPageToken,
-    };
-  }
+//     return {
+//       tables: tablesWithMetadata,
+//       nextPageToken: response?.nextPageToken,
+//     };
+//   }
 
-  async executeQuery(query: string): Promise<any[]> {
-    try {
-      const [job] = await this.client.createQueryJob({
-        query,
-        useLegacySql: false,
-      });
+//   async executeQuery(query: string): Promise<any[]> {
+//     try {
+//       const [job] = await this.client.createQueryJob({
+//         query,
+//         useLegacySql: false,
+//       });
 
-      const [rows] = await job.getQueryResults();
-      return rows.map(row => {
-        const parsedRow: any = {};
-        for (const key in row) {
-          parsedRow[key] = this.parseValue(row[key]);
-        }
-        return parsedRow;
-      });
-    } catch (error) {
-      console.error('Error executing BigQuery query:', error);
-      throw error;
-    }
-  }
+//       const [rows] = await job.getQueryResults();
+//       return rows.map(row => {
+//         const parsedRow: any = {};
+//         for (const key in row) {
+//           parsedRow[key] = this.parseValue(row[key]);
+//         }
+//         return parsedRow;
+//       });
+//     } catch (error) {
+//       console.error('Error executing BigQuery query:', error);
+//       throw error;
+//     }
+//   }
 
-  private parseValue(value: any): any {
-    if (typeof value === "object" && value?.hasOwnProperty("value")) {
-      return value.value.toString();
-    }
-    return value;
-  }
+//   private parseValue(value: any): any {
+//     if (typeof value === "object" && value?.hasOwnProperty("value")) {
+//       return value.value.toString();
+//     }
+//     return value;
+//   }
 
-  getProjectId(): string {
-    return this.projectId;
-  }
+//   getProjectId(): string {
+//     return this.projectId;
+//   }
 
-  getProjectName(): string {
-    return this.projectId;
-  }
-}
+//   getProjectName(): string {
+//     return this.projectId;
+//   }
+// }
 
 export class PostgresConnection extends DatabaseConnection {
   private client: Client;
@@ -400,9 +400,11 @@ export const createDatabaseConnection = ({
 }): DatabaseConnection => {
   switch (type) {
     case "bigquery":
-      return new BigQueryConnection(credentials as BigQueryCredentials, projectId!);
+      console.log("bigquery projectId", projectId);
+    //   return new BigQueryConnection(credentials as BigQueryCredentials, projectId!);
     case "postgres":
-      return new PostgresConnection(credentials as PostgresCredentials);
+      console.log("postgres credentials", credentials);
+      // return new PostgresConnection(credentials as PostgresCredentials);
     default:
       throw new Error(`Unsupported database type: ${type}`);
   }
