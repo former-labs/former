@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { DiffEditor, Editor } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Page() {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -197,6 +197,15 @@ export default function Page() {
     setDiffWidgets(currentWidgets);
   };
 
+  // Update line numbers when renderSideBySide changes
+  useEffect(() => {
+    if (diffEditorRef.current) {
+      diffEditorRef.current.getModifiedEditor().updateOptions({
+        lineNumbers: renderSideBySide ? "on" : "off",
+      });
+    }
+  }, [renderSideBySide, diffEditorRef.current]);
+
   const setInitialContent = () => {
     setEditorContent("SELECT\n    1 as foo,\n    2 as bar\nFROM table_c;");
   };
@@ -268,7 +277,11 @@ export default function Page() {
         <Button onClick={printDecorations}>Print decorations</Button>
         <Button onClick={removeWidgets}>Remove widgets</Button>
         {editorContentPending !== null && (
-          <Button onClick={() => setRenderSideBySide(!renderSideBySide)}>
+          <Button
+            onClick={() => {
+              setRenderSideBySide(!renderSideBySide);
+            }}
+          >
             {renderSideBySide ? "Inline View" : "Side by Side View"}
           </Button>
         )}
@@ -285,7 +298,6 @@ export default function Page() {
             options={{
               minimap: { enabled: false },
               fontSize: 14,
-              // wordWrap: "on",
               automaticLayout: true,
               scrollBeyondLastLine: false,
             }}
@@ -301,10 +313,18 @@ export default function Page() {
             options={{
               minimap: { enabled: false },
               fontSize: 14,
-              // wordWrap: "on",
               automaticLayout: true,
               scrollBeyondLastLine: false,
               renderSideBySide,
+
+              lightbulb: {
+                // This is actually buggy and will not disable in renderSideBySide mode
+                // https://github.com/microsoft/monaco-editor/issues/3873
+                enabled: editor.ShowLightbulbIconMode.Off,
+              },
+
+              // We give this extra width so that it is the same as the regular editor
+              lineDecorationsWidth: 26,
             }}
           />
         )}
