@@ -75,21 +75,9 @@ export default function Page() {
   const handleDiffEditorDidMount = (editor: editor.IStandaloneDiffEditor) => {
     diffEditorRef.current = editor;
 
-    // Get the modified editor and listen for changes
-    const modifiedEditor = editor.getModifiedEditor();
-    // modifiedEditor.onDidChangeModelContent(() => {
-    modifiedEditor.onDidChangeModelContent(() => {
-      console.log("modifiedEditor.onDidChangeModelContent");
-      // setEditorContentPending(modifiedEditor.getValue());
-      updateDiffWidgets(editor);
-    });
-
-    // Get the original editor and listen for changes
-    const originalEditor = editor.getOriginalEditor();
-    // originalEditor.onDidChangeModelContent(() => {
-    originalEditor.onDidChangeModelContent(() => {
-      console.log("originalEditor.onDidChangeModelContent");
-      // setEditorContentPending(originalEditor.getValue());
+    // Listen for diff updates instead of content changes
+    editor.onDidUpdateDiff(() => {
+      console.log("editor.onDidUpdateDiff");
       updateDiffWidgets(editor);
     });
 
@@ -113,6 +101,7 @@ export default function Page() {
 
     // Add new widgets for each change
     const changes = editor.getLineChanges();
+    console.log("changes", changes);
 
     changes?.forEach((change, index) => {
       const widget = new DiffWidget(
