@@ -9,8 +9,8 @@ import Script from "next/script";
 import { DataProvider } from "@/contexts/DataContext";
 
 export const metadata: Metadata = {
-  title: "Werve",
-  description: "Werve",
+  title: "Yerve",
+  description: "Yerve",
   icons: [{ rel: "icon", url: "/favicon.svg" }],
 };
 
