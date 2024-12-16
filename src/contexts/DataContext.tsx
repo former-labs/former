@@ -47,10 +47,9 @@ interface DataContextType {
   fetchMetadataIncremental: () => Promise<void>;
   isLoadingDatasets: boolean;
   isLoadingTables: boolean;
-  setCredentials: (credentials: DatabaseCredentials) => void;
-  setProjectId: (projectId: string) => void;
   integrations: Integration[];
   addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
+  editIntegration: (id: string, updates: Partial<Omit<Integration, "id" | "createdAt">>) => void;
   removeIntegration: (id: string) => void;
 }
 
@@ -70,10 +69,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [datasetsPageToken, setDatasetsPageToken] = useState<
     string | undefined
   >();
-  const [credentials, setCredentials] = useState<DatabaseCredentials | null>(
-    null,
-  );
-  const [projectId, setProjectId] = useState<string | null>(null);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
 
   useEffect(() => {
@@ -83,13 +78,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }, [integrations, activeIntegration]);
 
   const initializeDatabaseConnection = async (integration: Integration) => {
-    if (!credentials) {
-      throw new Error("No credentials provided");
-    }
     try {
       const connection = createDatabaseConnection({
-        credentials,
-        projectId,
+        credentials: integration.credentials,
+        projectId: integration.id,
         type: integration.type,
       });
       await connection.connect();
@@ -189,6 +181,22 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setIntegrations((prev) => [...prev, newIntegration]);
   };
 
+  const editIntegration = (
+    id: string,
+    updates: Partial<Omit<Integration, "id" | "createdAt">>,
+  ) => {
+    setIntegrations((prev) =>
+      prev.map((integration) =>
+        integration.id === id
+          ? {
+              ...integration,
+              ...updates,
+            }
+          : integration
+      )
+    );
+  };
+
   const removeIntegration = (id: string) => {
     setIntegrations((prev) => prev.filter((i) => i.id !== id));
   };
@@ -206,9 +214,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         fetchMetadataIncremental,
         isLoadingDatasets,
         isLoadingTables,
-        setCredentials,
-        setProjectId,
         addIntegration,
+        editIntegration,
         removeIntegration,
       }}
     >

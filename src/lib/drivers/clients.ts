@@ -1,6 +1,6 @@
 import type { WarehouseMetadata } from "@/contexts/DataContext";
-import { BigQuery } from "@google-cloud/bigquery";
-import { Client } from "pg";
+// import { BigQuery } from "@google-cloud/bigquery";
+// import { Client } from "pg";
 
 
 export interface BigQueryCredentials {

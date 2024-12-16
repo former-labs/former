@@ -16,12 +16,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useData } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { PostgresCredentials } from "@/lib/drivers/clients";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -36,20 +35,30 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+export interface PostgresConnectModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  defaultValues?: any;
+  mode?: 'create' | 'edit';
+  integrationId?: string;
+  integrationName?: string;
+  onSubmit: (credentials: any) => void;
+}
+
 export function PostgresConnectModal({
   open,
   onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const { addIntegration } = useData();
+  defaultValues,
+  mode = 'create',
+  integrationName,
+  onSubmit,
+}: PostgresConnectModalProps) {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       connectionString: "",
       host: "",
       port: 5432,
@@ -58,6 +67,16 @@ export function PostgresConnectModal({
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (defaultValues) {
+      Object.entries(defaultValues).forEach(([key, value]) => {
+        if (typeof value === 'string' || typeof value === 'number') {
+          form.setValue(key as keyof FormValues, value);
+        }
+      });
+    }
+  }, [defaultValues, form]);
 
   const hasConnectionString = !!form.watch("connectionString");
 
@@ -97,7 +116,7 @@ export function PostgresConnectModal({
     }
   };
 
-  const onSubmit = (values: FormValues) => {
+  const handleSubmit = (values: FormValues) => {
     let credentials: PostgresCredentials;
 
     if (values.connectionString) {
@@ -121,28 +140,25 @@ export function PostgresConnectModal({
       };
     }
 
-    addIntegration({
-      type: "postgres",
-      name: `${credentials.database}@${credentials.host}`,
-      credentials,
-    });
-    onOpenChange(false);
+    onSubmit(credentials);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Connect PostgreSQL Database</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Connect PostgreSQL Database' : 'Edit PostgreSQL Connection'}</DialogTitle>
           <DialogDescription>
-            Connect to your PostgreSQL database using a connection string or individual fields.
+            {mode === 'create' 
+              ? 'Connect to your PostgreSQL database using a connection string or individual fields.'
+              : 'Update your PostgreSQL database connection details.'}
           </DialogDescription>
         </DialogHeader>
 
         <Separator className="my-4" />
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="connectionString"
@@ -266,7 +282,7 @@ export function PostgresConnectModal({
             </div>
 
             <Button type="submit" className="w-full">
-              Connect
+              {mode === 'create' ? 'Connect' : 'Save Changes'}
             </Button>
           </form>
         </Form>

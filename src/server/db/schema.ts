@@ -1,6 +1,5 @@
 import { relations } from "drizzle-orm";
-import { json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { encryptedJson } from "./encryptedJsonFieldType";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // /**
 //  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -84,16 +83,6 @@ export const roleRelations = relations(roleTable, ({ one }) => ({
   }),
 }));
 
-export const integrationTable = pgTable("integration", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-  type: text("type", { enum: ["bigquery", "postgres"] }).notNull(),
-  credentials: encryptedJson("credentials").notNull(),
-  metadata: json("metadata").notNull(),
-});
-
 
 // Conversation
 /*
@@ -136,7 +125,6 @@ export const messageItemsTable = pgTable("message_item", {
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type MessageItemSelect = typeof messageItemsTable.$inferSelect;
-export type IntegrationSelect = typeof integrationTable.$inferSelect
 export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
 export type UserSelect = typeof userTable.$inferSelect;
 export type RoleSelect = typeof roleTable.$inferSelect;

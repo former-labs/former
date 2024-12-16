@@ -1,181 +1,148 @@
 "use client";
 
+import BigQueryLogo from "@/components/assets/bigquery.svg";
+import PostgresLogo from "@/components/assets/postgres.svg";
 import { BigQueryConnectModal } from "@/components/integrations/big-query-connect-modal";
+import { ExistingIntegrations } from "@/components/integrations/existing-integrations";
+import { IntegrationCard } from "@/components/integrations/integration-card";
 import { PostgresConnectModal } from "@/components/integrations/postgres-connect-modal";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
-import { Power } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 
-const integrationTypeMap = {
-  bigquery: {
+const integrationTypes = [
+  {
     name: "BigQuery",
-    displayName: "BigQuery",
-    icon: "https://storage.googleapis.com/verve-assets/logos/bigquery.svg",
+    icon: BigQueryLogo,
     description: "Connect your BigQuery account to start analyzing your data.",
+    type: "bigquery" as const,
   },
-  postgres: {
-    name: "PostgreSQL",
-    displayName: "PostgreSQL",
-    icon: "https://storage.googleapis.com/verve-assets/logos/postgresql.svg",
-    description: "Connect to your PostgreSQL database to analyze your data.",
+  {
+    name: "Postgres",
+    icon: PostgresLogo,
+    description: "Connect to your Postgres database to analyze your data.",
+    type: "postgres" as const,
   },
-} as const;
+];
 
 export default function IntegrationsPage() {
-  const { integrations, removeIntegration } = useData();
   const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
   const [openPostgresModal, setOpenPostgresModal] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState<{
+    id?: string;
+    type: "bigquery" | "postgres";
+    name?: string;
+    credentials?: any;
+  } | null>(null);
+  const { addIntegration, editIntegration } = useData();
+
+  const getDefaultIntegrationName = (type: "bigquery" | "postgres", credentials: any) => {
+    if (type === "bigquery") {
+      return credentials.projectId;
+    } else {
+      return `${credentials.user}@${credentials.database}`;
+    }
+  };
+
+  const handleCreateIntegration = (type: "bigquery" | "postgres", credentials: any) => {
+    const defaultName = getDefaultIntegrationName(type, credentials);
+    addIntegration({
+      type,
+      name: defaultName,
+      credentials,
+    });
+    handleCloseModal();
+  };
+
+  const handleUpdateIntegration = (type: "bigquery" | "postgres", id: string, credentials: any) => {
+    const defaultName = getDefaultIntegrationName(type, credentials);
+    editIntegration(id, {
+      name: defaultName,
+      credentials,
+    });
+    handleCloseModal();
+  };
+
+  const handleNewIntegration = (type: "bigquery" | "postgres") => {
+    setSelectedIntegration({ type });
+    if (type === "bigquery") {
+      setOpenBigQueryModal(true);
+    } else {
+      setOpenPostgresModal(true);
+    }
+  };
+
+  const handleEditIntegration = (type: "bigquery" | "postgres", id: string, name: string, credentials: any) => {
+    setSelectedIntegration({ type, id, name, credentials });
+    if (type === "bigquery") {
+      setOpenBigQueryModal(true);
+    } else {
+      setOpenPostgresModal(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedIntegration(null);
+    setOpenBigQueryModal(false);
+    setOpenPostgresModal(false);
+  };
+
+  const handleModalSubmit = (type: "bigquery" | "postgres", credentials: any) => {
+    if (selectedIntegration?.id) {
+      handleUpdateIntegration(type, selectedIntegration.id, credentials);
+    } else {
+      handleCreateIntegration(type, credentials);
+    }
+  };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Integrations</h1>
-      </div>
+    <div className="max-w-[1300px] mx-auto px-6 py-10">
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-[22px] font-semibold leading-7 mb-1">Integrations</h1>
+          <p className="text-[14px] text-muted-foreground">
+            Connect your data sources and manage existing connections.
+          </p>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {integrations.map((integration) => (
-          <IntegrationCard
-            key={integration.id}
-            integration={{
-              ...integration,
-              ...integrationTypeMap[integration.type],
-            }}
-            onDisconnect={() => removeIntegration(integration.id)}
-          />
-        ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {integrationTypes.map((integration) => (
+            <IntegrationCard
+              key={integration.name}
+              name={integration.name}
+              description={integration.description}
+              icon={integration.icon}
+              onClick={() => handleNewIntegration(integration.type)}
+            />
+          ))}
+        </div>
 
-        <AddIntegrationCard
-          onSelectBigQuery={() => setOpenBigQueryModal(true)}
-          onSelectPostgres={() => setOpenPostgresModal(true)}
-        />
+        <div className="mt-8">
+          <ExistingIntegrations onEditIntegration={handleEditIntegration} />
+        </div>
       </div>
 
       <BigQueryConnectModal
         open={openBigQueryModal}
-        onOpenChange={setOpenBigQueryModal}
+        onOpenChange={(open) => {
+          if (!open) handleCloseModal();
+        }}
+        defaultValues={selectedIntegration?.credentials}
+        mode={selectedIntegration?.id ? 'edit' : 'create'}
+        integrationId={selectedIntegration?.id}
+        integrationName={selectedIntegration?.name}
+        onSubmit={(credentials) => handleModalSubmit('bigquery', credentials)}
       />
       <PostgresConnectModal
         open={openPostgresModal}
-        onOpenChange={setOpenPostgresModal}
+        onOpenChange={(open) => {
+          if (!open) handleCloseModal();
+        }}
+        defaultValues={selectedIntegration?.credentials}
+        mode={selectedIntegration?.id ? 'edit' : 'create'}
+        integrationId={selectedIntegration?.id}
+        integrationName={selectedIntegration?.name}
+        onSubmit={(credentials) => handleModalSubmit('postgres', credentials)}
       />
     </div>
   );
 }
-
-const AddIntegrationCard = ({
-  onSelectBigQuery,
-  onSelectPostgres,
-}: {
-  onSelectBigQuery: () => void;
-  onSelectPostgres: () => void;
-}) => {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card
-        className="flex cursor-pointer items-center justify-center p-6 transition-colors hover:bg-muted/50"
-        onClick={onSelectBigQuery}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="flex max-w-xs flex-col items-center space-y-2">
-          <div className="relative flex h-8 w-8 flex-col">
-            <Image
-              src={integrationTypeMap.bigquery.icon}
-              alt="BigQuery logo"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <p className="text-sm font-medium">Add BigQuery Integration</p>
-        </div>
-      </Card>
-
-      <Card
-        className="flex cursor-pointer items-center justify-center p-6 transition-colors hover:bg-muted/50"
-        onClick={onSelectPostgres}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="flex max-w-xs flex-col items-center space-y-2">
-          <div className="relative flex h-8 w-8 flex-col">
-            <Image
-              src={integrationTypeMap.postgres.icon}
-              alt="PostgreSQL logo"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <p className="text-sm font-medium">Add PostgreSQL Integration</p>
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-const IntegrationCard = ({
-  integration,
-  onDisconnect,
-}: {
-  integration: {
-    id: string;
-    type: "bigquery" | "postgres";
-    name: string;
-    credentials: any;
-    createdAt: string;
-    displayName: string;
-    icon: string;
-    description: string;
-  };
-  onDisconnect: () => void;
-}) => {
-  return (
-    <Card className="space-y-4 p-6">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="relative h-10 w-10">
-            <Image
-              src={integration.icon}
-              alt={`${integration.name} logo`}
-              fill
-              className="object-contain"
-            />
-          </div>
-          <div>
-            <h3 className="font-medium">{integration.displayName}</h3>
-            <Badge variant="secondary" className="text-xs">
-              Connected{" "}
-              {new Date(integration.createdAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Badge>
-          </div>
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="destructive" size="icon" onClick={onDisconnect}>
-                <Power className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Disconnect</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <p className="text-sm text-muted-foreground">{integration.description}</p>
-    </Card>
-  );
-};

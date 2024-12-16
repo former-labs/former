@@ -20,12 +20,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useData } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -37,26 +36,45 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface BigQueryConnectModalProps {
+export interface BigQueryConnectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultValues?: any;
+  mode?: 'create' | 'edit';
+  integrationId?: string;
+  integrationName?: string;
+  onSubmit: (credentials: any) => void;
 }
 
 export function BigQueryConnectModal({
   open,
   onOpenChange,
+  defaultValues,
+  mode = 'create',
+  integrationName,
+  onSubmit,
 }: BigQueryConnectModalProps) {
   const { toast } = useToast();
-  const { addIntegration } = useData();
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       projectId: "",
       credentials: "",
     },
   });
+
+  useEffect(() => {
+    if (defaultValues) {
+      form.setValue("projectId", defaultValues.projectId || "");
+      form.setValue("credentials", JSON.stringify(defaultValues, null, 2));
+      setUploadedFile({
+        name: "credentials.json",
+        size: new Blob([JSON.stringify(defaultValues)]).size,
+      });
+    }
+  }, [defaultValues, form]);
 
   const updateProjectIdFromCredentials = (jsonString: string) => {
     try {
@@ -74,20 +92,17 @@ export function BigQueryConnectModal({
       // Validate JSON
       const credentials = JSON.parse(values.credentials);
       
-      addIntegration({
-        type: "bigquery",
-        name: "BigQuery",
-        credentials: {
-          ...credentials,
-          projectId: values.projectId,
-        },
+      onSubmit({
+        ...credentials,
+        projectId: values.projectId,
       });
 
       toast({
-        title: "Connected successfully",
-        description: "BigQuery integration has been set up.",
+        title: mode === 'create' ? "Connected successfully" : "Updated successfully",
+        description: mode === 'create' 
+          ? "BigQuery integration has been set up."
+          : "BigQuery integration has been updated.",
       });
-      onOpenChange(false);
     } catch (error) {
       console.error(error);
       toast({
@@ -162,9 +177,11 @@ export function BigQueryConnectModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Connect BigQuery</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Connect BigQuery' : 'Edit BigQuery Connection'}</DialogTitle>
           <DialogDescription>
-            Connect to BigQuery by providing your project ID and service account credentials.
+            {mode === 'create'
+              ? 'Connect to BigQuery by providing your project ID and service account credentials.'
+              : 'Update your BigQuery connection details.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -261,7 +278,7 @@ export function BigQueryConnectModal({
             />
 
             <Button type="submit" className="w-full" disabled={!form.formState.isValid}>
-              Connect BigQuery
+              {mode === 'create' ? 'Connect BigQuery' : 'Save Changes'}
             </Button>
           </form>
         </Form>
