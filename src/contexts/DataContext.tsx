@@ -52,6 +52,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }, [integrations, activeIntegration]);
 
   const initializeDriver = async (integration: Integration) => {
+    console.log("initializeDriver", integration);
     try {
       const config: DatabaseConfig = {
         id: integration.id ?? crypto.randomUUID(),
@@ -60,7 +61,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         credentials: integration.credentials,
       };
 
+      console.log("config", config);
       const result = await window.electron.database.connect(config);
+      console.log("result", result);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -93,6 +96,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Initialize connection when integration changes
   useEffect(() => {
     if (activeIntegration) {
+      console.log("activeIntegration", activeIntegration);
       initializeDriver(activeIntegration)
         .then(() => fetchMetadataIncremental())
         .catch(console.error);
@@ -115,6 +119,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       createdAt: new Date().toISOString(),
     };
     setIntegrations((prev) => [...prev, newIntegration]);
+    console.log("newIntegration", newIntegration);
+    setActiveIntegration(newIntegration);
   };
 
   const editIntegration = (id: string, updates: Integration) => {

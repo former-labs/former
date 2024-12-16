@@ -8,6 +8,7 @@ export const database = {
     try {
       let driver: Driver;
       const connectionId = config.id;
+      console.log('config', config);
 
       if (config.type === 'bigquery' && config.projectId) {
         driver = new BigQueryDriver(config.credentials as BigQueryCredentials, config.projectId);
@@ -17,9 +18,11 @@ export const database = {
         throw new Error(`Invalid database type: ${config.type}`);
       }
 
+      console.log('driver', driver);
       await driver.connect();
       connections.set(connectionId, driver);
-      
+
+      console.log('connections', connections);
       return { success: true, connectionId };
     } catch (error) {
       console.error('Failed to create connection:', error);

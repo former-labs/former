@@ -8,6 +8,12 @@ import { env } from './env.electron.js';
 const __filename = fileURLToPath(import.meta.url);
 const currentDir = dirname(__filename);
 
+// Set up remote debugging before app is ready
+const isDev = env.NODE_ENV === 'development';
+if (isDev) {
+  app.commandLine.appendSwitch('remote-debugging-port', '9222');
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
@@ -20,13 +26,10 @@ function createWindow() {
     }
   });
 
-  const isDev = env.NODE_ENV === 'development';
   const url = isDev ? 'http://localhost:3000' : env.DASHBOARD_URI;
   
-  // Add remote debugging port for the renderer process
   if (isDev) {
     win.webContents.openDevTools();
-    app.commandLine.appendSwitch('remote-debugging-port', '9222');
   }
 
   void win.loadURL(url).catch(err => {
