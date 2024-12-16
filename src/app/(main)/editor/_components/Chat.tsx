@@ -8,10 +8,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
+import {
+  CornerDownLeft,
+  History,
+  ListCheck,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import React, { type ReactNode, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "./chatStore";
+import { useEditor } from "./editorStore";
 
 export const ChatSidebar = () => {
   const { createChat, chats, setActiveChatId } = useChat();
@@ -84,6 +91,7 @@ const ActiveChat = () => {
                       pre: CodeBlock,
                       code: CodeInline,
                     }}
+                    className="space-y-2"
                   >
                     {message.content}
                   </ReactMarkdown>
@@ -198,6 +206,8 @@ const CodeBlock = ({
   children?: ReactNode;
   className?: string;
 }) => {
+  const { setEditorContentPending } = useEditor();
+
   if (!React.isValidElement(children)) {
     throw new Error("Node passed to code block that isn't a valid element.");
   }
@@ -206,14 +216,33 @@ const CodeBlock = ({
     throw new Error("Node passed to code block that isn't a code element.");
   }
 
-  // ReactMarkdown is stupid and passes both inline and block code elements
-  // through the CodeInline component first. We strip out the inline code
-  // wrapper here first and rewrap with our code block wrapper.
+  /*
+    ReactMarkdown is stupid and passes both inline and block code elements
+    through the CodeInline component first. We strip out the inline code
+    wrapper here first and rewrap with our code block wrapper.
+    This should just be a string now.
+  */
   const codeContent = children.props.children;
+  if (typeof codeContent !== "string") {
+    throw new Error("Code content is not a string.");
+  }
 
   return (
-    <pre className="relative overflow-x-auto rounded-md bg-gray-400 px-3 py-2">
-      <code className={`text-sm ${className}`}>{codeContent}</code>
-    </pre>
+    <div>
+      <pre className="relative overflow-x-auto rounded-sm border bg-gray-100 px-3 py-2">
+        <code className={`text-sm ${className}`}>{codeContent}</code>
+      </pre>
+      <div className="mt-1 flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setEditorContentPending(codeContent)}
+          className="gap-1"
+        >
+          Apply
+          <ListCheck className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 };
