@@ -9,8 +9,8 @@ export function LayoutSidebar({ children }: { children: React.ReactNode }) {
     <>
       <LeftSidebar />
       <SidebarInset className="z-10">
-        <header className="fixed z-10 flex h-12 w-full shrink-0 items-center justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-10">
-          <div className="flex items-center gap-2 rounded-lg px-4">
+        <header className="pointer-events-none fixed z-10 flex h-12 w-full shrink-0 items-center justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-10">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-lg px-4">
             <SidebarTrigger className="-ml-1 bg-background p-4" />
             {/* <IntegrationSwitcher /> */}
             {/* <Separator orientation="vertical" className="mr-2 h-4" />
