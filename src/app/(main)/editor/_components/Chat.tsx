@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import { Editor } from "@monaco-editor/react";
 import {
   CornerDownLeft,
   History,
@@ -15,6 +16,7 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
+import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
 import React, { type ReactNode, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "./chatStore";
@@ -78,7 +80,7 @@ const ActiveChat = () => {
   return (
     <div className="flex h-full flex-col">
       <div
-        className={`space-y-2 overflow-y-auto ${hasMessages ? "flex-1" : ""}`}
+        className={`space-y-2 overflow-y-auto pb-4 ${hasMessages ? "flex-1" : ""}`}
       >
         <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
         <div className="space-y-2">
@@ -207,6 +209,7 @@ const CodeBlock = ({
   className?: string;
 }) => {
   const { setEditorContentPending } = useEditor();
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
   if (!React.isValidElement(children)) {
     throw new Error("Node passed to code block that isn't a valid element.");
@@ -222,16 +225,53 @@ const CodeBlock = ({
     wrapper here first and rewrap with our code block wrapper.
     This should just be a string now.
   */
-  const codeContent = children.props.children;
+  let codeContent = children.props.children;
   if (typeof codeContent !== "string") {
     throw new Error("Code content is not a string.");
   }
 
+  codeContent = codeContent.replace(/\n+$/, "");
+
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor;
+
+    const updateEditorHeight = () => {
+      const contentHeight = editor.getContentHeight();
+      const editorElement = editor.getDomNode();
+
+      if (editorElement) {
+        editorElement.style.height = `${contentHeight}px`;
+        editor.layout();
+      }
+    };
+
+    editor.onDidContentSizeChange(updateEditorHeight);
+    updateEditorHeight();
+  };
+
   return (
     <div>
-      <pre className="relative overflow-x-auto rounded-sm border bg-gray-100 px-3 py-2">
-        <code className={`text-sm ${className}`}>{codeContent}</code>
-      </pre>
+      <div className="relative overflow-x-auto rounded-sm border">
+        <Editor
+          onMount={handleEditorDidMount}
+          language="sql"
+          value={codeContent}
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            readOnly: true,
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            lineNumbers: "off",
+            lineDecorationsWidth: 0,
+            padding: { top: 8, bottom: 8 },
+            scrollbar: {
+              ignoreHorizontalScrollbarInContentHeight: true,
+              alwaysConsumeMouseWheel: false,
+            },
+          }}
+        />
+      </div>
       <div className="mt-1 flex justify-end">
         <Button
           variant="outline"
