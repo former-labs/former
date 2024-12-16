@@ -10,11 +10,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
-  const { isLoadingIntegrations, integrations } = useData();
+  const { integrations } = useData();
   const { isWorkspaceLoading, roles } = useAuth();
 
   const isLoading =
-    (isLoadingIntegrations && integrations.length === 0) ||
+    (integrations.length === 0) ||
     (isWorkspaceLoading && roles.length === 0);
 
   return (
