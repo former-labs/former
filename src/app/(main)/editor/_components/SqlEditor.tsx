@@ -70,6 +70,10 @@ export const SqlEditor = () => {
         diffEditor: editor,
         onApply: (newContent: string) => {
           setEditorContent(newContent);
+          // Disable the diff editor if we accept all changes
+          if (newContent === editorContentPending) {
+            setEditorContentPending(null);
+          }
         },
         onReject: (newContent: string) => {
           setEditorContentPending(newContent);
