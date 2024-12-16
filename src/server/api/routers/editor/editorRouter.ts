@@ -1,4 +1,6 @@
+import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
+import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { z } from "zod";
 
 const chatMessageSchema = z.object({
@@ -12,15 +14,27 @@ export const editorRouter = createTRPCRouter({
       messages: z.array(chatMessageSchema).min(1),
     }))
     .mutation(async ({ input }) => {
-      const lastMessage = input.messages[input.messages.length - 1];
-      if (!lastMessage) {
-        throw new Error("Empty list of messages provided.");
-      }
+      // Transform messages to OpenAI format
+      const openAiMessages: ChatCompletionMessageParam[] = input.messages.map(msg => ({
+        role: msg.type,
+        content: msg.content
+      }));
+
+      // Define response schema
+      const responseSchema = z.object({
+        response: z.string()
+      });
+
+      // Get AI response
+      const aiResponse = await getAIChatResponse({
+        messages: openAiMessages,
+        schemaOutput: responseSchema
+      });
 
       return {
         message: {
           type: "assistant" as const,
-          content: lastMessage.content.toUpperCase(),
+          content: aiResponse.response
         }
       };
     }),
