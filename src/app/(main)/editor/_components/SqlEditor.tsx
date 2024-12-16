@@ -63,6 +63,8 @@ export const SqlEditor = () => {
 
     // Add new widgets for each change
     const changes = editor.getLineChanges();
+    const originalModel = editor.getModel()?.original;
+    if (!originalModel) return;
 
     changes?.forEach((change, index) => {
       const widget = new DiffWidget({
@@ -74,14 +76,11 @@ export const SqlEditor = () => {
         diffEditor: editor,
         onApply: (newContent: string) => {
           setEditorContent(newContent);
-          // Disable the diff editor if we accept all changes
-          if (newContent === editorContentPending) {
-            setEditorContentPending(null);
-          }
         },
         onReject: (newContent: string) => {
           setEditorContentPending(newContent);
         },
+        originalLineCount: originalModel.getLineCount(),
       });
       editor.getModifiedEditor().addContentWidget(widget);
       diffWidgetsRef.current.push(widget);

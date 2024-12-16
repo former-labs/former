@@ -7,11 +7,31 @@ interface EditorStore {
   setEditorContentPending: (content: string | null) => void;
 }
 
-const useEditorStore = create<EditorStore>((set) => ({
+const useEditorStore = create<EditorStore>((set, get) => ({
   editorContent: "",
   editorContentPending: null,
-  setEditorContent: (content) => set({ editorContent: content }),
-  setEditorContentPending: (content) => set({ editorContentPending: content }),
+  setEditorContent: (content) => {
+    set({ editorContent: content });
+
+    // If the editor content is set to the same as the pending content,
+    // this is equivalent to accepting all changes.
+    // In this case we disable the diff editor by setting the pending content to null.
+    const state = get();
+    if (state.editorContentPending === content) {
+      set({ editorContentPending: null });
+    }
+  },
+  setEditorContentPending: (content) => {
+    set({ editorContentPending: content });
+
+    // If the pending content is set to the same as the editor content,
+    // this is equivalent to accepting all changes.
+    // In this case we disable the diff editor by setting the pending content to null.
+    const state = get();
+    if (state.editorContent === content) {
+      set({ editorContentPending: null });
+    }
+  },
 }));
 
 export const useEditor = () => {

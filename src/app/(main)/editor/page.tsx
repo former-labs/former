@@ -23,13 +23,13 @@ export default function Page() {
   return (
     <div className="h-full max-h-[100vh]">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={80} minSize={15}>
+        <ResizablePanel defaultSize={70} minSize={15}>
           <div className="h-full px-4 pt-8">
             <SqlEditor />
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={25} minSize={15} maxSize={50}>
+        <ResizablePanel defaultSize={30} minSize={15} maxSize={50}>
           <ChatSidebar />
         </ResizablePanel>
       </ResizablePanelGroup>
