@@ -7,15 +7,11 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { SidebarRightProvider } from "@/components/ui/sidebar-right";
 import { Loading } from "@/components/utils/Loading";
 import { useAuth } from "@/contexts/AuthContext";
-import { useData } from "@/contexts/DataContext";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
-  const { integrations } = useData();
   const { isWorkspaceLoading, roles } = useAuth();
 
-  const isLoading =
-    (integrations.length === 0) ||
-    (isWorkspaceLoading && roles.length === 0);
+  const isLoading = isWorkspaceLoading && roles.length === 0;
 
   return (
     <SidebarRightProvider>
