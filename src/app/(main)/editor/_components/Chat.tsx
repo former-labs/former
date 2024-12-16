@@ -17,36 +17,36 @@ export const ChatSidebar = () => {
   const { createChat, chats, setActiveChatId } = useChat();
 
   return (
-    <div className="h-full bg-gray-100 p-3">
-      <div className="flex h-full flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-medium">Chat</div>
-          <div className="flex gap-2">
-            {chats.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <History className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="mr-2">
-                  {chats.map((chat) => (
-                    <DropdownMenuItem
-                      key={chat.chatId}
-                      onClick={() => setActiveChatId(chat.chatId)}
-                    >
-                      Chat - {chat.createdAt.toLocaleString()}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <Button onClick={createChat} size="icon" variant="outline">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+    <div className="flex h-full flex-col gap-4 bg-gray-200 p-3">
+      <div className="flex items-center justify-between">
+        <div className="text-lg font-medium">Chat</div>
+        <div className="flex gap-2">
+          {chats.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <History className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="mr-2">
+                {chats.map((chat) => (
+                  <DropdownMenuItem
+                    key={chat.chatId}
+                    onClick={() => setActiveChatId(chat.chatId)}
+                  >
+                    Chat - {chat.createdAt.toLocaleString()}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <Button onClick={createChat} size="icon" variant="outline">
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto">
         <ActiveChat />
       </div>
     </div>
@@ -69,10 +69,10 @@ const ActiveChat = () => {
   const hasMessages = activeChat.messages.length > 0;
 
   return (
-    <div
-      className={`flex h-full flex-col ${hasMessages ? "justify-between" : "justify-start"}`}
-    >
-      <div className="space-y-2 overflow-y-auto">
+    <div className="flex h-full flex-col">
+      <div
+        className={`space-y-2 overflow-y-auto ${hasMessages ? "flex-1" : ""}`}
+      >
         <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
         <div className="space-y-2">
           {activeChat.messages.map((message, i) => (
@@ -128,7 +128,7 @@ const ChatInputBox = ({
   };
 
   return (
-    <div className="space-y-2 rounded-lg bg-white p-2 shadow">
+    <div className="space-y-2 rounded-lg border bg-white p-2">
       <TextareaAutoResize
         value={value}
         onChange={(e) => setValue(e.target.value)}

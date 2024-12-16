@@ -21,7 +21,7 @@ const SqlEditor = dynamic(
 
 export default function Page() {
   return (
-    <div className="h-full">
+    <div className="h-full max-h-[100vh]">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={80} minSize={15}>
           <div className="h-full px-4 pt-8">
