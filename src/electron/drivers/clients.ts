@@ -1,6 +1,7 @@
 import { BigQuery } from "@google-cloud/bigquery";
-import { Client } from "pg";
+import pkg from 'pg';
 import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials, WarehouseMetadata } from "../../types/connections.js";
+const { Client } = pkg;
 
 
 // Helper function to convert object keys to snake_case
@@ -209,7 +210,7 @@ export class BigQueryDriver extends Driver {
 }
 
 export class PostgresDriver extends Driver {
-  private client: Client;
+  private client: any;
 
   constructor(credentials: PostgresCredentials) {
     super(credentials);
@@ -324,7 +325,7 @@ export class PostgresDriver extends Driver {
        WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`
     );
     return {
-      datasets: result.rows.map(row => ({ 
+      datasets: result.rows.map((row: { id: any; }) => ({ 
         id: row.id, 
         name: row.id 
       })),
@@ -389,7 +390,7 @@ export class PostgresDriver extends Driver {
   }
 }
 
-export const createDatabaseConnection = ({
+export const createDriver = ({
   credentials, 
   projectId, 
   type

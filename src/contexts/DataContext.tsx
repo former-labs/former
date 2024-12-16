@@ -1,10 +1,8 @@
 "use client";
 
-import {
-  type Driver,
-  createDatabaseConnection as createDriver,
-} from "@/electron/drivers/clients";
+import { type Driver } from "@/electron/drivers/clients";
 import type {
+  DatabaseConfig,
   DatabaseCredentials,
   WarehouseMetadata,
 } from "@/types/connections";
@@ -41,15 +39,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     useState<Integration | null>(null);
   const [warehouseMetadata, setWarehouseMetadata] =
     useState<WarehouseMetadata | null>(null);
-  const [driver, setDriver] = useState<Driver | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
-  const [currentDatasetIndex, setCurrentDatasetIndex] = useState(0);
-  const [datasetsPageToken, setDatasetsPageToken] = useState<
-    string | undefined
-  >();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [connectionId, setConnectionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeIntegration && integrations[0]) {
@@ -59,13 +53,20 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const initializeDriver = async (integration: Integration) => {
     try {
-      const driver = createDriver({
-        credentials: integration.credentials,
-        projectId: integration.id,
+      const config: DatabaseConfig = {
+        id: integration.id ?? crypto.randomUUID(),
         type: integration.type,
-      });
-      await driver.connect();
-      setDriver(driver);
+        projectId: integration.id ?? undefined,
+        credentials: integration.credentials,
+      };
+
+      const result = await window.electron.database.connect(config);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      setConnectionId(result.connectionId ?? null);
     } catch (error) {
       console.error("Failed to initialize database connection:", error);
       throw error;
@@ -73,59 +74,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const fetchMetadataIncremental = async () => {
-    if (!driver || isFetchingMetadata) return;
+    if (!connectionId || isFetchingMetadata) return;
 
     try {
       setIsFetchingMetadata(true);
-
-      if (datasetsPageToken !== null) {
-        // Still fetching datasets
-        setIsLoadingDatasets(true);
-        const datasetsResult = await driver.fetchDatasets(datasetsPageToken);
-
-        setWarehouseMetadata((currentMetadata) => {
-          const newMetadata: WarehouseMetadata = {
-            projects: [
-              {
-                id: driver.getProjectId(),
-                name: driver.getProjectName(),
-                datasets: [
-                  ...(currentMetadata?.projects?.[0]?.datasets ?? []),
-                  ...datasetsResult.datasets.map((d) => ({ ...d, tables: [] })),
-                ],
-              },
-            ],
-          };
-          return newMetadata;
-        });
-
-        setDatasetsPageToken(datasetsResult.nextPageToken ?? undefined);
-        setCurrentDatasetIndex(0);
-      } else if (warehouseMetadata?.projects?.[0]?.datasets) {
-        // Fetching tables for datasets
-        const datasets = warehouseMetadata.projects[0].datasets;
-
-        if (currentDatasetIndex < datasets.length) {
-          setIsLoadingTables(true);
-          const dataset = datasets[currentDatasetIndex];
-          const tablesResult = await driver.fetchTablesForDataset(
-            dataset?.id ?? "",
-          );
-
-          setWarehouseMetadata((currentMetadata) => {
-            const newMetadata = { ...currentMetadata! };
-            if (newMetadata.projects?.[0]?.datasets?.[currentDatasetIndex]) {
-              newMetadata.projects[0].datasets[currentDatasetIndex].tables =
-                tablesResult.tables;
-            }
-            return newMetadata;
-          });
-
-          setCurrentDatasetIndex((prev) => prev + 1);
-        }
-      }
+      const metadata = await window.electron.database.getMetadata(connectionId);
+      setWarehouseMetadata(metadata as WarehouseMetadata);
     } catch (error) {
-      console.error("Error fetching metadata incrementally:", error);
+      console.error("Error fetching metadata:", error);
       throw error;
     } finally {
       setIsFetchingMetadata(false);
@@ -144,9 +100,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       // Cleanup connection on unmount or integration change
-      driver?.disconnect().catch(console.error);
+      if (connectionId) {
+        window.electron.database.disconnect(connectionId).catch(console.error);
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
 
   const addIntegration = (
@@ -187,7 +144,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         integrations,
         warehouseMetadata,
         isFetchingMetadata,
-        driver,
+        driver: null,
         initializeDatabaseConnection: initializeDriver,
         fetchMetadataIncremental,
         isLoadingDatasets,
