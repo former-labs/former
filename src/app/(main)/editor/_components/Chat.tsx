@@ -28,13 +28,13 @@ export const ChatSidebar = () => {
                     <History className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent className="mr-2">
                   {chats.map((chat) => (
                     <DropdownMenuItem
                       key={chat.chatId}
                       onClick={() => setActiveChatId(chat.chatId)}
                     >
-                      Chat {chat.chatId}
+                      Chat - {chat.createdAt.toLocaleString()}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

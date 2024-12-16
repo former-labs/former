@@ -10,6 +10,7 @@ interface ChatMessage {
 interface Chat {
   chatId: string;
   messages: ChatMessage[];
+  createdAt: Date;
 }
 
 interface ChatStore {
@@ -51,8 +52,12 @@ export const useChat = () => {
 
   const createChat = () => {
     const chatId = uuidv4();
-    const newChat = { chatId, messages: [] };
-    store.setChats([...store.chats, newChat]);
+    const newChat = { 
+      chatId, 
+      messages: [],
+      createdAt: new Date()
+    };
+    store.setChats([newChat, ...store.chats]);
     store.setActiveChatId(chatId);
     return chatId;
   };
