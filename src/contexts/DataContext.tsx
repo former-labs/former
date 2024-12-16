@@ -1,14 +1,12 @@
 "use client";
 
+import type {
+  DatabaseCredentials,
+} from "@/lib/drivers/clients";
 import {
   type DatabaseConnection,
   createDatabaseConnection,
 } from "@/lib/drivers/clients";
-import type {
-  BigQueryCredentials,
-  DatabaseCredentials,
-  PostgresCredentials,
-} from "@/server/db/encryptedJsonFieldType";
 import { createContext, useContext, useEffect, useState } from "react";
 
 export interface WarehouseMetadata {
@@ -35,7 +33,7 @@ export type Integration = {
   id: string;
   type: "bigquery" | "postgres";
   name: string;
-  credentials: PostgresCredentials | BigQueryCredentials;
+  credentials: DatabaseCredentials;
   createdAt: string;
 };
 
