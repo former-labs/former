@@ -23,33 +23,32 @@ function createWindow() {
   const isDev = env.NODE_ENV === 'development';
   const url = isDev ? 'http://localhost:3000' : env.DASHBOARD_URI;
   
+  // Add remote debugging port for the renderer process
+  if (isDev) {
+    win.webContents.openDevTools();
+    app.commandLine.appendSwitch('remote-debugging-port', '9222');
+  }
+
   void win.loadURL(url).catch(err => {
     console.error('Failed to load URL:', err);
   });
-
-  if (isDev) {
-    console.log('isDev', isDev);
-    win.webContents.openDevTools();
-  } else {
-    console.log('isNotDev', 'isDev', isDev);
-  }
 }
 
 // Set up IPC handlers
 ipcMain.handle('database:connect', async (_, config) => {
-  void await database.connect(config);
+  return await database.connect(config);
 });
 
 ipcMain.handle('database:disconnect', async (_, connectionId) => {
-  void await database.disconnect(connectionId);
+  return await database.disconnect(connectionId);
 });
 
 ipcMain.handle('database:execute', async (_, connectionId, query) => {
-  void await database.execute(connectionId, query);
+  return await database.execute(connectionId, query);
 });
 
 ipcMain.handle('database:getMetadata', async (_, connectionId) => {
-  void await database.getMetadata(connectionId);
+  return await database.getMetadata(connectionId);
 });
 
 // Clean up database connections when app is closing

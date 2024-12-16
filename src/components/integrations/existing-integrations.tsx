@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type Integration, useData } from "@/contexts/DataContext";
-import { Trash2 } from "lucide-react";
+import { EditIcon, Trash2 } from "lucide-react";
 
 interface ExistingIntegrationsProps {
   onEditIntegration: ({
@@ -83,7 +83,8 @@ export function ExistingIntegrations({
                   <div className="flex items-center justify-end gap-2">
                     <Button
                       variant="ghost"
-                      className="h-8 px-3 text-xs text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+                      size="icon"
+                      className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
                       onClick={() =>
                         onEditIntegration({
                           type: integration.type,
@@ -91,7 +92,7 @@ export function ExistingIntegrations({
                         })
                       }
                     >
-                      Edit
+                      <EditIcon className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"

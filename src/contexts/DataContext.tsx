@@ -22,7 +22,7 @@ interface DataContextType {
   warehouseMetadata: WarehouseMetadata | null;
   isFetchingMetadata: boolean;
   driver: Driver | null;
-  initializeDatabaseConnection: (integration: Integration) => Promise<void>;
+  initializeDriver: (integration: Integration) => Promise<void>;
   fetchMetadataIncremental: () => Promise<void>;
   isLoadingDatasets: boolean;
   isLoadingTables: boolean;
@@ -145,7 +145,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         warehouseMetadata,
         isFetchingMetadata,
         driver: null,
-        initializeDatabaseConnection: initializeDriver,
+        initializeDriver,
         fetchMetadataIncremental,
         isLoadingDatasets,
         isLoadingTables,
