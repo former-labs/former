@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { Integration } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
-import type { PostgresCredentials } from "@/lib/drivers/clients";
+import type { PostgresCredentials } from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";

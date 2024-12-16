@@ -1,31 +1,7 @@
-import type { WarehouseMetadata } from "@/contexts/DataContext";
-// import { BigQuery } from "@google-cloud/bigquery";
-// import { Client } from "pg";
+import { BigQuery } from "@google-cloud/bigquery";
+import { Client } from "pg";
+import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials, WarehouseMetadata } from "../../types/connections.js";
 
-
-export interface BigQueryCredentials {
-  // Service account key file contents
-  type: string;
-  project_id: string;
-  private_key_id: string;
-  private_key: string;
-  client_email: string;
-  client_id: string;
-  auth_uri: string;
-  token_uri: string;
-  auth_provider_x509_cert_url: string;
-  client_x509_cert_url: string;
-}
-
-export interface PostgresCredentials {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-}
-
-export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
 // Helper function to convert object keys to snake_case
 const toSnakeCase = (str: string): string => {
@@ -53,7 +29,7 @@ export const keysToSnakeCase = (
 };
 
 // Abstract base class for database connections
-export abstract class DatabaseConnection {
+export abstract class Driver {
   protected credentials: any;
 
   constructor(credentials: any) {
@@ -110,7 +86,7 @@ export abstract class DatabaseConnection {
   }
 }
 
-export class BigQueryConnection extends DatabaseConnection {
+export class BigQueryDriver extends Driver {
   private client: BigQuery;
   private projectId: string;
 
@@ -232,10 +208,10 @@ export class BigQueryConnection extends DatabaseConnection {
   }
 }
 
-export class PostgresConnection extends DatabaseConnection {
+export class PostgresDriver extends Driver {
   private client: Client;
 
-  constructor(credentials: any) {
+  constructor(credentials: PostgresCredentials) {
     super(credentials);
     this.client = new Client({
       host: credentials.host,
@@ -421,14 +397,14 @@ export const createDatabaseConnection = ({
   credentials: DatabaseCredentials, 
   projectId: string | null,
   type: string
-}): DatabaseConnection => {
+}): Driver => {
   switch (type) {
     case "bigquery":
       console.log("bigquery projectId", projectId);
-    //   return new BigQueryConnection(credentials as BigQueryCredentials, projectId!);
+      return new BigQueryDriver(credentials as BigQueryCredentials, projectId!);
     case "postgres":
       console.log("postgres credentials", credentials);
-      // return new PostgresConnection(credentials as PostgresCredentials);
+      return new PostgresDriver(credentials as PostgresCredentials);
     default:
       throw new Error(`Unsupported database type: ${type}`);
   }

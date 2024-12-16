@@ -1,6 +1,7 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { database } from './database.js';
 import { env } from './env.electron.js';
 
 // Get the current file's directory path in ES module context
@@ -33,6 +34,28 @@ function createWindow() {
     console.log('isNotDev', 'isDev', isDev);
   }
 }
+
+// Set up IPC handlers
+ipcMain.handle('database:connect', async (_, config) => {
+  void await database.connect(config);
+});
+
+ipcMain.handle('database:disconnect', async (_, connectionId) => {
+  void await database.disconnect(connectionId);
+});
+
+ipcMain.handle('database:execute', async (_, connectionId, query) => {
+  void await database.execute(connectionId, query);
+});
+
+ipcMain.handle('database:getMetadata', async (_, connectionId) => {
+  void await database.getMetadata(connectionId);
+});
+
+// Clean up database connections when app is closing
+app.on('before-quit', () => {
+  void database.disconnectAll();
+});
 
 void app.whenReady().then(() => {
   createWindow();

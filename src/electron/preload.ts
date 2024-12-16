@@ -6,8 +6,17 @@ type IpcCallback = (...args: unknown[]) => void;
 contextBridge.exposeInMainWorld(
   'electron',
   {
+    database: {
+      connect: (config: unknown) => 
+        ipcRenderer.invoke('database:connect', config),
+      disconnect: (connectionId: string) => 
+        ipcRenderer.invoke('database:disconnect', connectionId),
+      execute: (connectionId: string, query: string) => 
+        ipcRenderer.invoke('database:execute', connectionId, query),
+      getMetadata: (connectionId: string) => 
+        ipcRenderer.invoke('database:getMetadata', connectionId),
+    },
     send: (channel: string, data: unknown) => {
-      // whitelist channels
       const validChannels = ['toMain'];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
@@ -16,7 +25,6 @@ contextBridge.exposeInMainWorld(
     receive: (channel: string, func: IpcCallback) => {
       const validChannels = ['fromMain'];
       if (validChannels.includes(channel)) {
-        // Deliberately strip event as it includes `sender` 
         ipcRenderer.on(channel, (_event: IpcRendererEvent, ...args) => func(...args));
       }
     }

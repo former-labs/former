@@ -1,31 +1,14 @@
 "use client";
 
-import type { DatabaseCredentials } from "@/lib/drivers/clients";
 import {
-  type DatabaseConnection,
-  createDatabaseConnection,
-} from "@/lib/drivers/clients";
+  type Driver,
+  createDatabaseConnection as createDriver,
+} from "@/electron/drivers/clients";
+import type {
+  DatabaseCredentials,
+  WarehouseMetadata,
+} from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
-
-export interface WarehouseMetadata {
-  projects: {
-    id: string;
-    name: string;
-    datasets: {
-      id: string;
-      name: string;
-      tables: {
-        id: string;
-        name: string;
-        fields: {
-          name: string;
-          type: string;
-          description?: string;
-        }[];
-      }[];
-    }[];
-  }[];
-}
 
 export type Integration = {
   id: string | null;
@@ -40,7 +23,7 @@ interface DataContextType {
   setActiveIntegration: (integration: Integration | null) => void;
   warehouseMetadata: WarehouseMetadata | null;
   isFetchingMetadata: boolean;
-  databaseConnection: DatabaseConnection | null;
+  driver: Driver | null;
   initializeDatabaseConnection: (integration: Integration) => Promise<void>;
   fetchMetadataIncremental: () => Promise<void>;
   isLoadingDatasets: boolean;
@@ -58,8 +41,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     useState<Integration | null>(null);
   const [warehouseMetadata, setWarehouseMetadata] =
     useState<WarehouseMetadata | null>(null);
-  const [databaseConnection, setDatabaseConnection] =
-    useState<DatabaseConnection | null>(null);
+  const [driver, setDriver] = useState<Driver | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
@@ -75,15 +57,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [integrations, activeIntegration]);
 
-  const initializeDatabaseConnection = async (integration: Integration) => {
+  const initializeDriver = async (integration: Integration) => {
     try {
-      const connection = createDatabaseConnection({
+      const driver = createDriver({
         credentials: integration.credentials,
         projectId: integration.id,
         type: integration.type,
       });
-      await connection.connect();
-      setDatabaseConnection(connection);
+      await driver.connect();
+      setDriver(driver);
     } catch (error) {
       console.error("Failed to initialize database connection:", error);
       throw error;
@@ -91,7 +73,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const fetchMetadataIncremental = async () => {
-    if (!databaseConnection || isFetchingMetadata) return;
+    if (!driver || isFetchingMetadata) return;
 
     try {
       setIsFetchingMetadata(true);
@@ -99,15 +81,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (datasetsPageToken !== null) {
         // Still fetching datasets
         setIsLoadingDatasets(true);
-        const datasetsResult =
-          await databaseConnection.fetchDatasets(datasetsPageToken);
+        const datasetsResult = await driver.fetchDatasets(datasetsPageToken);
 
         setWarehouseMetadata((currentMetadata) => {
           const newMetadata: WarehouseMetadata = {
             projects: [
               {
-                id: databaseConnection.getProjectId(),
-                name: databaseConnection.getProjectName(),
+                id: driver.getProjectId(),
+                name: driver.getProjectName(),
                 datasets: [
                   ...(currentMetadata?.projects?.[0]?.datasets ?? []),
                   ...datasetsResult.datasets.map((d) => ({ ...d, tables: [] })),
@@ -127,7 +108,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         if (currentDatasetIndex < datasets.length) {
           setIsLoadingTables(true);
           const dataset = datasets[currentDatasetIndex];
-          const tablesResult = await databaseConnection.fetchTablesForDataset(
+          const tablesResult = await driver.fetchTablesForDataset(
             dataset?.id ?? "",
           );
 
@@ -156,14 +137,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Initialize connection when integration changes
   useEffect(() => {
     if (activeIntegration) {
-      initializeDatabaseConnection(activeIntegration)
+      initializeDriver(activeIntegration)
         .then(() => fetchMetadataIncremental())
         .catch(console.error);
     }
 
     return () => {
       // Cleanup connection on unmount or integration change
-      databaseConnection?.disconnect().catch(console.error);
+      driver?.disconnect().catch(console.error);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
@@ -206,8 +187,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         integrations,
         warehouseMetadata,
         isFetchingMetadata,
-        databaseConnection,
-        initializeDatabaseConnection,
+        driver,
+        initializeDatabaseConnection: initializeDriver,
         fetchMetadataIncremental,
         isLoadingDatasets,
         isLoadingTables,
