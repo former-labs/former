@@ -24,6 +24,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { PATH_EDITOR, PATH_INTEGRATIONS } from "@/lib/paths";
+import { MetadataTree } from "@/components/navbar/metadata-tree";
 
 // This is sample data.
 const data = {
@@ -159,8 +160,8 @@ export function LeftSidebar({
         <WorkspaceSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {/* <NavMain items={data.navMain} /> */}
         <NavPages pages={data.sections} />
+        <MetadataTree />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

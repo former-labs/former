@@ -320,6 +320,7 @@ export class PostgresDriver extends Driver {
     datasets: Array<{ id: string; name: string }>;
     nextPageToken?: string;
   }> {
+    console.log("fetchDatasets for postgres", this.credentials.database);
     const result = await this.client.query(
       `SELECT schema_name as id FROM information_schema.schemata 
        WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`

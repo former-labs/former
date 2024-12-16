@@ -22,8 +22,8 @@ interface DataContextType {
   warehouseMetadata: WarehouseMetadata | null;
   isFetchingMetadata: boolean;
   driver: Driver | null;
-  initializeDriver: (integration: Integration) => Promise<void>;
-  fetchMetadataIncremental: (integration: Integration) => Promise<void>;
+  initializeDriver: (integration: Integration) => Promise<string | undefined>;
+  fetchMetadataIncremental: (connectionId: string) => Promise<void>;
   isLoadingDatasets: boolean;
   isLoadingTables: boolean;
   integrations: Integration[];
@@ -67,6 +67,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!result.success) {
         throw new Error(result.error);
+      } else {
+        return result.connectionId;
       }
     } catch (error) {
       console.error("Failed to initialize database connection:", error);
@@ -74,16 +76,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchMetadataIncremental = async (integration: Integration) => {
-    console.log("fetchMetadataIncremental", integration?.id);
-    if (!integration?.id || isFetchingMetadata) return;
+  const fetchMetadataIncremental = async (connectionId: string) => {
+    console.log("fetchMetadataIncremental", connectionId);
+    if (!connectionId || isFetchingMetadata) return;
 
     try {
       setIsFetchingMetadata(true);
-      console.log("Fetching metadata for", integration.id);
-      const metadata = await window.electron.database.getMetadata(
-        integration.id,
-      );
+      console.log("Fetching metadata for", connectionId);
+      const metadata = await window.electron.database.getMetadata(connectionId);
       setWarehouseMetadata(metadata as WarehouseMetadata);
       console.log("metadata", metadata);
     } catch (error) {
@@ -101,16 +101,18 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (activeIntegration) {
       console.log("activeIntegration", activeIntegration);
       initializeDriver(activeIntegration)
-        .then(() => fetchMetadataIncremental(activeIntegration))
+        .then((connectionId) => {
+          if (connectionId) {
+            void fetchMetadataIncremental(connectionId);
+          }
+        })
         .catch(console.error);
     }
 
     return () => {
       // Cleanup connection on unmount or integration change
       if (activeIntegration?.id) {
-        window.electron.database
-          .disconnect(activeIntegration.id)
-          .catch(console.error);
+        void window.electron.database.disconnect(activeIntegration.id);
       }
     };
   }, [activeIntegration?.id]);

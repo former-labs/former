@@ -47,7 +47,7 @@ export const database = {
   async getMetadata(connectionId: string) {
     const connection = connections.get(connectionId);
     if (!connection) throw new Error(`Connection not found: ${connectionId}`);
-    return connection.fetchMetadata();
+    return await connection.fetchMetadata();
   },
 
   async disconnectAll() {
