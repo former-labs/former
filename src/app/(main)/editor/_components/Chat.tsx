@@ -17,7 +17,7 @@ export const ChatSidebar = () => {
 
   return (
     <div className="h-full bg-gray-100 p-3">
-      <div className="flex flex-col gap-4">
+      <div className="flex h-full flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="text-lg font-medium">Chat</div>
           <div className="flex gap-2">
@@ -65,29 +65,34 @@ const ActiveChat = () => {
 
   const lastMessage = activeChat.messages[activeChat.messages.length - 1];
   const showLoadingMessage = lastMessage?.type === "user";
+  const hasMessages = activeChat.messages.length > 0;
 
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
-      <div className="space-y-2">
-        {activeChat.messages.map((message, i) => (
-          <div key={i}>
-            {message.type === "assistant" ? (
-              <div className="p-2">{message.content}</div>
-            ) : (
-              <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
-                {message.content}
-              </div>
-            )}
-          </div>
-        ))}
-        {showLoadingMessage && (
-          <div className="flex items-center gap-2 p-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-          </div>
-        )}
-        <ChatInputBox onSubmit={handleSubmit} />
+    <div
+      className={`flex h-full flex-col ${hasMessages ? "justify-between" : "justify-start"}`}
+    >
+      <div className="space-y-2 overflow-y-auto">
+        <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
+        <div className="space-y-2">
+          {activeChat.messages.map((message, i) => (
+            <div key={i}>
+              {message.type === "assistant" ? (
+                <div className="p-2">{message.content}</div>
+              ) : (
+                <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
+                  {message.content}
+                </div>
+              )}
+            </div>
+          ))}
+          {showLoadingMessage && (
+            <div className="flex items-center gap-2 p-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          )}
+        </div>
       </div>
+      <ChatInputBox onSubmit={handleSubmit} />
     </div>
   );
 };

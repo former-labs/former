@@ -224,7 +224,7 @@ const DiffWidgetButtons = ({
   };
 
   return (
-    <div className="flex w-full justify-end gap-1">
+    <div className="flex w-full justify-end gap-1 pr-4">
       <button
         onClick={handleClick}
         className="rounded-b bg-blue-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-blue-700"

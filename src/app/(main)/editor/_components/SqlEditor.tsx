@@ -5,15 +5,19 @@ import { DiffEditor, Editor } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
+import { useEditor } from "./editorStore";
 
 export const SqlEditor = () => {
+  const {
+    editorContent,
+    editorContentPending,
+    setEditorContent,
+    setEditorContentPending,
+  } = useEditor();
+
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
-  const [editorContent, setEditorContent] = useState("");
-  const [editorContentPending, setEditorContentPending] = useState<
-    string | null
-  >(null);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
@@ -80,20 +84,6 @@ export const SqlEditor = () => {
     }
   }, [renderSideBySide, diffEditorRef.current]);
 
-  const setInitialContent = () => {
-    setEditorContent("SELECT\n    1 as foo,\n    2 as bar\nFROM table_c;");
-  };
-
-  const startDiff = () => {
-    setEditorContentPending(
-      "SELECT\n    1 as foo,\n    3 as zam\nFROM table_c;",
-    );
-  };
-
-  const endDiff = () => {
-    setEditorContentPending(null);
-  };
-
   const printContent = () => {
     console.log({
       editorContent,
@@ -135,6 +125,20 @@ export const SqlEditor = () => {
       });
       diffWidgetsRef.current = [];
     }
+  };
+
+  const setInitialContent = () => {
+    setEditorContent("SELECT\n    1 as foo,\n    2 as bar\nFROM table_c;");
+  };
+
+  const startDiff = () => {
+    setEditorContentPending(
+      "SELECT\n    1 as foo,\n    3 as zam\nFROM table_c;",
+    );
+  };
+
+  const endDiff = () => {
+    setEditorContentPending(null);
   };
 
   return (
