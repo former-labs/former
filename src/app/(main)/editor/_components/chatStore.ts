@@ -54,12 +54,32 @@ export const useChat = () => {
     return chatId;
   };
 
+  const submitMessage = ({
+    message
+  }: {
+    message: string;
+  }) => {
+    if (!store.activeChatId) return;
+
+    // Add user message
+    store.addMessage(store.activeChatId, {
+      type: "user",
+      content: message,
+    });
+
+    // Add assistant message (capitalized)
+    store.addMessage(store.activeChatId, {
+      type: "assistant",
+      content: message.toUpperCase(),
+    });
+  };
+
   return {
     chats: store.chats,
     activeChat,
     activeChatId: store.activeChatId,
     setActiveChatId: store.setActiveChatId,
     createChat,
-    addMessage: store.addMessage,
+    submitMessage,
   };
 };

@@ -53,31 +53,29 @@ export const ChatSidebar = () => {
 };
 
 const ActiveChat = () => {
-  const { activeChat, addMessage } = useChat();
+  const { activeChat, submitMessage } = useChat();
 
   if (!activeChat) {
     return <div className="text-center text-gray-500">No active chat</div>;
   }
 
   const handleSubmit = (message: string) => {
-    addMessage(activeChat.chatId, {
-      type: "user",
-      content: message,
-    });
+    submitMessage({ message });
   };
 
   return (
     <div className="space-y-2">
       <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
-      <div className="space-y-4">
+      <div className="space-y-2">
         {activeChat.messages.map((message, i) => (
-          <div
-            key={i}
-            className={`rounded-lg bg-white p-3 shadow ${
-              message.type === "assistant" ? "text-blue-600" : "text-gray-800"
-            }`}
-          >
-            {message.content}
+          <div key={i}>
+            {message.type === "assistant" ? (
+              <div className="p-2 text-blue-600">{message.content}</div>
+            ) : (
+              <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
+                {message.content}
+              </div>
+            )}
           </div>
         ))}
         <ChatInputBox onSubmit={handleSubmit} />
@@ -156,7 +154,7 @@ const TextareaAutoResize = ({
       onChange={onChange}
       onKeyDown={onKeyDown}
       placeholder={placeholder}
-      className="h-full resize-none overflow-hidden border shadow-none focus-visible:ring-0"
+      className="h-full resize-none overflow-hidden border p-2 shadow-none focus-visible:ring-0"
       rows={1}
     />
   );
