@@ -17,7 +17,12 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "electron:dev": "tsc -p src/electron/tsconfig.json && electron dist/electron/main.js",
+    "electron:build": "tsc -p src/electron/tsconfig.json",
+    "electron:start": "electron dist/electron/main.js",
+    "electron:package": "electron-builder build --config electron-builder.config.cjs",
+    "electron:make": "npm run electron:build && npm run electron:package"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^7.9.1",
@@ -91,6 +96,8 @@
     "@typescript-eslint/eslint-plugin": "^8.1.0",
     "@typescript-eslint/parser": "^8.1.0",
     "drizzle-kit": "^0.24.0",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.0.1",
     "eslint-plugin-drizzle": "^0.2.3",

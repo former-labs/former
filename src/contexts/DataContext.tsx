@@ -3,7 +3,7 @@
 import {
   type DatabaseConnection,
   createDatabaseConnection,
-} from "@/lib/databaseConnections/clients";
+} from "@/lib/drivers/clients";
 import type {
   BigQueryCredentials,
   DatabaseCredentials,
