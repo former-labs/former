@@ -8,44 +8,54 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { CornerDownLeft, History, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Editor } from "@monaco-editor/react";
+import {
+  CornerDownLeft,
+  History,
+  ListCheck,
+  Loader2,
+  Plus,
+} from "lucide-react";
+import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
+import React, { type ReactNode, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { useChat } from "./chatStore";
+import { useEditor } from "./editorStore";
 
 export const ChatSidebar = () => {
   const { createChat, chats, setActiveChatId } = useChat();
 
   return (
-    <div className="h-full bg-gray-100 p-3">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-medium">Chat</div>
-          <div className="flex gap-2">
-            {chats.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <History className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {chats.map((chat) => (
-                    <DropdownMenuItem
-                      key={chat.chatId}
-                      onClick={() => setActiveChatId(chat.chatId)}
-                    >
-                      Chat {chat.chatId}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <Button onClick={createChat} size="icon" variant="outline">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+    <div className="flex h-full flex-col gap-4 bg-gray-200 p-3">
+      <div className="flex items-center justify-between">
+        <div className="text-lg font-medium">Chat</div>
+        <div className="flex gap-2">
+          {chats.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <History className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="mr-2">
+                {chats.map((chat) => (
+                  <DropdownMenuItem
+                    key={chat.chatId}
+                    onClick={() => setActiveChatId(chat.chatId)}
+                  >
+                    Chat - {chat.createdAt.toLocaleString()}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <Button onClick={createChat} size="icon" variant="outline">
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto">
         <ActiveChat />
       </div>
     </div>
@@ -63,23 +73,46 @@ const ActiveChat = () => {
     await submitMessage({ message });
   };
 
+  const lastMessage = activeChat.messages[activeChat.messages.length - 1];
+  const showLoadingMessage = lastMessage?.type === "user";
+  const hasMessages = activeChat.messages.length > 0;
+
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
-      <div className="space-y-2">
-        {activeChat.messages.map((message, i) => (
-          <div key={i}>
-            {message.type === "assistant" ? (
-              <div className="p-2 text-blue-600">{message.content}</div>
-            ) : (
-              <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
-                {message.content}
-              </div>
-            )}
-          </div>
-        ))}
-        <ChatInputBox onSubmit={handleSubmit} />
+    <div className="flex h-full flex-col">
+      <div
+        className={`space-y-2 overflow-y-auto pb-4 ${hasMessages ? "flex-1" : ""}`}
+      >
+        <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
+        <div className="space-y-2">
+          {activeChat.messages.map((message, i) => (
+            <div key={i}>
+              {message.type === "assistant" ? (
+                <div className="p-2">
+                  <ReactMarkdown
+                    components={{
+                      pre: CodeBlock,
+                      code: CodeInline,
+                    }}
+                    className="space-y-2"
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
+                  {message.content}
+                </div>
+              )}
+            </div>
+          ))}
+          {showLoadingMessage && (
+            <div className="flex items-center gap-2 p-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          )}
+        </div>
       </div>
+      <ChatInputBox onSubmit={handleSubmit} />
     </div>
   );
 };
@@ -105,7 +138,7 @@ const ChatInputBox = ({
   };
 
   return (
-    <div className="space-y-2 rounded-lg bg-white p-2 shadow">
+    <div className="space-y-2 rounded-lg border bg-white p-2">
       <TextareaAutoResize
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -157,5 +190,99 @@ const TextareaAutoResize = ({
       className="h-full resize-none overflow-hidden border p-2 shadow-none focus-visible:ring-0"
       rows={1}
     />
+  );
+};
+
+const CodeInline = ({ children }: { children?: ReactNode }) => {
+  return (
+    <code className="rounded bg-gray-300 px-1 py-0.5 text-sm text-gray-800">
+      {children}
+    </code>
+  );
+};
+
+const CodeBlock = ({
+  children,
+  className,
+}: {
+  children?: ReactNode;
+  className?: string;
+}) => {
+  const { setEditorContentPending } = useEditor();
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  if (!React.isValidElement(children)) {
+    throw new Error("Node passed to code block that isn't a valid element.");
+  }
+
+  if (children.props?.node?.tagName !== "code") {
+    throw new Error("Node passed to code block that isn't a code element.");
+  }
+
+  /*
+    ReactMarkdown is stupid and passes both inline and block code elements
+    through the CodeInline component first. We strip out the inline code
+    wrapper here first and rewrap with our code block wrapper.
+    This should just be a string now.
+  */
+  let codeContent = children.props.children;
+  if (typeof codeContent !== "string") {
+    throw new Error("Code content is not a string.");
+  }
+
+  codeContent = codeContent.replace(/\n+$/, "");
+
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor;
+
+    const updateEditorHeight = () => {
+      const contentHeight = editor.getContentHeight();
+      const editorElement = editor.getDomNode();
+
+      if (editorElement) {
+        editorElement.style.height = `${contentHeight}px`;
+        editor.layout();
+      }
+    };
+
+    editor.onDidContentSizeChange(updateEditorHeight);
+    updateEditorHeight();
+  };
+
+  return (
+    <div>
+      <div className="relative overflow-x-auto rounded-sm border">
+        <Editor
+          onMount={handleEditorDidMount}
+          language="sql"
+          value={codeContent}
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            readOnly: true,
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            lineNumbers: "off",
+            lineDecorationsWidth: 0,
+            padding: { top: 8, bottom: 8 },
+            scrollbar: {
+              ignoreHorizontalScrollbarInContentHeight: true,
+              alwaysConsumeMouseWheel: false,
+            },
+          }}
+        />
+      </div>
+      <div className="mt-1 flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setEditorContentPending(codeContent)}
+          className="gap-1"
+        >
+          Apply
+          <ListCheck className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 };

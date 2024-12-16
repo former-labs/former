@@ -12,6 +12,7 @@ interface DiffWidgetProps {
   diffEditor: editor.IStandaloneDiffEditor;
   onApply: (newContent: string) => void;
   onReject: (newContent: string) => void;
+  originalLineCount: number;
 }
 
 export class DiffWidget implements editor.IContentWidget {
@@ -50,6 +51,18 @@ export class DiffWidget implements editor.IContentWidget {
 
   getPosition(): editor.IContentWidgetPosition {
     // Use dodgy logic to handle when the edit is a deletion only
+
+    /*
+      Also, because of how monaco diff editor works, there is a weird case where the diff
+      is equal to a deletion of the bottom lines of the original editor.
+      In this case we override and do a BELOW position. It's not perfectly consistent but
+      it is usable, unlike EXACT which does not render properly because the original editor
+      has no lines to place it on.
+    */
+    const isDeleteOriginalBottom =
+      this.props.modifiedEndLineNumber === 0 &&
+      this.props.originalEndLineNumber === this.props.originalLineCount;
+
     return {
       position: {
         lineNumber:
@@ -59,9 +72,9 @@ export class DiffWidget implements editor.IContentWidget {
         column: 1,
       },
       preference: [
-        this.props.modifiedEndLineNumber === 0
-          ? editor.ContentWidgetPositionPreference.EXACT
-          : editor.ContentWidgetPositionPreference.BELOW,
+        isDeleteOriginalBottom || this.props.modifiedEndLineNumber !== 0
+          ? editor.ContentWidgetPositionPreference.BELOW
+          : editor.ContentWidgetPositionPreference.EXACT,
       ],
     };
   }
@@ -224,7 +237,7 @@ const DiffWidgetButtons = ({
   };
 
   return (
-    <div className="flex w-full justify-end gap-1">
+    <div className="flex w-full justify-end gap-1 pr-4">
       <button
         onClick={handleClick}
         className="rounded-b bg-blue-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-blue-700"

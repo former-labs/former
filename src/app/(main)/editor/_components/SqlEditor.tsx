@@ -3,18 +3,22 @@
 import { Button } from "@/components/ui/button";
 import { DiffEditor, Editor } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
+import { useEditor } from "./editorStore";
 
 export const SqlEditor = () => {
+  const {
+    editorContent,
+    editorContentPending,
+    setEditorContent,
+    setEditorContentPending,
+  } = useEditor();
+
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
-  const [editorContent, setEditorContent] = useState("");
-  const [editorContentPending, setEditorContentPending] = useState<
-    string | null
-  >(null);
+  const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
-  const [diffWidgets, setDiffWidgets] = useState<editor.IContentWidget[]>([]);
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
@@ -33,26 +37,34 @@ export const SqlEditor = () => {
       setEditorContentPending(modifiedEditor.getValue());
     });
 
-    // Initial widget setup
-    updateDiffWidgets(editor);
-  };
+    modifiedEditor.updateOptions({
+      lineNumbers: renderSideBySide ? "on" : "off",
+    });
 
-  // Keep a reference to current widgets outside of React state
-  let currentWidgets: editor.IContentWidget[] = [];
+    // Create the widgets when we first activate the diff editor
+    // This is dumb but we apparently need to use a timeout for this to work
+    // Tbh idk if this is stable on a slow machine
+    // I'm sure there's a better way to do this
+    setTimeout(() => {
+      updateDiffWidgets(editor);
+    }, 0);
+  };
 
   const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
     // Remove existing widgets
     if (diffEditorRef.current) {
       const modifiedEditor = diffEditorRef.current.getModifiedEditor();
-      currentWidgets.forEach((widget) => {
+      diffWidgetsRef.current.forEach((widget) => {
         modifiedEditor.removeContentWidget(widget);
       });
     }
 
-    currentWidgets = [];
+    diffWidgetsRef.current = [];
 
     // Add new widgets for each change
     const changes = editor.getLineChanges();
+    const originalModel = editor.getModel()?.original;
+    if (!originalModel) return;
 
     changes?.forEach((change, index) => {
       const widget = new DiffWidget({
@@ -68,36 +80,11 @@ export const SqlEditor = () => {
         onReject: (newContent: string) => {
           setEditorContentPending(newContent);
         },
+        originalLineCount: originalModel.getLineCount(),
       });
       editor.getModifiedEditor().addContentWidget(widget);
-      currentWidgets.push(widget);
+      diffWidgetsRef.current.push(widget);
     });
-
-    // Update React state if needed for other purposes
-    setDiffWidgets(currentWidgets);
-  };
-
-  // Update line numbers when renderSideBySide changes
-  useEffect(() => {
-    if (diffEditorRef.current) {
-      diffEditorRef.current.getModifiedEditor().updateOptions({
-        lineNumbers: renderSideBySide ? "on" : "off",
-      });
-    }
-  }, [renderSideBySide, diffEditorRef.current]);
-
-  const setInitialContent = () => {
-    setEditorContent("SELECT\n    1 as foo,\n    2 as bar\nFROM table_c;");
-  };
-
-  const startDiff = () => {
-    setEditorContentPending(
-      "SELECT\n    1 as foo,\n    3 as zam\nFROM table_c;",
-    );
-  };
-
-  const endDiff = () => {
-    setEditorContentPending(null);
   };
 
   const printContent = () => {
@@ -136,11 +123,25 @@ export const SqlEditor = () => {
   const removeWidgets = () => {
     if (diffEditorRef.current) {
       const modifiedEditor = diffEditorRef.current.getModifiedEditor();
-      diffWidgets.forEach((widget) => {
+      diffWidgetsRef.current.forEach((widget) => {
         modifiedEditor.removeContentWidget(widget);
       });
-      setDiffWidgets([]);
+      diffWidgetsRef.current = [];
     }
+  };
+
+  const setInitialContent = () => {
+    setEditorContent("SELECT\n    1 as foo,\n    2 as bar\nFROM table_c;");
+  };
+
+  const startDiff = () => {
+    setEditorContentPending(
+      "SELECT\n    1 as foo,\n    3 as zam\nFROM table_c;",
+    );
+  };
+
+  const endDiff = () => {
+    setEditorContentPending(null);
   };
 
   return (
@@ -153,20 +154,31 @@ export const SqlEditor = () => {
         <Button onClick={setDecorations}>Set decorations</Button>
         <Button onClick={printDecorations}>Print decorations</Button>
         <Button onClick={removeWidgets}>Remove widgets</Button>
+        <Button onClick={() => updateDiffWidgets(diffEditorRef.current!)}>
+          Update diff widgets
+        </Button>
         {editorContentPending !== null && (
           <Button
             onClick={() => {
-              setRenderSideBySide(!renderSideBySide);
+              const newRenderSideBySide = !renderSideBySide;
+              setRenderSideBySide(newRenderSideBySide);
+
+              // Update line numbers when toggling view
+              if (diffEditorRef.current) {
+                diffEditorRef.current.getModifiedEditor().updateOptions({
+                  lineNumbers: newRenderSideBySide ? "on" : "off",
+                });
+              }
             }}
           >
             {renderSideBySide ? "Inline View" : "Side by Side View"}
           </Button>
         )}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 pb-4">
         {editorContentPending === null ? (
           <Editor
-            height="calc(100vh - 120px)"
+            height="100%"
             className="overflow-hidden border"
             language="sql"
             value={editorContent}
@@ -180,30 +192,55 @@ export const SqlEditor = () => {
             }}
           />
         ) : (
-          <DiffEditor
-            height="calc(100vh - 120px)"
-            className="overflow-hidden border"
-            language="sql"
-            original={editorContent}
-            modified={editorContentPending}
-            onMount={handleDiffEditorDidMount}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              automaticLayout: true,
-              scrollBeyondLastLine: true,
-              renderSideBySide,
+          <div className="relative h-full">
+            <div className="absolute right-8 top-4 z-10 flex gap-2">
+              <Button
+                onClick={() => {
+                  if (editorContentPending) {
+                    setEditorContent(editorContentPending);
+                    setEditorContentPending(null);
+                  }
+                }}
+              >
+                Accept All
+              </Button>
+              <Button
+                onClick={() => {
+                  setEditorContentPending(null);
+                }}
+              >
+                Reject All
+              </Button>
+            </div>
+            <DiffEditor
+              height="100%"
+              className="overflow-hidden border"
+              language="sql"
+              original={editorContent}
+              modified={editorContentPending}
+              onMount={handleDiffEditorDidMount}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                automaticLayout: true,
+                scrollBeyondLastLine: true,
+                renderSideBySide,
 
-              lightbulb: {
-                // This is actually buggy and will not disable in renderSideBySide mode
-                // https://github.com/microsoft/monaco-editor/issues/3873
-                enabled: editor.ShowLightbulbIconMode.Off,
-              },
+                lightbulb: {
+                  // This is actually buggy and will not disable in renderSideBySide mode
+                  // https://github.com/microsoft/monaco-editor/issues/3873
+                  enabled: editor.ShowLightbulbIconMode.Off,
+                },
 
-              // We give this extra width so that it is the same as the regular editor
-              lineDecorationsWidth: 26,
-            }}
-          />
+                // We give this extra width so that it is the same as the regular editor
+                lineDecorationsWidth: 26,
+
+                // The wider scrollbar on the right that shows green/red where diffs are
+                // We might want this back
+                renderOverviewRuler: false,
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

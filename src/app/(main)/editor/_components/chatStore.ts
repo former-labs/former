@@ -1,6 +1,7 @@
 import { api } from "@/trpc/react";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
+import { useEditor } from "./editorStore";
 
 interface ChatMessage {
   type: "assistant" | "user";
@@ -10,6 +11,7 @@ interface ChatMessage {
 interface Chat {
   chatId: string;
   messages: ChatMessage[];
+  createdAt: Date;
 }
 
 interface ChatStore {
@@ -42,6 +44,7 @@ const useChatStore = create<ChatStore>((set) => ({
 
 export const useChat = () => {
   const store = useChatStore();
+  const { editorContent } = useEditor();
   
   const activeChat = store.chats.find(
     (chat) => chat.chatId === store.activeChatId
@@ -51,8 +54,12 @@ export const useChat = () => {
 
   const createChat = () => {
     const chatId = uuidv4();
-    const newChat = { chatId, messages: [] };
-    store.setChats([...store.chats, newChat]);
+    const newChat = { 
+      chatId, 
+      messages: [],
+      createdAt: new Date()
+    };
+    store.setChats([newChat, ...store.chats]);
     store.setActiveChatId(chatId);
     return chatId;
   };
@@ -62,24 +69,21 @@ export const useChat = () => {
   }: {
     message: string;
   }) => {
-    if (!store.activeChatId) return;
+    if (!store.activeChatId || !activeChat) return;
 
-    // Add user message
-    store.addMessage(store.activeChatId, {
-      type: "user",
+    const newMessage = {
+      type: "user" as const,
       content: message,
+    };
+
+    const responsePromise = submitMessageMutation.mutateAsync({
+      messages: [...activeChat.messages, newMessage],
+      editorContent,
     });
 
-    // Get assistant response from API
-    const response = await submitMessageMutation.mutateAsync({
-      message,
-    });
-
-    // Add assistant message
-    store.addMessage(store.activeChatId, {
-      type: "assistant",
-      content: response.message,
-    });
+    store.addMessage(store.activeChatId, newMessage);
+    const response = await responsePromise;
+    store.addMessage(store.activeChatId, response.message);
   };
 
   return {
