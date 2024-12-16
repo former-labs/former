@@ -18,8 +18,9 @@
     "preview": "next build && next start",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "electron:dev": "tsc -p src/electron/tsconfig.json && electron dist/electron/main.js",
-    "electron:build": "tsc -p src/electron/tsconfig.json",
+    "electron:dev": "npm run electron:build && electron dist/electron/main.js",
+    "electron:build": "tsc -p src/electron/tsconfig.json && npm run electron:build:preload",
+    "electron:build:preload": "tsc -p src/electron/tsconfig.preload.json",
     "electron:start": "electron dist/electron/main.js",
     "electron:package": "electron-builder build --config electron-builder.config.cjs",
     "electron:make": "npm run electron:build && npm run electron:package"
@@ -87,6 +88,7 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
+    "@types/dotenv": "^6.1.1",
     "@types/eslint": "^8.56.10",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.14.10",

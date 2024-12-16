@@ -1,10 +1,11 @@
 import { app, BrowserWindow } from 'electron';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { env } from '../env.js';
+import { env } from './env.electron.js';
 
+// Get the current file's directory path in ES module context
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const currentDir = dirname(__filename);
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -13,12 +14,11 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: join(__dirname, 'preload.js')
+      // Use currentDir instead of __dirname
+      preload: join(currentDir, 'preload.js')
     }
   });
 
-  // In development, load from localhost
-  // In production, load from Vercel deployment
   const isDev = env.NODE_ENV === 'development';
   const url = isDev ? 'http://localhost:3000' : env.DASHBOARD_URI;
   
@@ -26,7 +26,6 @@ function createWindow() {
     console.error('Failed to load URL:', err);
   });
 
-  // Open DevTools in development
   if (isDev) {
     console.log('isDev', isDev);
     win.webContents.openDevTools();

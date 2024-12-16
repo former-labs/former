@@ -7,25 +7,22 @@ module.exports = {
   productName: "Yerve",
   directories: {
     output: "release/${version}",
-    buildResources: "resources"
+    buildResources: "resources",
   },
-  files: [
-    "dist/electron/**/*",
-    "node_modules/**/*"
-  ],
+  files: ["dist/electron/**/*", "node_modules/**/*"],
   win: {
     target: [
       {
         target: "nsis",
-        arch: ["x64"]
-      }
-    ]
+        arch: ["x64"],
+      },
+    ],
   },
   mac: {
-    target: ["dmg"]
+    target: ["dmg"],
   },
   linux: {
     target: ["AppImage"],
-    category: "Development"
-  }
-}; 
+    category: "Development",
+  },
+};
