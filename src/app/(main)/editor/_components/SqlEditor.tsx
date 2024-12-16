@@ -191,17 +191,25 @@ export const SqlEditor = () => {
           />
         ) : (
           <div className="relative h-full">
-            <Button
-              className="absolute right-8 top-4 z-10"
-              onClick={() => {
-                if (editorContentPending) {
-                  setEditorContent(editorContentPending);
+            <div className="absolute right-8 top-4 z-10 flex gap-2">
+              <Button
+                onClick={() => {
+                  if (editorContentPending) {
+                    setEditorContent(editorContentPending);
+                    setEditorContentPending(null);
+                  }
+                }}
+              >
+                Accept All
+              </Button>
+              <Button
+                onClick={() => {
                   setEditorContentPending(null);
-                }
-              }}
-            >
-              Accept All
-            </Button>
+                }}
+              >
+                Reject All
+              </Button>
+            </div>
             <DiffEditor
               height="100%"
               className="overflow-hidden border"
