@@ -5,8 +5,19 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import dynamic from "next/dynamic";
 import { ChatSidebar } from "./_components/Chat";
-import { SqlEditor } from "./_components/SqlEditor";
+
+/*
+  If this is not dynamic, hot reload seems to cause the entire page to reload.
+*/
+const SqlEditor = dynamic(
+  () => import("./_components/SqlEditor").then((mod) => mod.SqlEditor),
+  {
+    ssr: false,
+    loading: () => <div>Loading editor...</div>,
+  },
+);
 
 export default function Page() {
   return (

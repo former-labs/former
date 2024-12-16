@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import React, { type ReactNode, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { useChat } from "./chatStore";
 
 export const ChatSidebar = () => {
@@ -77,7 +78,16 @@ const ActiveChat = () => {
           {activeChat.messages.map((message, i) => (
             <div key={i}>
               {message.type === "assistant" ? (
-                <div className="p-2">{message.content}</div>
+                <div className="p-2">
+                  <ReactMarkdown
+                    components={{
+                      pre: CodeBlock,
+                      code: CodeInline,
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
               ) : (
                 <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
                   {message.content}
@@ -170,5 +180,40 @@ const TextareaAutoResize = ({
       className="h-full resize-none overflow-hidden border p-2 shadow-none focus-visible:ring-0"
       rows={1}
     />
+  );
+};
+
+const CodeInline = ({ children }: { children?: ReactNode }) => {
+  return (
+    <code className="rounded bg-gray-300 px-1 py-0.5 text-sm text-gray-800">
+      {children}
+    </code>
+  );
+};
+
+const CodeBlock = ({
+  children,
+  className,
+}: {
+  children?: ReactNode;
+  className?: string;
+}) => {
+  if (!React.isValidElement(children)) {
+    throw new Error("Node passed to code block that isn't a valid element.");
+  }
+
+  if (children.props?.node?.tagName !== "code") {
+    throw new Error("Node passed to code block that isn't a code element.");
+  }
+
+  // ReactMarkdown is stupid and passes both inline and block code elements
+  // through the CodeInline component first. We strip out the inline code
+  // wrapper here first and rewrap with our code block wrapper.
+  const codeContent = children.props.children;
+
+  return (
+    <pre className="relative overflow-x-auto rounded-md bg-gray-400 px-3 py-2">
+      <code className={`text-sm ${className}`}>{codeContent}</code>
+    </pre>
   );
 };
