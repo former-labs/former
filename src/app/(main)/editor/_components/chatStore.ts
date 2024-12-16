@@ -16,6 +16,7 @@ interface ChatStore {
   activeChatId: string | null;
   setActiveChatId: (chatId: string) => void;
   setChats: (chats: Chat[]) => void;
+  addMessage: (chatId: string, message: ChatMessage) => void;
 }
 
 const useChatStore = create<ChatStore>((set) => ({
@@ -26,6 +27,15 @@ const useChatStore = create<ChatStore>((set) => ({
   },
   setChats: (chats) => {
     set({ chats });
+  },
+  addMessage: (chatId, message) => {
+    set((state) => ({
+      chats: state.chats.map((chat) =>
+        chat.chatId === chatId
+          ? { ...chat, messages: [...chat.messages, message] }
+          : chat
+      ),
+    }));
   },
 }));
 
@@ -50,5 +60,6 @@ export const useChat = () => {
     activeChatId: store.activeChatId,
     setActiveChatId: store.setActiveChatId,
     createChat,
+    addMessage: store.addMessage,
   };
 };

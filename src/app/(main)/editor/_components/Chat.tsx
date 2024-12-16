@@ -16,7 +16,7 @@ export const ChatSidebar = () => {
   const { createChat, chats, setActiveChatId } = useChat();
 
   return (
-    <div className="h-full bg-gray-100 p-4">
+    <div className="h-full bg-gray-100 p-3">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="text-lg font-medium">Chat</div>
@@ -53,34 +53,34 @@ export const ChatSidebar = () => {
 };
 
 const ActiveChat = () => {
-  const { activeChat } = useChat();
+  const { activeChat, addMessage } = useChat();
 
   if (!activeChat) {
     return <div className="text-center text-gray-500">No active chat</div>;
   }
 
   const handleSubmit = (message: string) => {
-    console.log(message);
+    addMessage(activeChat.chatId, {
+      type: "user",
+      content: message,
+    });
   };
 
   return (
     <div className="space-y-2">
       <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
-      <div className="space-y-2 rounded-lg bg-white p-2 shadow">
-        {activeChat.messages.length > 0 ? (
-          activeChat.messages.map((message, i) => (
-            <div
-              key={i}
-              className={`${
-                message.type === "assistant" ? "text-blue-600" : "text-gray-800"
-              }`}
-            >
-              {message.content}
-            </div>
-          ))
-        ) : (
-          <ChatInputBox onSubmit={handleSubmit} />
-        )}
+      <div className="space-y-4">
+        {activeChat.messages.map((message, i) => (
+          <div
+            key={i}
+            className={`rounded-lg bg-white p-3 shadow ${
+              message.type === "assistant" ? "text-blue-600" : "text-gray-800"
+            }`}
+          >
+            {message.content}
+          </div>
+        ))}
+        <ChatInputBox onSubmit={handleSubmit} />
       </div>
     </div>
   );
@@ -99,11 +99,19 @@ const ChatInputBox = ({
     setValue("");
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 rounded-lg bg-white p-2 shadow">
       <TextareaAutoResize
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder="Ask anything..."
       />
       <div className="flex justify-end">
@@ -124,10 +132,12 @@ const ChatInputBox = ({
 const TextareaAutoResize = ({
   value,
   onChange,
+  onKeyDown,
   placeholder,
 }: {
   value: string;
   onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
 }) => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -144,6 +154,7 @@ const TextareaAutoResize = ({
       ref={textAreaRef}
       value={value}
       onChange={onChange}
+      onKeyDown={onKeyDown}
       placeholder={placeholder}
       className="h-full resize-none overflow-hidden border shadow-none focus-visible:ring-0"
       rows={1}
