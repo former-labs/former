@@ -18,7 +18,7 @@ export default function Page() {
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={50}>
+        <ResizablePanel defaultSize={25} minSize={15} maxSize={50}>
           <ChatSidebar />
         </ResizablePanel>
       </ResizablePanelGroup>

@@ -1,5 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conversationRouter } from "./routers/conversation/conversationRouter";
+import { editorRouter } from "./routers/editor/editorRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
 import { integrationRouter } from "./routers/integrationRouter";
 import { onboardingRouter } from "./routers/onboardingRouter";
@@ -12,6 +13,7 @@ import { userRouter } from "./routers/userRouter";
  */
 export const appRouter = createTRPCRouter({
   conversation: conversationRouter,
+  editor: editorRouter,
   onboarding: onboardingRouter,
   integration: integrationRouter,
   eval: evalRouter,

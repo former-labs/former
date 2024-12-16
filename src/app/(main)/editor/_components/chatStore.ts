@@ -1,3 +1,4 @@
+import { api } from "@/trpc/react";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 
@@ -46,6 +47,8 @@ export const useChat = () => {
     (chat) => chat.chatId === store.activeChatId
   );
 
+  const submitMessageMutation = api.editor.submitMessage.useMutation();
+
   const createChat = () => {
     const chatId = uuidv4();
     const newChat = { chatId, messages: [] };
@@ -54,7 +57,7 @@ export const useChat = () => {
     return chatId;
   };
 
-  const submitMessage = ({
+  const submitMessage = async ({
     message
   }: {
     message: string;
@@ -67,10 +70,15 @@ export const useChat = () => {
       content: message,
     });
 
-    // Add assistant message (capitalized)
+    // Get assistant response from API
+    const response = await submitMessageMutation.mutateAsync({
+      message,
+    });
+
+    // Add assistant message
     store.addMessage(store.activeChatId, {
       type: "assistant",
-      content: message.toUpperCase(),
+      content: response.message,
     });
   };
 

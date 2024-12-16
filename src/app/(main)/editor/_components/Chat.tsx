@@ -59,8 +59,8 @@ const ActiveChat = () => {
     return <div className="text-center text-gray-500">No active chat</div>;
   }
 
-  const handleSubmit = (message: string) => {
-    submitMessage({ message });
+  const handleSubmit = async (message: string) => {
+    await submitMessage({ message });
   };
 
   return (
@@ -87,13 +87,13 @@ const ActiveChat = () => {
 const ChatInputBox = ({
   onSubmit,
 }: {
-  onSubmit: (message: string) => void;
+  onSubmit: (message: string) => Promise<void>;
 }) => {
   const [value, setValue] = useState("");
 
   const handleSubmit = () => {
     if (!value.trim()) return;
-    onSubmit(value);
+    void onSubmit(value);
     setValue("");
   };
 
