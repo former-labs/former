@@ -13,8 +13,31 @@ export const editorRouter = createTRPCRouter({
           content: z.string(),
         })
       ).min(1),
+      editorContent: z.string(),
     }))
     .mutation(async ({ input }) => {
+      // For now, just log the editor content
+      console.log("Editor content received:", input.editorContent);
+
+      const systemMessage: ChatCompletionMessageParam = {
+        role: "system",
+        content: `
+You are a SQL assistant for the AI-first SQL IDE called "Yerve".
+
+The user is writing SQL code in the editor.
+They may ask you a question, or they may ask you to modify the code.
+Please respond appropriately based on the user's request.
+
+Respond in Markdown format.
+
+The user's SQL code is below:
+\`\`\`sql
+${input.editorContent}
+\`\`\`
+        `
+      }
+
+
       // Transform messages to OpenAI format
       const openAiMessages: ChatCompletionMessageParam[] = input.messages.map(msg => ({
         role: msg.type,
@@ -23,9 +46,12 @@ export const editorRouter = createTRPCRouter({
 
       // Get AI response
       const aiResponse = await getAIChatResponse({
-        messages: openAiMessages,
+        messages: [
+          systemMessage,
+          ...openAiMessages
+        ],
         schemaOutput: z.object({
-          response: z.string()
+          response: z.string().describe("The response to the user's request, in Markdown format.")
         }),
       });
 

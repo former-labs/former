@@ -1,6 +1,7 @@
 import { api } from "@/trpc/react";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
+import { useEditor } from "./editorStore";
 
 interface ChatMessage {
   type: "assistant" | "user";
@@ -43,6 +44,7 @@ const useChatStore = create<ChatStore>((set) => ({
 
 export const useChat = () => {
   const store = useChatStore();
+  const { editorContent } = useEditor();
   
   const activeChat = store.chats.find(
     (chat) => chat.chatId === store.activeChatId
@@ -74,17 +76,13 @@ export const useChat = () => {
       content: message,
     };
 
-    // Get assistant response from API using useChatStore.getState() to get latest state
     const responsePromise = submitMessageMutation.mutateAsync({
       messages: [...activeChat.messages, newMessage],
+      editorContent,
     });
 
-    // Add user message
     store.addMessage(store.activeChatId, newMessage);
-
     const response = await responsePromise;
-
-    // Add assistant message
     store.addMessage(store.activeChatId, response.message);
   };
 
