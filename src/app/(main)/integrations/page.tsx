@@ -6,7 +6,7 @@ import { BigQueryConnectModal } from "@/components/integrations/big-query-connec
 import { ExistingIntegrations } from "@/components/integrations/existing-integrations";
 import { IntegrationCard } from "@/components/integrations/integration-card";
 import { PostgresConnectModal } from "@/components/integrations/postgres-connect-modal";
-import { useData } from "@/contexts/DataContext";
+import { type Integration, useData } from "@/contexts/DataContext";
 import { useState } from "react";
 
 const integrationTypes = [
@@ -27,52 +27,29 @@ const integrationTypes = [
 export default function IntegrationsPage() {
   const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
   const [openPostgresModal, setOpenPostgresModal] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<{
-    id?: string;
-    type: "bigquery" | "postgres";
-    name?: string;
-    credentials?: any;
-  } | null>(null);
+  const [selectedIntegration, setSelectedIntegration] = useState<
+    Integration | undefined
+  >(undefined);
   const { addIntegration, editIntegration } = useData();
 
-  const getDefaultIntegrationName = (type: "bigquery" | "postgres", credentials: any) => {
-    if (type === "bigquery") {
-      return credentials.projectId;
-    } else {
-      return `${credentials.user}@${credentials.database}`;
-    }
-  };
-
-  const handleCreateIntegration = (type: "bigquery" | "postgres", credentials: any) => {
-    const defaultName = getDefaultIntegrationName(type, credentials);
-    addIntegration({
-      type,
-      name: defaultName,
-      credentials,
-    });
+  const handleCreateIntegration = (integration: Integration) => {
+    addIntegration(integration);
     handleCloseModal();
   };
 
-  const handleUpdateIntegration = (type: "bigquery" | "postgres", id: string, credentials: any) => {
-    const defaultName = getDefaultIntegrationName(type, credentials);
-    editIntegration(id, {
-      name: defaultName,
-      credentials,
-    });
+  const handleUpdateIntegration = (integration: Integration) => {
+    editIntegration(integration.id!, integration);
     handleCloseModal();
   };
 
-  const handleNewIntegration = (type: "bigquery" | "postgres") => {
-    setSelectedIntegration({ type });
-    if (type === "bigquery") {
-      setOpenBigQueryModal(true);
-    } else {
-      setOpenPostgresModal(true);
-    }
-  };
-
-  const handleEditIntegration = (type: "bigquery" | "postgres", id: string, name: string, credentials: any) => {
-    setSelectedIntegration({ type, id, name, credentials });
+  const handleOpenModal = ({
+    type,
+    integration,
+  }: {
+    type: "bigquery" | "postgres";
+    integration?: Integration;
+  }) => {
+    setSelectedIntegration(integration);
     if (type === "bigquery") {
       setOpenBigQueryModal(true);
     } else {
@@ -81,43 +58,50 @@ export default function IntegrationsPage() {
   };
 
   const handleCloseModal = () => {
-    setSelectedIntegration(null);
+    setSelectedIntegration(undefined);
     setOpenBigQueryModal(false);
     setOpenPostgresModal(false);
   };
 
-  const handleModalSubmit = (type: "bigquery" | "postgres", credentials: any) => {
-    if (selectedIntegration?.id) {
-      handleUpdateIntegration(type, selectedIntegration.id, credentials);
+  const handleModalSubmit = (integration: Integration) => {
+    if (integration.id) {
+      handleUpdateIntegration(integration);
     } else {
-      handleCreateIntegration(type, credentials);
+      handleCreateIntegration(integration);
     }
   };
 
   return (
-    <div className="max-w-[1300px] mx-auto px-6 py-10">
+    <div className="mx-auto max-w-[1300px] px-6 py-10">
       <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-[22px] font-semibold leading-7 mb-1">Integrations</h1>
+          <h1 className="mb-1 text-[22px] font-semibold leading-7">
+            Integrations
+          </h1>
           <p className="text-[14px] text-muted-foreground">
             Connect your data sources and manage existing connections.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {integrationTypes.map((integration) => (
             <IntegrationCard
               key={integration.name}
               name={integration.name}
               description={integration.description}
               icon={integration.icon}
-              onClick={() => handleNewIntegration(integration.type)}
+              onClick={() =>
+                handleOpenModal({
+                  type: integration.type,
+                  integration: undefined,
+                })
+              }
             />
           ))}
         </div>
 
         <div className="mt-8">
-          <ExistingIntegrations onEditIntegration={handleEditIntegration} />
+          <ExistingIntegrations onEditIntegration={handleOpenModal} />
         </div>
       </div>
 
@@ -126,22 +110,16 @@ export default function IntegrationsPage() {
         onOpenChange={(open) => {
           if (!open) handleCloseModal();
         }}
-        defaultValues={selectedIntegration?.credentials}
-        mode={selectedIntegration?.id ? 'edit' : 'create'}
-        integrationId={selectedIntegration?.id}
-        integrationName={selectedIntegration?.name}
-        onSubmit={(credentials) => handleModalSubmit('bigquery', credentials)}
+        integration={selectedIntegration}
+        onSubmit={(integration) => handleModalSubmit(integration)}
       />
       <PostgresConnectModal
         open={openPostgresModal}
         onOpenChange={(open) => {
           if (!open) handleCloseModal();
         }}
-        defaultValues={selectedIntegration?.credentials}
-        mode={selectedIntegration?.id ? 'edit' : 'create'}
-        integrationId={selectedIntegration?.id}
-        integrationName={selectedIntegration?.name}
-        onSubmit={(credentials) => handleModalSubmit('postgres', credentials)}
+        integration={selectedIntegration}
+        onSubmit={(integration) => handleModalSubmit(integration)}
       />
     </div>
   );

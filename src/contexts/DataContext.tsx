@@ -1,8 +1,6 @@
 "use client";
 
-import type {
-  DatabaseCredentials,
-} from "@/lib/drivers/clients";
+import type { DatabaseCredentials } from "@/lib/drivers/clients";
 import {
   type DatabaseConnection,
   createDatabaseConnection,
@@ -30,7 +28,7 @@ export interface WarehouseMetadata {
 }
 
 export type Integration = {
-  id: string;
+  id: string | null;
   type: "bigquery" | "postgres";
   name: string;
   credentials: DatabaseCredentials;
@@ -48,8 +46,8 @@ interface DataContextType {
   isLoadingDatasets: boolean;
   isLoadingTables: boolean;
   integrations: Integration[];
-  addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
-  editIntegration: (id: string, updates: Partial<Omit<Integration, "id" | "createdAt">>) => void;
+  addIntegration: (integration: Integration) => void;
+  editIntegration: (id: string, updates: Integration) => void;
   removeIntegration: (id: string) => void;
 }
 
@@ -181,19 +179,18 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setIntegrations((prev) => [...prev, newIntegration]);
   };
 
-  const editIntegration = (
-    id: string,
-    updates: Partial<Omit<Integration, "id" | "createdAt">>,
-  ) => {
+  const editIntegration = (id: string, updates: Integration) => {
     setIntegrations((prev) =>
       prev.map((integration) =>
         integration.id === id
           ? {
               ...integration,
-              ...updates,
+              type: updates.type,
+              name: updates.name,
+              credentials: updates.credentials,
             }
-          : integration
-      )
+          : integration,
+      ),
     );
   };
 

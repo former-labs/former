@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import type { Integration } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { PostgresCredentials } from "@/lib/drivers/clients";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
   connectionString: z.string().optional(),
   host: z.string().min(1, "Host is required"),
   port: z.number().min(1, "Port is required"),
@@ -38,19 +40,14 @@ type FormValues = z.infer<typeof formSchema>;
 export interface PostgresConnectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultValues?: any;
-  mode?: 'create' | 'edit';
-  integrationId?: string;
-  integrationName?: string;
-  onSubmit: (credentials: any) => void;
+  integration?: Integration;
+  onSubmit: (integration: Integration) => void;
 }
 
 export function PostgresConnectModal({
   open,
   onOpenChange,
-  defaultValues,
-  mode = 'create',
-  integrationName,
+  integration,
   onSubmit,
 }: PostgresConnectModalProps) {
   const { toast } = useToast();
@@ -58,7 +55,8 @@ export function PostgresConnectModal({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues || {
+    defaultValues: {
+      name: "",
       connectionString: "",
       host: "",
       port: 5432,
@@ -69,24 +67,44 @@ export function PostgresConnectModal({
   });
 
   useEffect(() => {
-    if (defaultValues) {
-      Object.entries(defaultValues).forEach(([key, value]) => {
-        if (typeof value === 'string' || typeof value === 'number') {
-          form.setValue(key as keyof FormValues, value);
-        }
+    if (integration) {
+      form.reset({
+        name: integration.name,
+        connectionString: "",
+        host: (integration.credentials as PostgresCredentials).host,
+        port: (integration.credentials as PostgresCredentials).port,
+        database: (integration.credentials as PostgresCredentials).database,
+        user: (integration.credentials as PostgresCredentials).user,
+        password: (integration.credentials as PostgresCredentials).password,
       });
     }
-  }, [defaultValues, form]);
+  }, [integration, form]);
+
+  useEffect(() => {
+    if (!open) {
+      form.reset({
+        name: "",
+        connectionString: "",
+        host: "",
+        port: 5432,
+        database: "",
+        user: "",
+        password: "",
+      });
+    }
+  }, [open, form]);
 
   const hasConnectionString = !!form.watch("connectionString");
 
-  const parseConnectionString = (connString: string): PostgresCredentials | null => {
+  const parseConnectionString = (
+    connString: string,
+  ): PostgresCredentials | null => {
     try {
       const regex = /^postgres(?:ql)?:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
       const match = regex.exec(connString);
 
       if (!match) {
-        throw new Error('Invalid connection string format');
+        throw new Error("Invalid connection string format");
       }
 
       const [, user, password, host, port, database] = match;
@@ -99,7 +117,7 @@ export function PostgresConnectModal({
         password: decodeURIComponent(password ?? ""),
       };
     } catch (error) {
-      console.error('Failed to parse connection string:', error);
+      console.error("Failed to parse connection string:", error);
       return null;
     }
   };
@@ -140,25 +158,51 @@ export function PostgresConnectModal({
       };
     }
 
-    onSubmit(credentials);
+    onSubmit({
+      id: integration?.id ?? null,
+      type: "postgres",
+      createdAt: integration?.createdAt ?? new Date().toISOString(),
+      credentials,
+      name: values.name,
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Connect PostgreSQL Database' : 'Edit PostgreSQL Connection'}</DialogTitle>
+          <DialogTitle>
+            {integration
+              ? "Edit PostgreSQL Connection"
+              : "Connect PostgreSQL Database"}
+          </DialogTitle>
           <DialogDescription>
-            {mode === 'create' 
-              ? 'Connect to your PostgreSQL database using a connection string or individual fields.'
-              : 'Update your PostgreSQL database connection details.'}
+            {integration
+              ? "Update your PostgreSQL database connection details."
+              : "Connect to your PostgreSQL database using a connection string or individual fields."}
           </DialogDescription>
         </DialogHeader>
 
         <Separator className="my-4" />
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="connectionString"
@@ -169,7 +213,9 @@ export function PostgresConnectModal({
                     <Input
                       placeholder="postgresql://user:password@host:port/database"
                       {...field}
-                      onChange={(e) => handleConnectionStringChange(e.target.value)}
+                      onChange={(e) =>
+                        handleConnectionStringChange(e.target.value)
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -194,7 +240,13 @@ export function PostgresConnectModal({
                 name="host"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={hasConnectionString ? "text-muted-foreground" : ""}>Host</FormLabel>
+                    <FormLabel
+                      className={
+                        hasConnectionString ? "text-muted-foreground" : ""
+                      }
+                    >
+                      Host
+                    </FormLabel>
                     <FormControl>
                       <Input {...field} disabled={hasConnectionString} />
                     </FormControl>
@@ -207,12 +259,20 @@ export function PostgresConnectModal({
                 name="port"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={hasConnectionString ? "text-muted-foreground" : ""}>Port</FormLabel>
+                    <FormLabel
+                      className={
+                        hasConnectionString ? "text-muted-foreground" : ""
+                      }
+                    >
+                      Port
+                    </FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value))
+                        }
                         disabled={hasConnectionString}
                       />
                     </FormControl>
@@ -225,7 +285,13 @@ export function PostgresConnectModal({
                 name="database"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={hasConnectionString ? "text-muted-foreground" : ""}>Database</FormLabel>
+                    <FormLabel
+                      className={
+                        hasConnectionString ? "text-muted-foreground" : ""
+                      }
+                    >
+                      Database
+                    </FormLabel>
                     <FormControl>
                       <Input {...field} disabled={hasConnectionString} />
                     </FormControl>
@@ -238,7 +304,13 @@ export function PostgresConnectModal({
                 name="user"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={hasConnectionString ? "text-muted-foreground" : ""}>Username</FormLabel>
+                    <FormLabel
+                      className={
+                        hasConnectionString ? "text-muted-foreground" : ""
+                      }
+                    >
+                      Username
+                    </FormLabel>
                     <FormControl>
                       <Input {...field} disabled={hasConnectionString} />
                     </FormControl>
@@ -251,7 +323,13 @@ export function PostgresConnectModal({
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={hasConnectionString ? "text-muted-foreground" : ""}>Password</FormLabel>
+                    <FormLabel
+                      className={
+                        hasConnectionString ? "text-muted-foreground" : ""
+                      }
+                    >
+                      Password
+                    </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -268,9 +346,13 @@ export function PostgresConnectModal({
                           disabled={hasConnectionString}
                         >
                           {showPassword ? (
-                            <EyeOff className={`h-4 w-4 ${hasConnectionString ? "text-muted-foreground" : ""}`} />
+                            <EyeOff
+                              className={`h-4 w-4 ${hasConnectionString ? "text-muted-foreground" : ""}`}
+                            />
                           ) : (
-                            <Eye className={`h-4 w-4 ${hasConnectionString ? "text-muted-foreground" : ""}`} />
+                            <Eye
+                              className={`h-4 w-4 ${hasConnectionString ? "text-muted-foreground" : ""}`}
+                            />
                           )}
                         </Button>
                       </div>
@@ -282,11 +364,11 @@ export function PostgresConnectModal({
             </div>
 
             <Button type="submit" className="w-full">
-              {mode === 'create' ? 'Connect' : 'Save Changes'}
+              {integration ? "Save Changes" : "Connect"}
             </Button>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-} 
+}

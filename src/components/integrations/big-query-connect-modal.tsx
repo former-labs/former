@@ -20,16 +20,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { type Integration } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
+import { type BigQueryCredentials } from "@/lib/drivers/clients";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
   projectId: z.string().min(1, "Project ID is required"),
   credentials: z.string().min(1, "Service account credentials are required"),
 });
@@ -39,42 +42,53 @@ type FormValues = z.infer<typeof formSchema>;
 export interface BigQueryConnectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultValues?: any;
-  mode?: 'create' | 'edit';
-  integrationId?: string;
-  integrationName?: string;
-  onSubmit: (credentials: any) => void;
+  integration?: Integration;
+  onSubmit: (integration: Integration) => void;
 }
 
 export function BigQueryConnectModal({
   open,
   onOpenChange,
-  defaultValues,
-  mode = 'create',
-  integrationName,
+  integration,
   onSubmit,
 }: BigQueryConnectModalProps) {
   const { toast } = useToast();
-  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<{
+    name: string;
+    size: number;
+  } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues || {
+    defaultValues: {
+      name: "",
       projectId: "",
       credentials: "",
     },
   });
 
+  // Update form values when integration changes
   useEffect(() => {
-    if (defaultValues) {
-      form.setValue("projectId", defaultValues.projectId || "");
-      form.setValue("credentials", JSON.stringify(defaultValues, null, 2));
-      setUploadedFile({
-        name: "credentials.json",
-        size: new Blob([JSON.stringify(defaultValues)]).size,
+    if (integration) {
+      form.reset({
+        name: integration.name,
+        projectId: (integration.credentials as BigQueryCredentials).project_id,
+        credentials: JSON.stringify(integration.credentials, null, 2),
       });
     }
-  }, [defaultValues, form]);
+  }, [integration, form]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!open) {
+      form.reset({
+        name: "",
+        projectId: "",
+        credentials: "",
+      });
+      setUploadedFile(null);
+    }
+  }, [open, form]);
 
   const updateProjectIdFromCredentials = (jsonString: string) => {
     try {
@@ -91,17 +105,20 @@ export function BigQueryConnectModal({
     try {
       // Validate JSON
       const credentials = JSON.parse(values.credentials);
-      
+
       onSubmit({
-        ...credentials,
-        projectId: values.projectId,
+        id: integration?.id ?? null,
+        type: "bigquery",
+        createdAt: integration?.createdAt ?? new Date().toISOString(),
+        credentials,
+        name: values.name,
       });
 
       toast({
-        title: mode === 'create' ? "Connected successfully" : "Updated successfully",
-        description: mode === 'create' 
-          ? "BigQuery integration has been set up."
-          : "BigQuery integration has been updated.",
+        title: integration ? "Updated successfully" : "Connected successfully",
+        description: integration
+          ? "BigQuery integration has been updated."
+          : "BigQuery integration has been set up.",
       });
     } catch (error) {
       console.error(error);
@@ -138,7 +155,7 @@ export function BigQueryConnectModal({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [form, toast]
+    [form, toast],
   );
 
   const handleRemoveFile = () => {
@@ -166,29 +183,48 @@ export function BigQueryConnectModal({
   });
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
+    const sizes = ["Bytes", "KB", "MB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Connect BigQuery' : 'Edit BigQuery Connection'}</DialogTitle>
+          <DialogTitle>
+            {integration ? "Edit BigQuery Connection" : "Connect BigQuery"}
+          </DialogTitle>
           <DialogDescription>
-            {mode === 'create'
-              ? 'Connect to BigQuery by providing your project ID and service account credentials.'
-              : 'Update your BigQuery connection details.'}
+            {integration
+              ? "Update your BigQuery connection details."
+              : "Connect to BigQuery by providing your project ID and service account credentials."}
           </DialogDescription>
         </DialogHeader>
 
         <Separator className="my-4" />
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleConnect)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleConnect)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="My BigQuery Integration" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="projectId"
@@ -218,13 +254,16 @@ export function BigQueryConnectModal({
                             "relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors",
                             isDragActive
                               ? "border-primary bg-muted/30"
-                              : "border-muted-foreground/25"
+                              : "border-muted-foreground/25",
                           )}
                         >
                           <input {...getInputProps()} />
                           <UploadCloud className="h-8 w-8 text-muted-foreground" />
                           <p className="mt-2 text-sm font-medium">
-                            <span className="text-primary">Click to upload</span> or drag and drop
+                            <span className="text-primary">
+                              Click to upload
+                            </span>{" "}
+                            or drag and drop
                           </p>
                           <p className="mt-2 text-xs text-muted-foreground">
                             JSON file only (max. 1MB)
@@ -235,7 +274,9 @@ export function BigQueryConnectModal({
                           <div className="flex items-center space-x-4">
                             <CheckCircle2 className="h-5 w-5 text-green-500" />
                             <div>
-                              <p className="text-sm font-medium">{uploadedFile.name}</p>
+                              <p className="text-sm font-medium">
+                                {uploadedFile.name}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {formatFileSize(uploadedFile.size)}
                               </p>
@@ -268,7 +309,9 @@ export function BigQueryConnectModal({
                         placeholder="Paste your service account JSON here..."
                         className="min-h-[200px]"
                         {...field}
-                        onChange={(e) => handleCredentialsChange(e.target.value)}
+                        onChange={(e) =>
+                          handleCredentialsChange(e.target.value)
+                        }
                       />
                     </div>
                   </FormControl>
@@ -277,12 +320,16 @@ export function BigQueryConnectModal({
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={!form.formState.isValid}>
-              {mode === 'create' ? 'Connect BigQuery' : 'Save Changes'}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!form.formState.isValid}
+            >
+              {integration ? "Save Changes" : "Connect BigQuery"}
             </Button>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-} 
+}
