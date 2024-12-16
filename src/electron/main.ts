@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { env } from '../env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,8 +19,8 @@ function createWindow() {
 
   // In development, load from localhost
   // In production, load from Vercel deployment
-  const isDev = process.env.NODE_ENV === 'development';
-  const url = isDev ? 'http://localhost:3000' : 'http://localhost:3000';
+  const isDev = env.NODE_ENV === 'development';
+  const url = isDev ? 'http://localhost:3000' : env.DASHBOARD_URI;
   
   void win.loadURL(url).catch(err => {
     console.error('Failed to load URL:', err);
@@ -27,7 +28,10 @@ function createWindow() {
 
   // Open DevTools in development
   if (isDev) {
+    console.log('isDev', isDev);
     win.webContents.openDevTools();
+  } else {
+    console.log('isNotDev', 'isDev', isDev);
   }
 }
 
