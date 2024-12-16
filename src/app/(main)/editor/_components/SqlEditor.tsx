@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { DiffEditor, Editor } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 
@@ -35,6 +35,10 @@ export const SqlEditor = () => {
     const modifiedEditor = editor.getModifiedEditor();
     modifiedEditor.onDidChangeModelContent(() => {
       setEditorContentPending(modifiedEditor.getValue());
+    });
+
+    modifiedEditor.updateOptions({
+      lineNumbers: renderSideBySide ? "on" : "off",
     });
 
     // Create the widgets when we first activate the diff editor
@@ -83,15 +87,6 @@ export const SqlEditor = () => {
       diffWidgetsRef.current.push(widget);
     });
   };
-
-  // Update line numbers when renderSideBySide changes
-  useEffect(() => {
-    if (diffEditorRef.current) {
-      diffEditorRef.current.getModifiedEditor().updateOptions({
-        lineNumbers: renderSideBySide ? "on" : "off",
-      });
-    }
-  }, [renderSideBySide, diffEditorRef.current]);
 
   const printContent = () => {
     console.log({
@@ -166,7 +161,15 @@ export const SqlEditor = () => {
         {editorContentPending !== null && (
           <Button
             onClick={() => {
-              setRenderSideBySide(!renderSideBySide);
+              const newRenderSideBySide = !renderSideBySide;
+              setRenderSideBySide(newRenderSideBySide);
+
+              // Update line numbers when toggling view
+              if (diffEditorRef.current) {
+                diffEditorRef.current.getModifiedEditor().updateOptions({
+                  lineNumbers: newRenderSideBySide ? "on" : "off",
+                });
+              }
             }}
           >
             {renderSideBySide ? "Inline View" : "Side by Side View"}
