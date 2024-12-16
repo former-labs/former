@@ -9,12 +9,12 @@ import { DiffWidget } from "./DiffWidget";
 export const SqlEditor = () => {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
+  const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [editorContent, setEditorContent] = useState("");
   const [editorContentPending, setEditorContentPending] = useState<
     string | null
   >(null);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
-  const [diffWidgets, setDiffWidgets] = useState<editor.IContentWidget[]>([]);
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
@@ -37,19 +37,16 @@ export const SqlEditor = () => {
     updateDiffWidgets(editor);
   };
 
-  // Keep a reference to current widgets outside of React state
-  let currentWidgets: editor.IContentWidget[] = [];
-
   const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
     // Remove existing widgets
     if (diffEditorRef.current) {
       const modifiedEditor = diffEditorRef.current.getModifiedEditor();
-      currentWidgets.forEach((widget) => {
+      diffWidgetsRef.current.forEach((widget) => {
         modifiedEditor.removeContentWidget(widget);
       });
     }
 
-    currentWidgets = [];
+    diffWidgetsRef.current = [];
 
     // Add new widgets for each change
     const changes = editor.getLineChanges();
@@ -70,11 +67,8 @@ export const SqlEditor = () => {
         },
       });
       editor.getModifiedEditor().addContentWidget(widget);
-      currentWidgets.push(widget);
+      diffWidgetsRef.current.push(widget);
     });
-
-    // Update React state if needed for other purposes
-    setDiffWidgets(currentWidgets);
   };
 
   // Update line numbers when renderSideBySide changes
@@ -136,10 +130,10 @@ export const SqlEditor = () => {
   const removeWidgets = () => {
     if (diffEditorRef.current) {
       const modifiedEditor = diffEditorRef.current.getModifiedEditor();
-      diffWidgets.forEach((widget) => {
+      diffWidgetsRef.current.forEach((widget) => {
         modifiedEditor.removeContentWidget(widget);
       });
-      setDiffWidgets([]);
+      diffWidgetsRef.current = [];
     }
   };
 
