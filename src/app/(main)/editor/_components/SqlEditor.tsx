@@ -37,8 +37,13 @@ export const SqlEditor = () => {
       setEditorContentPending(modifiedEditor.getValue());
     });
 
-    // Initial widget setup
-    updateDiffWidgets(editor);
+    // Create the widgets when we first activate the diff editor
+    // This is dumb but we apparently need to use a timeout for this to work
+    // Tbh idk if this is stable on a slow machine
+    // I'm sure there's a better way to do this
+    setTimeout(() => {
+      updateDiffWidgets(editor);
+    }, 0);
   };
 
   const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
@@ -151,6 +156,9 @@ export const SqlEditor = () => {
         <Button onClick={setDecorations}>Set decorations</Button>
         <Button onClick={printDecorations}>Print decorations</Button>
         <Button onClick={removeWidgets}>Remove widgets</Button>
+        <Button onClick={() => updateDiffWidgets(diffEditorRef.current!)}>
+          Update diff widgets
+        </Button>
         {editorContentPending !== null && (
           <Button
             onClick={() => {
@@ -161,10 +169,10 @@ export const SqlEditor = () => {
           </Button>
         )}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 pb-4">
         {editorContentPending === null ? (
           <Editor
-            height="calc(100vh - 120px)"
+            height="100%"
             className="overflow-hidden border"
             language="sql"
             value={editorContent}
@@ -178,30 +186,47 @@ export const SqlEditor = () => {
             }}
           />
         ) : (
-          <DiffEditor
-            height="calc(100vh - 120px)"
-            className="overflow-hidden border"
-            language="sql"
-            original={editorContent}
-            modified={editorContentPending}
-            onMount={handleDiffEditorDidMount}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              automaticLayout: true,
-              scrollBeyondLastLine: true,
-              renderSideBySide,
+          <div className="relative h-full">
+            <Button
+              className="absolute right-8 top-4 z-10"
+              onClick={() => {
+                if (editorContentPending) {
+                  setEditorContent(editorContentPending);
+                  setEditorContentPending(null);
+                }
+              }}
+            >
+              Accept All
+            </Button>
+            <DiffEditor
+              height="100%"
+              className="overflow-hidden border"
+              language="sql"
+              original={editorContent}
+              modified={editorContentPending}
+              onMount={handleDiffEditorDidMount}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                automaticLayout: true,
+                scrollBeyondLastLine: true,
+                renderSideBySide,
 
-              lightbulb: {
-                // This is actually buggy and will not disable in renderSideBySide mode
-                // https://github.com/microsoft/monaco-editor/issues/3873
-                enabled: editor.ShowLightbulbIconMode.Off,
-              },
+                lightbulb: {
+                  // This is actually buggy and will not disable in renderSideBySide mode
+                  // https://github.com/microsoft/monaco-editor/issues/3873
+                  enabled: editor.ShowLightbulbIconMode.Off,
+                },
 
-              // We give this extra width so that it is the same as the regular editor
-              lineDecorationsWidth: 26,
-            }}
-          />
+                // We give this extra width so that it is the same as the regular editor
+                lineDecorationsWidth: 26,
+
+                // The wider scrollbar on the right that shows green/red where diffs are
+                // We might want this back
+                renderOverviewRuler: false,
+              }}
+            />
+          </div>
         )}
       </div>
     </div>
