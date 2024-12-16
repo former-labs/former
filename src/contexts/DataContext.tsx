@@ -23,13 +23,14 @@ interface DataContextType {
   isFetchingMetadata: boolean;
   driver: Driver | null;
   initializeDriver: (integration: Integration) => Promise<void>;
-  fetchMetadataIncremental: () => Promise<void>;
+  fetchMetadataIncremental: (integration: Integration) => Promise<void>;
   isLoadingDatasets: boolean;
   isLoadingTables: boolean;
   integrations: Integration[];
   addIntegration: (integration: Integration) => void;
   editIntegration: (id: string, updates: Integration) => void;
   removeIntegration: (id: string) => void;
+  executeQuery: (query: string) => Promise<unknown>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -43,7 +44,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [connectionId, setConnectionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeIntegration && integrations[0]) {
@@ -68,21 +68,24 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (!result.success) {
         throw new Error(result.error);
       }
-
-      setConnectionId(result.connectionId ?? null);
     } catch (error) {
       console.error("Failed to initialize database connection:", error);
       throw error;
     }
   };
 
-  const fetchMetadataIncremental = async () => {
-    if (!connectionId || isFetchingMetadata) return;
+  const fetchMetadataIncremental = async (integration: Integration) => {
+    console.log("fetchMetadataIncremental", integration?.id);
+    if (!integration?.id || isFetchingMetadata) return;
 
     try {
       setIsFetchingMetadata(true);
-      const metadata = await window.electron.database.getMetadata(connectionId);
+      console.log("Fetching metadata for", integration.id);
+      const metadata = await window.electron.database.getMetadata(
+        integration.id,
+      );
       setWarehouseMetadata(metadata as WarehouseMetadata);
+      console.log("metadata", metadata);
     } catch (error) {
       console.error("Error fetching metadata:", error);
       throw error;
@@ -98,14 +101,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (activeIntegration) {
       console.log("activeIntegration", activeIntegration);
       initializeDriver(activeIntegration)
-        .then(() => fetchMetadataIncremental())
+        .then(() => fetchMetadataIncremental(activeIntegration))
         .catch(console.error);
     }
 
     return () => {
       // Cleanup connection on unmount or integration change
-      if (connectionId) {
-        window.electron.database.disconnect(connectionId).catch(console.error);
+      if (activeIntegration?.id) {
+        window.electron.database
+          .disconnect(activeIntegration.id)
+          .catch(console.error);
       }
     };
   }, [activeIntegration?.id]);
@@ -142,6 +147,23 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setIntegrations((prev) => prev.filter((i) => i.id !== id));
   };
 
+  const executeQuery = async (query: string) => {
+    if (!activeIntegration?.id) {
+      throw new Error("No active integration");
+    }
+
+    try {
+      const result = await window.electron.database.execute(
+        activeIntegration.id,
+        query,
+      );
+      return result;
+    } catch (error) {
+      console.error("Error executing query:", error);
+      throw error;
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -158,6 +180,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addIntegration,
         editIntegration,
         removeIntegration,
+        executeQuery,
       }}
     >
       {children}
