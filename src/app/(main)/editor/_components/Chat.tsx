@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { CornerDownLeft, History, Plus } from "lucide-react";
+import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "./chatStore";
 
@@ -63,6 +63,9 @@ const ActiveChat = () => {
     await submitMessage({ message });
   };
 
+  const lastMessage = activeChat.messages[activeChat.messages.length - 1];
+  const showLoadingMessage = lastMessage?.type === "user";
+
   return (
     <div className="space-y-2">
       <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
@@ -70,7 +73,7 @@ const ActiveChat = () => {
         {activeChat.messages.map((message, i) => (
           <div key={i}>
             {message.type === "assistant" ? (
-              <div className="p-2 text-blue-600">{message.content}</div>
+              <div className="p-2">{message.content}</div>
             ) : (
               <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
                 {message.content}
@@ -78,6 +81,11 @@ const ActiveChat = () => {
             )}
           </div>
         ))}
+        {showLoadingMessage && (
+          <div className="flex items-center gap-2 p-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </div>
+        )}
         <ChatInputBox onSubmit={handleSubmit} />
       </div>
     </div>

@@ -67,24 +67,25 @@ export const useChat = () => {
   }: {
     message: string;
   }) => {
-    if (!store.activeChatId) return;
+    if (!store.activeChatId || !activeChat) return;
+
+    const newMessage = {
+      type: "user" as const,
+      content: message,
+    };
+
+    // Get assistant response from API using useChatStore.getState() to get latest state
+    const responsePromise = submitMessageMutation.mutateAsync({
+      messages: [...activeChat.messages, newMessage],
+    });
 
     // Add user message
-    store.addMessage(store.activeChatId, {
-      type: "user",
-      content: message,
-    });
+    store.addMessage(store.activeChatId, newMessage);
 
-    // Get assistant response from API
-    const response = await submitMessageMutation.mutateAsync({
-      message,
-    });
+    const response = await responsePromise;
 
     // Add assistant message
-    store.addMessage(store.activeChatId, {
-      type: "assistant",
-      content: response.message,
-    });
+    store.addMessage(store.activeChatId, response.message);
   };
 
   return {
