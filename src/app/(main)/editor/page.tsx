@@ -5,7 +5,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { Chat } from "./_components/Chat";
+import { ChatSidebar } from "./_components/Chat";
 import { SqlEditor } from "./_components/SqlEditor";
 
 export default function Page() {
@@ -19,7 +19,7 @@ export default function Page() {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={20} minSize={15} maxSize={50}>
-          <Chat />
+          <ChatSidebar />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
