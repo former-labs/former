@@ -1,15 +1,19 @@
+import type { Selection } from 'monaco-editor';
 import { create } from "zustand";
 
 interface EditorStore {
   editorContent: string;
   editorContentPending: string | null;
+  editorSelection: Selection | null;
   setEditorContent: (content: string) => void;
   setEditorContentPending: (content: string | null) => void;
+  setEditorSelection: (selection: Selection | null) => void;
 }
 
 const useEditorStore = create<EditorStore>((set, get) => ({
   editorContent: "",
   editorContentPending: null,
+  editorSelection: null,
   setEditorContent: (content) => {
     set({ editorContent: content });
 
@@ -32,6 +36,10 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       set({ editorContentPending: null });
     }
   },
+  setEditorSelection: (selection) => {
+    console.log("setEditorSelection", selection);
+    set({ editorSelection: selection });
+  },
 }));
 
 export const useEditor = () => {
@@ -40,7 +48,9 @@ export const useEditor = () => {
   return {
     editorContent: store.editorContent,
     editorContentPending: store.editorContentPending,
+    editorSelection: store.editorSelection,
     setEditorContent: store.setEditorContent,
     setEditorContentPending: store.setEditorContentPending,
+    setEditorSelection: store.setEditorSelection,
   };
 };

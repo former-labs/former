@@ -10,19 +10,18 @@ import {
 } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useRef, useState } from "react";
-import { useChat } from "./chatStore";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 
 export const SqlEditor = () => {
   const monaco = useMonaco();
-  const { createChat } = useChat();
 
   const {
     editorContent,
     editorContentPending,
     setEditorContent,
     setEditorContentPending,
+    setEditorSelection,
   } = useEditor();
 
   const { executeQuery } = useData();
@@ -117,6 +116,12 @@ export const SqlEditor = () => {
   ) => {
     editorRef.current = editor;
     setupEditorKeybindings(editor, monaco);
+
+    // Add selection change listener
+    editor.onDidChangeCursorSelection((e) => {
+      const selection = editor.getSelection();
+      setEditorSelection(selection);
+    });
   };
 
   const handleDiffEditorDidMount = (
@@ -136,6 +141,12 @@ export const SqlEditor = () => {
 
     modifiedEditor.onDidChangeModelContent(() => {
       setEditorContentPending(modifiedEditor.getValue());
+    });
+
+    // Add selection change listener for diff editor
+    modifiedEditor.onDidChangeCursorSelection((e) => {
+      const selection = modifiedEditor.getSelection();
+      setEditorSelection(selection);
     });
 
     modifiedEditor.updateOptions({
