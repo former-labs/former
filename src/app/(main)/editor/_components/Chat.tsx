@@ -64,6 +64,21 @@ export const ChatSidebar = () => {
 
 const ActiveChat = () => {
   const { activeChat, submitMessage } = useChat();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    // Kinda dodgy to have the timeout bc unknown race conditions.
+    // I think the ReactMarkdown component causes the need for the timeout.
+    // This works for now.
+    if (activeChat?.messages) {
+      const timeoutId = setTimeout(scrollToBottom, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeChat?.messages]);
 
   if (!activeChat) {
     return <div className="text-center text-gray-500">No active chat</div>;
@@ -110,6 +125,7 @@ const ActiveChat = () => {
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
       </div>
       <ChatInputBox onSubmit={handleSubmit} />
