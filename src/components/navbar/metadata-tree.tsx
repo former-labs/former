@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
+import type { DatabaseMetadata } from "@/types/connections";
 import {
   ArrowRight,
   ChevronDown,
@@ -29,10 +30,25 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 
+type TableWithCounts =
+  DatabaseMetadata["projects"][0]["datasets"][0]["tables"][0] & {
+    _originalFieldCount?: number;
+  };
+
+type DatasetWithCounts = DatabaseMetadata["projects"][0]["datasets"][0] & {
+  _originalTableCount?: number;
+  tables: TableWithCounts[];
+};
+
+type ProjectWithCounts = DatabaseMetadata["projects"][0] & {
+  _originalDatasetCount?: number;
+  datasets: DatasetWithCounts[];
+};
+
 export function MetadataTree() {
   const router = useRouter();
   const {
-    warehouseMetadata,
+    databaseMetadata,
     isFetchingMetadata,
     activeIntegration,
     integrations,
@@ -46,6 +62,17 @@ export function MetadataTree() {
   );
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    // Initialize with all project IDs expanded
+    if (!isFetchingMetadata && databaseMetadata?.projects) {
+      const projectIds = new Set<string>();
+      databaseMetadata.projects.forEach((project) => {
+        if (project.id) projectIds.add(project.id);
+      });
+      setExpandedProjects(projectIds);
+    }
+  }, [isFetchingMetadata, databaseMetadata]);
 
   const toggleProject = (projectId: string) => {
     setExpandedProjects((prev) => {
@@ -98,10 +125,18 @@ export function MetadataTree() {
     );
   };
 
-  const { filteredProjects, expandedFromSearch } = useMemo(() => {
-    if (!warehouseMetadata?.projects || !searchQuery)
+  const { filteredProjects, expandedFromSearch } = useMemo<{
+    filteredProjects: ProjectWithCounts[];
+    expandedFromSearch: {
+      projects: Set<string>;
+      datasets: Set<string>;
+      tables: Set<string>;
+    };
+  }>(() => {
+    if (!databaseMetadata?.projects || !searchQuery)
       return {
-        filteredProjects: warehouseMetadata?.projects,
+        filteredProjects: (databaseMetadata?.projects ??
+          []) as ProjectWithCounts[],
         expandedFromSearch: {
           projects: new Set<string>(),
           datasets: new Set<string>(),
@@ -116,8 +151,10 @@ export function MetadataTree() {
       tables: new Set<string>(),
     };
 
-    const filtered = warehouseMetadata.projects
-      .map((project) => {
+    const filtered = databaseMetadata.projects
+      .map((project): ProjectWithCounts | null => {
+        if (!project) return null;
+
         const projectMatches =
           project.name.toLowerCase().includes(query) ||
           project.description?.toLowerCase().includes(query);
@@ -126,6 +163,8 @@ export function MetadataTree() {
 
         const filteredDatasets = project.datasets
           .map((dataset) => {
+            if (!dataset) return null;
+
             const datasetMatches =
               dataset.name.toLowerCase().includes(query) ||
               dataset.description?.toLowerCase().includes(query);
@@ -170,13 +209,18 @@ export function MetadataTree() {
               }
               return {
                 ...dataset,
-                tables: datasetMatches ? dataset.tables : filteredTables,
+                tables: (datasetMatches
+                  ? dataset.tables
+                  : filteredTables) as TableWithCounts[],
                 _originalTableCount: originalTableCount,
-              };
+              } as DatasetWithCounts;
             }
             return null;
           })
-          .filter(Boolean);
+          .filter(
+            (dataset): dataset is NonNullable<typeof dataset> =>
+              dataset !== null,
+          );
 
         if (projectMatches || filteredDatasets.length > 0) {
           return {
@@ -187,10 +231,13 @@ export function MetadataTree() {
         }
         return null;
       })
-      .filter(Boolean);
+      .filter(
+        (project): project is NonNullable<ProjectWithCounts> =>
+          project !== null,
+      );
 
     return { filteredProjects: filtered, expandedFromSearch: toExpand };
-  }, [warehouseMetadata?.projects, searchQuery]);
+  }, [databaseMetadata?.projects, searchQuery]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -220,7 +267,7 @@ export function MetadataTree() {
         {integrations.length > 0 ? (
           <div className="mb-2 px-2">
             <Select
-              value={activeIntegration?.id || ""}
+              value={activeIntegration?.id ?? ""}
               onValueChange={(value) => {
                 const integration = integrations.find((i) => i.id === value);
                 if (integration) setActiveIntegration(integration);
@@ -228,12 +275,12 @@ export function MetadataTree() {
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select integration">
-                  {activeIntegration?.name || "Select integration"}
+                  {activeIntegration?.name ?? "Select integration"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {integrations.map((integration) => (
-                  <SelectItem key={integration.id} value={integration.id || ""}>
+                  <SelectItem key={integration.id} value={integration.id ?? ""}>
                     {integration.name}
                   </SelectItem>
                 ))}
@@ -272,7 +319,7 @@ export function MetadataTree() {
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
             </div>
           ) : (
-            filteredProjects?.map((project) => (
+            filteredProjects?.map((project: ProjectWithCounts) => (
               <div key={project.id} className="space-y-1">
                 <Button
                   variant="ghost"
@@ -323,7 +370,7 @@ export function MetadataTree() {
                 </Button>
                 {expandedProjects.has(project.id) && (
                   <div className="space-y-1 pl-4">
-                    {project.datasets.map((dataset) => (
+                    {project.datasets.map((dataset: DatasetWithCounts) => (
                       <div key={dataset.id} className="space-y-1">
                         <Button
                           variant="ghost"
@@ -377,7 +424,7 @@ export function MetadataTree() {
                         </Button>
                         {expandedDatasets.has(dataset.id) && (
                           <div className="space-y-1 pl-4">
-                            {dataset.tables.map((table) => (
+                            {dataset.tables.map((table: TableWithCounts) => (
                               <div key={table.id} className="space-y-1">
                                 <Button
                                   variant="ghost"

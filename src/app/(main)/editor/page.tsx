@@ -5,6 +5,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { useData } from "@/contexts/DataContext";
 import dynamic from "next/dynamic";
 import { ChatSidebar } from "./_components/Chat";
 
@@ -20,6 +21,22 @@ const SqlEditor = dynamic(
 );
 
 export default function Page() {
+  const { databaseMetadata } = useData();
+
+  if (!databaseMetadata) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center">
+        <div className="text-lg text-gray-500">
+          Please connect a database to continue
+        </div>
+        <div className="text-gray-500">
+          tbh we can probs let ppl edit regardless but for now this simplifies
+          the cases i need to handle
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full max-h-[100vh]">
       <ResizablePanelGroup direction="horizontal">

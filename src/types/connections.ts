@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface BigQueryCredentials {
   type: string;
   project_id: string;
@@ -28,25 +30,28 @@ export interface DatabaseConfig {
   credentials: DatabaseCredentials;
 }
 
-export interface WarehouseMetadata {
-  projects: Array<{
-    id: string;
-    name: string;
-    description: string;
-    datasets: Array<{
-      id: string;
-      name: string;
-      description: string;
-      tables: Array<{
-        id: string;
-        name: string;
-        description: string;
-        fields: Array<{
-          name: string;
-          type: string;
-          description?: string;
-        }>;
-      }>;
-    }>;
-  }>;
-} 
+
+export const databaseMetadataSchema = z.object({
+  projects: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable(),
+    datasets: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string().nullable(),
+      tables: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string().nullable(),
+        fields: z.array(z.object({
+          name: z.string(),
+          type: z.string(),
+          description: z.string().nullable()
+        }))
+      }))
+    }))
+  }))
+});
+
+export type DatabaseMetadata = z.infer<typeof databaseMetadataSchema>;

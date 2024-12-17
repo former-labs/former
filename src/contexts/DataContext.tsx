@@ -1,10 +1,10 @@
 "use client";
 
 import { type Driver } from "@/electron/drivers/clients";
-import type {
-  DatabaseConfig,
-  DatabaseCredentials,
-  WarehouseMetadata,
+import {
+  type DatabaseConfig,
+  type DatabaseCredentials,
+  type DatabaseMetadata,
 } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -19,7 +19,7 @@ export type Integration = {
 interface DataContextType {
   activeIntegration: Integration | null;
   setActiveIntegration: (integration: Integration | null) => void;
-  warehouseMetadata: WarehouseMetadata | null;
+  databaseMetadata: DatabaseMetadata | null;
   isFetchingMetadata: boolean;
   driver: Driver | null;
   initializeDriver: (integration: Integration) => Promise<string | undefined>;
@@ -38,8 +38,8 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeIntegration, setActiveIntegration] =
     useState<Integration | null>(null);
-  const [warehouseMetadata, setWarehouseMetadata] =
-    useState<WarehouseMetadata | null>(null);
+  const [databaseMetadata, setDatabaseMetadata] =
+    useState<DatabaseMetadata | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
@@ -155,8 +155,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsFetchingMetadata(true);
       console.log("Fetching metadata for", connectionId);
+      // I'm validating here because unsafe casting occurs deep in this funciton
+      // Imo we should push this validation deeper into electron itself
       const metadata = await window.electron.database.getMetadata(connectionId);
-      setWarehouseMetadata(metadata as WarehouseMetadata);
+      // const validatedMetadata = databaseMetadataSchema.parse(metadata);
+      setDatabaseMetadata(metadata);
       console.log("metadata", metadata);
     } catch (error) {
       console.error("Error fetching metadata:", error);
@@ -244,7 +247,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         activeIntegration,
         setActiveIntegration,
         integrations,
-        warehouseMetadata,
+        databaseMetadata,
         isFetchingMetadata,
         driver: null,
         initializeDriver,

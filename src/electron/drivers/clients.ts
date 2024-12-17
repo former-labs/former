@@ -1,6 +1,6 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import pkg from 'pg';
-import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials, WarehouseMetadata } from "../../types/connections.js";
+import type { BigQueryCredentials, DatabaseCredentials, DatabaseMetadata, PostgresCredentials } from "../../types/connections.js";
 const { Client } = pkg;
 
 
@@ -51,7 +51,7 @@ export abstract class Driver {
       fields: Array<{
         name: string;
         type: string;
-        description?: string;
+        description: string | null;
       }>;
     }>;
     nextPageToken?: string;
@@ -60,12 +60,12 @@ export abstract class Driver {
   abstract getProjectId(): string;
   abstract getProjectName(): string;
 
-  async fetchMetadata(): Promise<WarehouseMetadata> {
-    const metadata: WarehouseMetadata = {
+  async fetchMetadata(): Promise<DatabaseMetadata> {
+    const metadata: DatabaseMetadata = {
       projects: [{
         id: this.getProjectId(),
         name: this.getProjectName(),
-        description: "",
+        description: null,
         datasets: [],
       }]
     };
@@ -78,7 +78,7 @@ export abstract class Driver {
         project.datasets.push(...datasets.map(d => ({
           id: d.id,
           name: d.name,
-          description: "",
+          description: null,
           tables: []
         })));
       }
@@ -140,7 +140,7 @@ export class BigQueryDriver extends Driver {
       fields: Array<{
         name: string;
         type: string;
-        description?: string;
+        description: string | null;
       }>;
     }>;
     nextPageToken?: string;
@@ -162,7 +162,7 @@ export class BigQueryDriver extends Driver {
           fields: metadata.schema.fields.map((field: any) => ({
             name: field.name,
             type: field.type,
-            description: field.description || undefined,
+            description: field.description || null,
           })),
         };
       })
@@ -233,8 +233,8 @@ export class PostgresDriver extends Driver {
     await this.client.end();
   }
 
-  async fetchMetadata(): Promise<WarehouseMetadata> {
-    const metadata: WarehouseMetadata = { projects: [] };
+  async fetchMetadata(): Promise<DatabaseMetadata> {
+    const metadata: DatabaseMetadata = { projects: [] };
 
     try {
       // Get all schemas (equivalent to datasets in BigQuery)
@@ -245,13 +245,13 @@ export class PostgresDriver extends Driver {
       `;
       const schemasResult = await this.client.query(schemasQuery);
 
-      type Project = Required<WarehouseMetadata>['projects'][number];
+      type Project = Required<DatabaseMetadata>['projects'][number];
       type Dataset = Project['datasets'][number];
 
       const project: Project = {
         id: this.credentials.database,
         name: this.credentials.database,
-        description: "",
+        description: null,
         datasets: [],
       };
 
@@ -259,7 +259,7 @@ export class PostgresDriver extends Driver {
         const datasetInfo: Dataset = {
           id: schema.schema_name,
           name: schema.schema_name,
-          description: "",
+          description: null,
           tables: [],
         };
 
@@ -286,7 +286,7 @@ export class PostgresDriver extends Driver {
             tableMap.set(row.table_name, {
               id: `${schema.schema_name}.${row.table_name}`,
               name: row.table_name,
-              description: "",
+              description: null,
               fields: [],
             });
           }
@@ -294,7 +294,7 @@ export class PostgresDriver extends Driver {
           table.fields.push({
             name: row.column_name,
             type: row.data_type,
-            description: row.description,
+            description: row.description || null,
           });
         }
 
@@ -346,7 +346,7 @@ export class PostgresDriver extends Driver {
       fields: Array<{
         name: string;
         type: string;
-        description?: string;
+        description: string | null;
       }>;
     }>;
     nextPageToken?: string;
@@ -377,7 +377,7 @@ export class PostgresDriver extends Driver {
       tables.get(row.table_name).fields.push({
         name: row.column_name,
         type: row.data_type,
-        description: row.description
+        description: row.description || null,
       });
     }
 

@@ -1,12 +1,12 @@
 import type { Integration } from '@/contexts/DataContext';
-import type { DatabaseConfig, WarehouseMetadata } from "./connections";
+import type { DatabaseConfig, DatabaseMetadata } from "./connections";
 
 export interface IElectronAPI {
   database: {
     connect: (config: DatabaseConfig) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
     execute: (connectionId: string, query: string) => Promise<unknown[]>;
-    getMetadata: (connectionId: string) => Promise<WarehouseMetadata>;
+    getMetadata: (connectionId: string) => Promise<DatabaseMetadata>;
   };
   send: (channel: string, data: unknown) => void;
   receive: (channel: string, func: (...args: unknown[]) => void) => void;
