@@ -318,6 +318,12 @@ export function MetadataTree() {
             <div className="flex h-32 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
             </div>
+          ) : !databaseMetadata && activeIntegration ? (
+            <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
+              <div className="text-center text-sm text-muted-foreground">
+                No metadata found for <strong>{activeIntegration.name}</strong>
+              </div>
+            </div>
           ) : (
             filteredProjects?.map((project: ProjectWithCounts) => (
               <div key={project.id} className="space-y-1">
