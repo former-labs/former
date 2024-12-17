@@ -10,6 +10,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Editor } from "@monaco-editor/react";
 import {
+  Check,
+  Copy,
   CornerDownLeft,
   History,
   ListCheck,
@@ -230,6 +232,7 @@ const CodeBlock = ({
 }) => {
   const { setEditorContentPending } = useEditor();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   if (!React.isValidElement(children)) {
     throw new Error("Node passed to code block that isn't a valid element.");
@@ -269,6 +272,12 @@ const CodeBlock = ({
     updateEditorHeight();
   };
 
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(codeContent);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 3000);
+  };
+
   return (
     <div>
       <div className="relative overflow-x-auto rounded-sm border">
@@ -292,7 +301,20 @@ const CodeBlock = ({
           }}
         />
       </div>
-      <div className="mt-1 flex justify-end">
+      <div className="mt-1 flex justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopy}
+          className="gap-1"
+        >
+          Copy
+          {isCopied ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </Button>
         <Button
           variant="outline"
           size="sm"
