@@ -1,31 +1,9 @@
 import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
-import type { WarehouseMetadata } from "@/types/connections";
+import { warehouseMetadataSchema } from "@/types/connections";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { z } from "zod";
 
-const warehouseMetadataSchema = z.object({
-  projects: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    datasets: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      description: z.string(),
-      tables: z.array(z.object({
-        id: z.string(),
-        name: z.string(),
-        description: z.string(),
-        fields: z.array(z.object({
-          name: z.string(),
-          type: z.string(),
-          description: z.string().nullable()
-        }))
-      }))
-    }))
-  }))
-}) satisfies z.ZodType<WarehouseMetadata>;
 
 export const editorRouter = createTRPCRouter({
   submitMessage: workspaceProtectedProcedure
