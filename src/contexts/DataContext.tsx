@@ -45,6 +45,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isStoreReady, setIsStoreReady] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Check if store is ready
   useEffect(() => {
@@ -61,56 +62,66 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Load stored data once store is ready
   useEffect(() => {
-    if (!isStoreReady) return;
+    if (!isStoreReady || isInitialized) return;
 
     const loadStoredData = async () => {
       try {
         console.log("Loading stored data...");
         const storedIntegrations =
           await window.electron.store.getIntegrations();
-        console.log("Stored integrations:", storedIntegrations);
-
         const activeIntegrationId =
           await window.electron.store.getActiveIntegrationId();
+
+        console.log("Stored integrations:", storedIntegrations);
         console.log("Active integration ID:", activeIntegrationId);
 
-        setIntegrations(storedIntegrations);
-        if (activeIntegrationId) {
+        // Only set integrations if we found some stored
+        if (storedIntegrations?.length > 0) {
+          setIntegrations(storedIntegrations);
+        }
+
+        // Only set active integration if we found a valid one
+        if (activeIntegrationId && storedIntegrations?.length) {
           const active = storedIntegrations.find(
             (i) => i.id === activeIntegrationId,
           );
-          console.log("Setting active integration:", active);
-          setActiveIntegration(active ?? null);
+          if (active) {
+            setActiveIntegration(active);
+          }
         }
+
+        setIsInitialized(true);
       } catch (error) {
         console.error("Error loading stored data:", error);
+        setIsInitialized(true);
       }
     };
 
     void loadStoredData();
-  }, [isStoreReady]);
+  }, [isStoreReady, isInitialized]);
+
+  // Only set default active integration if we've initialized and none is set
+  useEffect(() => {
+    if (isInitialized && !activeIntegration && integrations[0]) {
+      setActiveIntegration(integrations[0]);
+    }
+  }, [integrations, activeIntegration, isInitialized]);
 
   // Persist integrations whenever they change
   useEffect(() => {
-    if (!window.electron?.store) return;
+    if (!window.electron?.store || !isStoreReady || !isInitialized) return;
     console.log("setting integrations", integrations);
     void window.electron.store.setIntegrations(integrations);
-  }, [integrations]);
+  }, [integrations, isStoreReady, isInitialized]);
 
   // Persist active integration whenever it changes
   useEffect(() => {
-    if (!window.electron?.store) return;
+    if (!window.electron?.store || !isStoreReady || !isInitialized) return;
     console.log("setting active integration", activeIntegration?.id);
     void window.electron.store.setActiveIntegrationId(
       activeIntegration?.id ?? null,
     );
-  }, [activeIntegration?.id]);
-
-  useEffect(() => {
-    if (!activeIntegration && integrations[0]) {
-      setActiveIntegration(integrations[0]);
-    }
-  }, [integrations, activeIntegration]);
+  }, [activeIntegration?.id, isStoreReady, isInitialized]);
 
   const initializeDriver = async (integration: Integration) => {
     console.log("initializeDriver", integration);

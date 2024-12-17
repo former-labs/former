@@ -32,12 +32,15 @@ export interface WarehouseMetadata {
   projects: Array<{
     id: string;
     name: string;
+    description: string;
     datasets: Array<{
       id: string;
       name: string;
+      description: string;
       tables: Array<{
         id: string;
         name: string;
+        description: string;
         fields: Array<{
           name: string;
           type: string;
