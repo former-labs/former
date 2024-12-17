@@ -1,6 +1,6 @@
 import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
-import { warehouseMetadataSchema } from "@/types/connections";
+import { databaseMetadataSchema } from "@/types/connections";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { z } from "zod";
 
@@ -15,12 +15,12 @@ export const editorRouter = createTRPCRouter({
         })
       ).min(1),
       editorContent: z.string(),
-      warehouseMetadata: warehouseMetadataSchema
+      databaseMetadata: databaseMetadataSchema
     }))
     .mutation(async ({ input }) => {
-      // For now, just log the editor content and warehouse metadata
+      // For now, just log the editor content and database metadata
       console.log("Editor content received:", input.editorContent);
-      console.log("Warehouse metadata received:", input.warehouseMetadata);
+      console.log("Database metadata received:", input.databaseMetadata);
 
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",

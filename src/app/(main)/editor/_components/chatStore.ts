@@ -44,7 +44,7 @@ const useChatStore = create<ChatStore>((set) => ({
 }));
 
 export const useChat = () => {
-  const { warehouseMetadata } = useData();
+  const { databaseMetadata } = useData();
 
   const chatStore = useChatStore();
   const { editorContent } = useEditor();
@@ -72,19 +72,19 @@ export const useChat = () => {
   }: {
     message: string;
   }) => {
-    if (!chatStore.activeChatId || !activeChat || !warehouseMetadata) return;
+    if (!chatStore.activeChatId || !activeChat || !databaseMetadata) return;
 
     const newMessage = {
       type: "user" as const,
       content: message,
     };
 
-    console.log("metadata", warehouseMetadata);
+    console.log("metadata", databaseMetadata);
 
     const responsePromise = submitMessageMutation.mutateAsync({
       messages: [...activeChat.messages, newMessage],
       editorContent,
-      warehouseMetadata,
+      databaseMetadata,
     });
 
     chatStore.addMessage(chatStore.activeChatId, newMessage);

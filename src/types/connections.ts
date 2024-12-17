@@ -31,7 +31,7 @@ export interface DatabaseConfig {
 }
 
 
-export const warehouseMetadataSchema = z.object({
+export const databaseMetadataSchema = z.object({
   projects: z.array(z.object({
     id: z.string(),
     name: z.string(),
@@ -54,4 +54,4 @@ export const warehouseMetadataSchema = z.object({
   }))
 });
 
-export type WarehouseMetadata = z.infer<typeof warehouseMetadataSchema>;
+export type DatabaseMetadata = z.infer<typeof databaseMetadataSchema>;

@@ -1,6 +1,6 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import pkg from 'pg';
-import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials, WarehouseMetadata } from "../../types/connections.js";
+import type { BigQueryCredentials, DatabaseCredentials, DatabaseMetadata, PostgresCredentials } from "../../types/connections.js";
 const { Client } = pkg;
 
 
@@ -60,8 +60,8 @@ export abstract class Driver {
   abstract getProjectId(): string;
   abstract getProjectName(): string;
 
-  async fetchMetadata(): Promise<WarehouseMetadata> {
-    const metadata: WarehouseMetadata = {
+  async fetchMetadata(): Promise<DatabaseMetadata> {
+    const metadata: DatabaseMetadata = {
       projects: [{
         id: this.getProjectId(),
         name: this.getProjectName(),
@@ -233,8 +233,8 @@ export class PostgresDriver extends Driver {
     await this.client.end();
   }
 
-  async fetchMetadata(): Promise<WarehouseMetadata> {
-    const metadata: WarehouseMetadata = { projects: [] };
+  async fetchMetadata(): Promise<DatabaseMetadata> {
+    const metadata: DatabaseMetadata = { projects: [] };
 
     try {
       // Get all schemas (equivalent to datasets in BigQuery)
@@ -245,7 +245,7 @@ export class PostgresDriver extends Driver {
       `;
       const schemasResult = await this.client.query(schemasQuery);
 
-      type Project = Required<WarehouseMetadata>['projects'][number];
+      type Project = Required<DatabaseMetadata>['projects'][number];
       type Dataset = Project['datasets'][number];
 
       const project: Project = {

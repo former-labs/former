@@ -30,7 +30,7 @@ import { Badge } from "../ui/badge";
 export function MetadataTree() {
   const router = useRouter();
   const {
-    warehouseMetadata,
+    databaseMetadata,
     isFetchingMetadata,
     activeIntegration,
     integrations,
@@ -128,7 +128,7 @@ export function MetadataTree() {
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
             </div>
           ) : (
-            warehouseMetadata?.projects.map((project) => (
+            databaseMetadata?.projects.map((project) => (
               <div key={project.id} className="space-y-1">
                 <Button
                   variant="ghost"
