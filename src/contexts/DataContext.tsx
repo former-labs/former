@@ -145,7 +145,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       setIsFetchingMetadata(true);
       console.log("Fetching metadata for", connectionId);
       const metadata = await window.electron.database.getMetadata(connectionId);
-      setWarehouseMetadata(metadata as WarehouseMetadata);
+      setWarehouseMetadata(metadata);
       console.log("metadata", metadata);
     } catch (error) {
       console.error("Error fetching metadata:", error);

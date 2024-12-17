@@ -1,3 +1,4 @@
+import { useData } from "@/contexts/DataContext";
 import { api } from "@/trpc/react";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
@@ -43,11 +44,13 @@ const useChatStore = create<ChatStore>((set) => ({
 }));
 
 export const useChat = () => {
-  const store = useChatStore();
+  const { warehouseMetadata } = useData();
+
+  const chatStore = useChatStore();
   const { editorContent } = useEditor();
   
-  const activeChat = store.chats.find(
-    (chat) => chat.chatId === store.activeChatId
+  const activeChat = chatStore.chats.find(
+    (chat) => chat.chatId === chatStore.activeChatId
   );
 
   const submitMessageMutation = api.editor.submitMessage.useMutation();
@@ -59,8 +62,8 @@ export const useChat = () => {
       messages: [],
       createdAt: new Date()
     };
-    store.setChats([newChat, ...store.chats]);
-    store.setActiveChatId(chatId);
+    chatStore.setChats([newChat, ...chatStore.chats]);
+    chatStore.setActiveChatId(chatId);
     return chatId;
   };
 
@@ -69,28 +72,31 @@ export const useChat = () => {
   }: {
     message: string;
   }) => {
-    if (!store.activeChatId || !activeChat) return;
+    if (!chatStore.activeChatId || !activeChat || !warehouseMetadata) return;
 
     const newMessage = {
       type: "user" as const,
       content: message,
     };
 
+    console.log("metadata", warehouseMetadata);
+
     const responsePromise = submitMessageMutation.mutateAsync({
       messages: [...activeChat.messages, newMessage],
       editorContent,
+      warehouseMetadata,
     });
 
-    store.addMessage(store.activeChatId, newMessage);
+    chatStore.addMessage(chatStore.activeChatId, newMessage);
     const response = await responsePromise;
-    store.addMessage(store.activeChatId, response.message);
+    chatStore.addMessage(chatStore.activeChatId, response.message);
   };
 
   return {
-    chats: store.chats,
+    chats: chatStore.chats,
     activeChat,
-    activeChatId: store.activeChatId,
-    setActiveChatId: store.setActiveChatId,
+    activeChatId: chatStore.activeChatId,
+    setActiveChatId: chatStore.setActiveChatId,
     createChat,
     submitMessage,
   };

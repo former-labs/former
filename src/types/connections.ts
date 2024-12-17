@@ -41,7 +41,7 @@ export interface WarehouseMetadata {
         fields: Array<{
           name: string;
           type: string;
-          description?: string;
+          description: string | null;
         }>;
       }>;
     }>;

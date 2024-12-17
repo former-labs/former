@@ -1,8 +1,28 @@
 import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
+import type { WarehouseMetadata } from "@/types/connections";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { z } from "zod";
 
+const warehouseMetadataSchema = z.object({
+  projects: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    datasets: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      tables: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        fields: z.array(z.object({
+          name: z.string(),
+          type: z.string(),
+          description: z.string().nullable()
+        }))
+      }))
+    }))
+  }))
+}) satisfies z.ZodType<WarehouseMetadata>;
 
 export const editorRouter = createTRPCRouter({
   submitMessage: workspaceProtectedProcedure
@@ -14,10 +34,12 @@ export const editorRouter = createTRPCRouter({
         })
       ).min(1),
       editorContent: z.string(),
+      warehouseMetadata: warehouseMetadataSchema
     }))
     .mutation(async ({ input }) => {
-      // For now, just log the editor content
+      // For now, just log the editor content and warehouse metadata
       console.log("Editor content received:", input.editorContent);
+      console.log("Warehouse metadata received:", input.warehouseMetadata);
 
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",
