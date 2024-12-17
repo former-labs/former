@@ -88,7 +88,7 @@ export function MetadataTree() {
         {integrations.length > 0 ? (
           <div className="mb-2 px-2">
             <Select
-              value={activeIntegration?.id || ""}
+              value={activeIntegration?.id ?? ""}
               onValueChange={(value) => {
                 const integration = integrations.find((i) => i.id === value);
                 if (integration) setActiveIntegration(integration);
@@ -96,12 +96,12 @@ export function MetadataTree() {
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select integration">
-                  {activeIntegration?.name || "Select integration"}
+                  {activeIntegration?.name ?? "Select integration"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {integrations.map((integration) => (
-                  <SelectItem key={integration.id} value={integration.id || ""}>
+                  <SelectItem key={integration.id} value={integration.id ?? ""}>
                     {integration.name}
                   </SelectItem>
                 ))}
@@ -291,7 +291,7 @@ export function MetadataTree() {
                                                 </Badge>
                                               </div>
                                               <div>
-                                                {field.description ||
+                                                {field.description ??
                                                   "No description available"}
                                               </div>
                                             </div>
