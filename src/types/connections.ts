@@ -31,20 +31,19 @@ export interface DatabaseConfig {
 }
 
 
-
 export const warehouseMetadataSchema = z.object({
   projects: z.array(z.object({
     id: z.string(),
     name: z.string(),
-    description: z.string(),
+    description: z.string().optional(),
     datasets: z.array(z.object({
       id: z.string(),
       name: z.string(),
-      description: z.string(),
+      description: z.string().optional(),
       tables: z.array(z.object({
         id: z.string(),
         name: z.string(),
-        description: z.string(),
+        description: z.string().optional(),
         fields: z.array(z.object({
           name: z.string(),
           type: z.string(),
