@@ -1,3 +1,4 @@
+import type { Integration } from '@/types/electron';
 import { type IpcRendererEvent, contextBridge, ipcRenderer } from 'electron';
 
 // Define the type for the callback function
@@ -27,6 +28,15 @@ contextBridge.exposeInMainWorld(
       if (validChannels.includes(channel)) {
         ipcRenderer.on(channel, (_event: IpcRendererEvent, ...args) => func(...args));
       }
-    }
+    },
+    store: {
+      getIntegrations: () => ipcRenderer.invoke('store:getIntegrations'),
+      setIntegrations: (integrations: Integration[]) => 
+        ipcRenderer.invoke('store:setIntegrations', integrations),
+      getActiveIntegrationId: () => 
+        ipcRenderer.invoke('store:getActiveIntegrationId'),
+      setActiveIntegrationId: (id: string | null) => 
+        ipcRenderer.invoke('store:setActiveIntegrationId', id),
+    },
   }
 ); 

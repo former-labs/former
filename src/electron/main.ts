@@ -3,6 +3,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { database } from './database.js';
 import { env } from './env.electron.js';
+import storeUtils from './store.js';
 
 // Get the current file's directory path in ES module context
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,23 @@ ipcMain.handle('database:execute', async (_, connectionId, query) => {
 
 ipcMain.handle('database:getMetadata', async (_, connectionId) => {
   return await database.getMetadata(connectionId);
+});
+
+// Add these IPC handlers before app.whenReady()
+ipcMain.handle('store:getIntegrations', () => {
+  return storeUtils.get('integrations');
+});
+
+ipcMain.handle('store:setIntegrations', (_, integrations) => {
+  storeUtils.set('integrations', integrations);
+});
+
+ipcMain.handle('store:getActiveIntegrationId', () => {
+  return storeUtils.get('activeIntegrationId');
+});
+
+ipcMain.handle('store:setActiveIntegrationId', (_, id) => {
+  storeUtils.set('activeIntegrationId', id);
 });
 
 // Clean up database connections when app is closing

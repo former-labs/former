@@ -44,6 +44,67 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [isStoreReady, setIsStoreReady] = useState(false);
+
+  // Check if store is ready
+  useEffect(() => {
+    const checkStore = () => {
+      if (window.electron?.store) {
+        setIsStoreReady(true);
+        console.log("store is ready");
+      } else {
+        setTimeout(checkStore, 100);
+      }
+    };
+    checkStore();
+  }, []);
+
+  // Load stored data once store is ready
+  useEffect(() => {
+    if (!isStoreReady) return;
+
+    const loadStoredData = async () => {
+      try {
+        console.log("Loading stored data...");
+        const storedIntegrations =
+          await window.electron.store.getIntegrations();
+        console.log("Stored integrations:", storedIntegrations);
+
+        const activeIntegrationId =
+          await window.electron.store.getActiveIntegrationId();
+        console.log("Active integration ID:", activeIntegrationId);
+
+        setIntegrations(storedIntegrations);
+        if (activeIntegrationId) {
+          const active = storedIntegrations.find(
+            (i) => i.id === activeIntegrationId,
+          );
+          console.log("Setting active integration:", active);
+          setActiveIntegration(active ?? null);
+        }
+      } catch (error) {
+        console.error("Error loading stored data:", error);
+      }
+    };
+
+    void loadStoredData();
+  }, [isStoreReady]);
+
+  // Persist integrations whenever they change
+  useEffect(() => {
+    if (!window.electron?.store) return;
+    console.log("setting integrations", integrations);
+    void window.electron.store.setIntegrations(integrations);
+  }, [integrations]);
+
+  // Persist active integration whenever it changes
+  useEffect(() => {
+    if (!window.electron?.store) return;
+    console.log("setting active integration", activeIntegration?.id);
+    void window.electron.store.setActiveIntegrationId(
+      activeIntegration?.id ?? null,
+    );
+  }, [activeIntegration?.id]);
 
   useEffect(() => {
     if (!activeIntegration && integrations[0]) {
