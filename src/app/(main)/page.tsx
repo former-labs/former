@@ -1,6 +1,5 @@
 "use client";
 
-import { NewConversationSearchBar } from "@/components/chat/NewConversationSearchBar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,10 +46,6 @@ export default function ChatPage() {
         <h1 className="mb-4 text-2xl font-semibold">
           Ask a question of your data
         </h1>
-
-        <div className="w-full max-w-screen-lg">
-          <NewConversationSearchBar />
-        </div>
       </div>
     </div>
   );

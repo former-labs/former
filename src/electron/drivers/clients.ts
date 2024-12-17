@@ -65,6 +65,7 @@ export abstract class Driver {
       projects: [{
         id: this.getProjectId(),
         name: this.getProjectName(),
+        description: "",
         datasets: [],
       }]
     };
@@ -77,6 +78,7 @@ export abstract class Driver {
         project.datasets.push(...datasets.map(d => ({
           id: d.id,
           name: d.name,
+          description: "",
           tables: []
         })));
       }
@@ -249,6 +251,7 @@ export class PostgresDriver extends Driver {
       const project: Project = {
         id: this.credentials.database,
         name: this.credentials.database,
+        description: "",
         datasets: [],
       };
 
@@ -256,6 +259,7 @@ export class PostgresDriver extends Driver {
         const datasetInfo: Dataset = {
           id: schema.schema_name,
           name: schema.schema_name,
+          description: "",
           tables: [],
         };
 
@@ -282,6 +286,7 @@ export class PostgresDriver extends Driver {
             tableMap.set(row.table_name, {
               id: `${schema.schema_name}.${row.table_name}`,
               name: row.table_name,
+              description: "",
               fields: [],
             });
           }
