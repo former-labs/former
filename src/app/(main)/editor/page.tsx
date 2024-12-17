@@ -7,7 +7,9 @@ import {
 } from "@/components/ui/resizable";
 import { useData } from "@/contexts/DataContext";
 import dynamic from "next/dynamic";
+import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/Chat";
+import { useChat } from "./_components/chatStore";
 
 /*
   If this is not dynamic, hot reload seems to cause the entire page to reload.
@@ -22,6 +24,16 @@ const SqlEditor = dynamic(
 
 export default function Page() {
   const { databaseMetadata } = useData();
+  const { createChat } = useChat();
+
+  useEventListener("keydown", (e) => {
+    // Check for Cmd+L (Mac) or Ctrl+L (Windows/Linux)
+    if ((e.metaKey || e.ctrlKey) && e.key === "l") {
+      console.log("create chat cmd+l");
+      e.preventDefault();
+      createChat();
+    }
+  });
 
   if (!databaseMetadata) {
     return (

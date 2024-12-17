@@ -194,6 +194,8 @@ const TextareaAutoResize = ({
   placeholder?: string;
 }) => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea } =
+    useChat();
 
   useEffect(() => {
     if (textAreaRef.current) {
@@ -201,6 +203,17 @@ const TextareaAutoResize = ({
       textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
     }
   }, [value]);
+
+  useEffect(() => {
+    /*
+      Possibly dodgy.
+      We listen for this value to become true. When it does we consume it and focus the textarea.
+    */
+    if (shouldFocusActiveChatTextarea && textAreaRef.current) {
+      textAreaRef.current.focus();
+      setShouldFocusActiveChatTextarea(false);
+    }
+  }, [shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea]);
 
   return (
     <Textarea
@@ -301,7 +314,7 @@ const CodeBlock = ({
           }}
         />
       </div>
-      <div className="mt-1 flex justify-end gap-2">
+      <div className="mt-1 flex justify-end gap-1">
         <Button
           variant="outline"
           size="sm"

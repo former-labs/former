@@ -2,14 +2,21 @@
 
 import { Button } from "@/components/ui/button";
 import { useData } from "@/contexts/DataContext";
-import { DiffEditor, Editor, useMonaco } from "@monaco-editor/react";
+import {
+  DiffEditor,
+  Editor,
+  type Monaco,
+  useMonaco,
+} from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useRef, useState } from "react";
+import { useChat } from "./chatStore";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 
 export const SqlEditor = () => {
   const monaco = useMonaco();
+  const { createChat } = useChat();
 
   const {
     editorContent,
@@ -86,19 +93,47 @@ export const SqlEditor = () => {
     }
   };
 
-  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
-    editorRef.current = editor;
+  const setupEditorKeybindings = (
+    editor: editor.IStandaloneCodeEditor,
+    monaco: Monaco,
+  ) => {
+    // Override the default Cmd+L binding
+    const keybinding = monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL;
+    editor.addCommand(keybinding, () => {
+      // Simulate the original Cmd+L keybinding by dispatching a new keyboard event
+      const event = new KeyboardEvent("keydown", {
+        key: "l",
+        code: "KeyL",
+        metaKey: true,
+        bubbles: true,
+      });
+      document.dispatchEvent(event);
+    });
   };
 
-  const handleDiffEditorDidMount = (editor: editor.IStandaloneDiffEditor) => {
+  const handleEditorDidMount = (
+    editor: editor.IStandaloneCodeEditor,
+    monaco: Monaco,
+  ) => {
+    editorRef.current = editor;
+    setupEditorKeybindings(editor, monaco);
+  };
+
+  const handleDiffEditorDidMount = (
+    editor: editor.IStandaloneDiffEditor,
+    monaco: Monaco,
+  ) => {
     diffEditorRef.current = editor;
+
+    // Override the default Cmd+L binding in the modified editor
+    const modifiedEditor = editor.getModifiedEditor();
+    setupEditorKeybindings(modifiedEditor, monaco);
 
     // Listen for diff updates instead of content changes
     editor.onDidUpdateDiff(() => {
       updateDiffWidgets(editor);
     });
 
-    const modifiedEditor = editor.getModifiedEditor();
     modifiedEditor.onDidChangeModelContent(() => {
       setEditorContentPending(modifiedEditor.getValue());
     });
@@ -108,9 +143,6 @@ export const SqlEditor = () => {
     });
 
     // Create the widgets when we first activate the diff editor
-    // This is dumb but we apparently need to use a timeout for this to work
-    // Tbh idk if this is stable on a slow machine
-    // I'm sure there's a better way to do this
     setTimeout(() => {
       updateDiffWidgets(editor);
     }, 0);
@@ -163,19 +195,7 @@ export const SqlEditor = () => {
   };
 
   const setDecorations = () => {
-    // if (editorRef.current) {
-    //   const model = editorRef.current.getModel();
-    //   if (!model) return;
-    //   editorRef.current.deltaDecorations([], [
-    //     {
-    //       range: new model.getLineRange(1),
-    //       options: {
-    //         isWholeLine: true,
-    //         className: "myDecoration",
-    //       },
-    //     },
-    //   ]);
-    // }
+    // Example: Adding decorations if needed
   };
 
   const printDecorations = () => {
@@ -221,6 +241,27 @@ export const SqlEditor = () => {
     }
   };
 
+  const printSelection = () => {
+    if (editorRef.current) {
+      const selection = editorRef.current.getSelection();
+      if (selection) {
+        const selectedText = editorRef.current
+          .getModel()
+          ?.getValueInRange(selection);
+        console.log("Selected text:", selectedText);
+      }
+    } else if (diffEditorRef.current) {
+      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
+      const selection = modifiedEditor.getSelection();
+      if (selection) {
+        const selectedText = modifiedEditor
+          .getModel()
+          ?.getValueInRange(selection);
+        console.log("Selected text:", selectedText);
+      }
+    }
+  };
+
   return (
     <div className="flex h-full w-full flex-col pt-4">
       <div className="mb-4 flex gap-2 overflow-x-auto">
@@ -236,6 +277,7 @@ export const SqlEditor = () => {
           Update diff widgets
         </Button>
         <Button onClick={enableIntellisense}>Intellisense</Button>
+        <Button onClick={printSelection}>Print Selection</Button>
         {editorContentPending !== null && (
           <Button
             onClick={() => {
