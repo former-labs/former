@@ -2,13 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { useData } from "@/contexts/DataContext";
-import { DiffEditor, Editor } from "@monaco-editor/react";
+import { DiffEditor, Editor, useMonaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 
 export const SqlEditor = () => {
+  const monaco = useMonaco();
+
   const {
     editorContent,
     editorContentPending,
@@ -22,6 +24,67 @@ export const SqlEditor = () => {
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
+
+  const enableIntellisense = () => {
+    // Example table names - replace with actual table names from your schema
+    const tableNames = [
+      "users",
+      "orders",
+      "products",
+      "categories",
+      "customers",
+    ];
+
+    if (monaco) {
+      // Clear existing completions first
+      monaco.languages.registerCompletionItemProvider("sql", {
+        provideCompletionItems: () => ({ suggestions: [] }),
+      });
+
+      // Register new completions
+      monaco.languages.registerCompletionItemProvider("sql", {
+        provideCompletionItems: (model, position) => {
+          const word = model.getWordUntilPosition(position);
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn,
+          };
+
+          const suggestions = tableNames.map((table) => ({
+            label: table,
+            kind: monaco.languages.CompletionItemKind.Class,
+            insertText: table,
+            range: range,
+          }));
+
+          // Add SQL keywords
+          const keywords = [
+            "SELECT",
+            "FROM",
+            "WHERE",
+            "GROUP BY",
+            "ORDER BY",
+            "HAVING",
+            "JOIN",
+            "LEFT JOIN",
+            "RIGHT JOIN",
+          ];
+          const keywordSuggestions = keywords.map((keyword) => ({
+            label: keyword,
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: keyword,
+            range: range,
+          }));
+
+          return {
+            suggestions: [...suggestions, ...keywordSuggestions],
+          };
+        },
+      });
+    }
+  };
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
@@ -160,7 +223,7 @@ export const SqlEditor = () => {
 
   return (
     <div className="flex h-full w-full flex-col pt-4">
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex gap-2 overflow-x-auto">
         <Button onClick={handleExecute}>Execute</Button>
         <Button onClick={setInitialContent}>Set Initial Content</Button>
         <Button onClick={startDiff}>Start diff</Button>
@@ -172,6 +235,7 @@ export const SqlEditor = () => {
         <Button onClick={() => updateDiffWidgets(diffEditorRef.current!)}>
           Update diff widgets
         </Button>
+        <Button onClick={enableIntellisense}>Intellisense</Button>
         {editorContentPending !== null && (
           <Button
             onClick={() => {
