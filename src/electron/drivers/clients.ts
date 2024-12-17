@@ -51,7 +51,7 @@ export abstract class Driver {
       fields: Array<{
         name: string;
         type: string;
-        description?: string;
+        description: string | null;
       }>;
     }>;
     nextPageToken?: string;
@@ -65,7 +65,7 @@ export abstract class Driver {
       projects: [{
         id: this.getProjectId(),
         name: this.getProjectName(),
-        description: "",
+        description: null,
         datasets: [],
       }]
     };
@@ -78,7 +78,7 @@ export abstract class Driver {
         project.datasets.push(...datasets.map(d => ({
           id: d.id,
           name: d.name,
-          description: "",
+          description: null,
           tables: []
         })));
       }
@@ -140,7 +140,7 @@ export class BigQueryDriver extends Driver {
       fields: Array<{
         name: string;
         type: string;
-        description?: string;
+        description: string | null;
       }>;
     }>;
     nextPageToken?: string;
@@ -162,7 +162,7 @@ export class BigQueryDriver extends Driver {
           fields: metadata.schema.fields.map((field: any) => ({
             name: field.name,
             type: field.type,
-            description: field.description || undefined,
+            description: field.description || null,
           })),
         };
       })
@@ -251,7 +251,7 @@ export class PostgresDriver extends Driver {
       const project: Project = {
         id: this.credentials.database,
         name: this.credentials.database,
-        description: "",
+        description: null,
         datasets: [],
       };
 
@@ -259,7 +259,7 @@ export class PostgresDriver extends Driver {
         const datasetInfo: Dataset = {
           id: schema.schema_name,
           name: schema.schema_name,
-          description: "",
+          description: null,
           tables: [],
         };
 
@@ -286,7 +286,7 @@ export class PostgresDriver extends Driver {
             tableMap.set(row.table_name, {
               id: `${schema.schema_name}.${row.table_name}`,
               name: row.table_name,
-              description: "",
+              description: null,
               fields: [],
             });
           }
@@ -294,7 +294,7 @@ export class PostgresDriver extends Driver {
           table.fields.push({
             name: row.column_name,
             type: row.data_type,
-            description: row.description,
+            description: row.description || null,
           });
         }
 
@@ -346,7 +346,7 @@ export class PostgresDriver extends Driver {
       fields: Array<{
         name: string;
         type: string;
-        description?: string;
+        description: string | null;
       }>;
     }>;
     nextPageToken?: string;
@@ -377,7 +377,7 @@ export class PostgresDriver extends Driver {
       tables.get(row.table_name).fields.push({
         name: row.column_name,
         type: row.data_type,
-        description: row.description
+        description: row.description || null,
       });
     }
 

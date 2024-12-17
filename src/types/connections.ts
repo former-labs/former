@@ -35,15 +35,15 @@ export const warehouseMetadataSchema = z.object({
   projects: z.array(z.object({
     id: z.string(),
     name: z.string(),
-    description: z.string().optional(),
+    description: z.string().nullable(),
     datasets: z.array(z.object({
       id: z.string(),
       name: z.string(),
-      description: z.string().optional(),
+      description: z.string().nullable(),
       tables: z.array(z.object({
         id: z.string(),
         name: z.string(),
-        description: z.string().optional(),
+        description: z.string().nullable(),
         fields: z.array(z.object({
           name: z.string(),
           type: z.string(),
