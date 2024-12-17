@@ -23,7 +23,7 @@ import { useChat } from "./chatStore";
 import { useEditor } from "./editorStore";
 
 export const ChatSidebar = () => {
-  const { createChat, chats, setActiveChatId } = useChat();
+  const { createChat, chats, setActiveChatId, activeChat } = useChat();
 
   return (
     <div className="flex h-full flex-col gap-4 bg-gray-200 p-3">
@@ -42,6 +42,11 @@ export const ChatSidebar = () => {
                   <DropdownMenuItem
                     key={chat.chatId}
                     onClick={() => setActiveChatId(chat.chatId)}
+                    className={
+                      activeChat?.chatId === chat.chatId
+                        ? "border bg-gray-100"
+                        : ""
+                    }
                   >
                     Chat - {chat.createdAt.toLocaleString()}
                   </DropdownMenuItem>
@@ -97,7 +102,6 @@ const ActiveChat = () => {
       <div
         className={`space-y-2 overflow-y-auto pb-4 ${hasMessages ? "flex-1" : ""}`}
       >
-        <div className="text-sm font-medium">Chat {activeChat.chatId}</div>
         <div className="space-y-2">
           {activeChat.messages.map((message, i) => (
             <div key={i}>
