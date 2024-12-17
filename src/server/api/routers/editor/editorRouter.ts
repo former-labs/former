@@ -8,12 +8,15 @@ const warehouseMetadataSchema = z.object({
   projects: z.array(z.object({
     id: z.string(),
     name: z.string(),
+    description: z.string(),
     datasets: z.array(z.object({
       id: z.string(),
       name: z.string(),
+      description: z.string(),
       tables: z.array(z.object({
         id: z.string(),
         name: z.string(),
+        description: z.string(),
         fields: z.array(z.object({
           name: z.string(),
           type: z.string(),
