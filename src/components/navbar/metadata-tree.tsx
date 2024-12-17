@@ -162,7 +162,7 @@ export function MetadataTree() {
                           </Badge>
                         </div>
                         <div>
-                          {project.description || "No description available"}
+                          {project.description ?? "No description available"}
                         </div>
                       </div>
                     </TooltipContent>
@@ -206,7 +206,7 @@ export function MetadataTree() {
                                   </Badge>
                                 </div>
                                 <div>
-                                  {dataset.description ||
+                                  {dataset.description ??
                                     "No description available"}
                                 </div>
                               </div>
@@ -253,7 +253,7 @@ export function MetadataTree() {
                                           </Badge>
                                         </div>
                                         <div>
-                                          {table?.description ||
+                                          {table?.description ??
                                             "No description available"}
                                         </div>
                                       </div>
