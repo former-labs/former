@@ -173,9 +173,17 @@ export function MetadataTree() {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <div className="flex flex-col gap-1">
-                                      <div>Table: {table.name}</div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-semibold">
+                                          {table.name}
+                                        </span>
+                                        <Badge variant="secondary">
+                                          {table.fields?.length || 0} fields
+                                        </Badge>
+                                      </div>
                                       <div>
-                                        Fields: {table.fields?.length || 0}
+                                        {table?.description ||
+                                          "No description available"}
                                       </div>
                                     </div>
                                   </TooltipContent>
@@ -203,8 +211,18 @@ export function MetadataTree() {
                                         </TooltipTrigger>
                                         <TooltipContent>
                                           <div className="flex flex-col gap-1">
-                                            <div>Field: {field.name}</div>
-                                            <div>Type: {field.type}</div>
+                                            <div className="flex items-center gap-x-2">
+                                              <div className="font-semibold">
+                                                {field.name}
+                                              </div>
+                                              <Badge variant="secondary">
+                                                {field.type}
+                                              </Badge>
+                                            </div>
+                                            <div>
+                                              {field.description ||
+                                                "No description available"}
+                                            </div>
                                           </div>
                                         </TooltipContent>
                                       </Tooltip>
