@@ -1,5 +1,6 @@
 import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
+import type { DatabaseMetadata } from "@/types/connections";
 import { databaseMetadataSchema } from "@/types/connections";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { z } from "zod";
@@ -30,6 +31,12 @@ You are a SQL assistant for the AI-first SQL IDE called "Yerve".
 The user is writing SQL code in the editor.
 They may ask you a question, or they may ask you to modify the code.
 Please respond appropriately based on the user's request.
+
+To help you write queries, you must adhere to the below database schema.
+Do not generate SQL code that is not for the provided database schema.
+<DATABASE_SCHEMA>
+${formatDatabaseMetadata(input.databaseMetadata)}
+</DATABASE_SCHEMA>
 
 Respond in Markdown format.
 
@@ -66,3 +73,9 @@ ${input.editorContent}
       };
     }),
 });
+
+const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
+  // TODO: Probs just get the CREATE statements for everything? Bc we need foreign keys and stuff like that.
+  // SQL just works as a schema definition language.
+  return JSON.stringify(metadata, null, 2);
+};
