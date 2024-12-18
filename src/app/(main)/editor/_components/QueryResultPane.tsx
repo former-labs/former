@@ -35,11 +35,8 @@ export const QueryResultPane = () => {
   }
 
   return (
-    <div className="h-full overflow-auto bg-gray-50 p-4">
-      <pre className="whitespace-pre-wrap">
-        {/* {JSON.stringify(result, null, 2)} */}
-        <TableDataView data={result} />
-      </pre>
+    <div className="h-full bg-gray-50 p-0">
+      <TableDataView data={result} />
     </div>
   );
 };
@@ -63,7 +60,7 @@ const TableDataView = ({ data }: { data: ResultRow[] }) => {
   }, []);
 
   return (
-    <div className="ag-theme-quartz h-[300px] w-full">
+    <div className="ag-theme-quartz h-full w-full">
       <AgGridReact
         rowData={data}
         columnDefs={columnDefs}
