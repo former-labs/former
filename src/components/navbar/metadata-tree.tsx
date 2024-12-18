@@ -241,7 +241,8 @@ function DatasetItem({
   expandedTables: Set<string>;
   toggleTable: (id: string) => void;
 }) {
-  const { activeIntegration, fetchTablesForDataset } = useData();
+  const { activeIntegration, fetchTablesForDataset, loadingDatasets } =
+    useData();
 
   const handleToggle = async () => {
     onToggle();
@@ -249,6 +250,8 @@ function DatasetItem({
       await fetchTablesForDataset(activeIntegration.id, dataset.id);
     }
   };
+
+  const isLoading = loadingDatasets.has(dataset.id);
 
   return (
     <div className="space-y-1">
@@ -308,15 +311,24 @@ function DatasetItem({
       </Button>
       {isExpanded && (
         <div className="space-y-1 pl-4">
-          {dataset.tables.map((table) => (
-            <TableItem
-              key={table.id}
-              table={table}
-              searchQuery={searchQuery}
-              isExpanded={expandedTables.has(table.id)}
-              onToggle={() => toggleTable(table.id)}
-            />
-          ))}
+          {isLoading ? (
+            <div className="flex items-center gap-2 py-2 pl-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-gray-900" />
+              <span className="text-sm text-muted-foreground">
+                Loading tables...
+              </span>
+            </div>
+          ) : (
+            dataset.tables.map((table) => (
+              <TableItem
+                key={table.id}
+                table={table}
+                searchQuery={searchQuery}
+                isExpanded={expandedTables.has(table.id)}
+                onToggle={() => toggleTable(table.id)}
+              />
+            ))
+          )}
         </div>
       )}
     </div>

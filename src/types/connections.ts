@@ -44,12 +44,7 @@ export const fieldSchema: z.ZodType<{
   name: string;
   type: string;
   description: string | null;
-  fields?: Array<{
-    name: string;
-    type: string;
-    description: string | null;
-    fields?: Array<any>;
-  }>;
+  fields?: Array<Field>;
 }> = z.object({
   name: z.string(),
   type: z.string(),

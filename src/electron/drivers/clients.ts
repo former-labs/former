@@ -1,6 +1,6 @@
 import { BigQuery, type TableField } from "@google-cloud/bigquery";
 import pkg from 'pg';
-import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials, Project, Table } from "../../types/connections.js";
+import type { BigQueryCredentials, DatabaseCredentials, Field, PostgresCredentials, Project, Table } from "../../types/connections.js";
 const { Client } = pkg;
 
 
@@ -112,17 +112,7 @@ export class BigQueryDriver extends Driver {
       pageToken,
     });
 
-    const parseField = (field: TableField): {
-      name: string;
-      type: string;
-      description: string | null;
-      fields?: Array<{
-        name: string;
-        type: string;
-        description: string | null;
-        fields?: Array<any>;
-      }>;
-    } => ({
+    const parseField = (field: TableField): Field => ({
       name: field.name ?? '',
       type: field.type ?? '',
       description: field.description ?? null,

@@ -16,8 +16,8 @@ interface DataContextType {
     connectionId: string,
     datasetId: string,
   ) => Promise<void>;
+  loadingDatasets: Set<string>;
   isLoadingDatasets: boolean;
-  isLoadingTables: boolean;
   integrations: Integration[];
   addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
   editIntegration: (
@@ -38,7 +38,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     useState<DatabaseMetadata | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
-  const [isLoadingTables, setIsLoadingTables] = useState(false);
+  const [loadingDatasets, setLoadingDatasets] = useState<Set<string>>(
+    new Set(),
+  );
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isStoreReady, setIsStoreReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -168,12 +170,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       !connectionId ||
       !datasetId ||
       loadedDatasets.has(datasetId) ||
-      isLoadingTables
+      loadingDatasets.has(datasetId)
     )
       return;
 
     try {
-      setIsLoadingTables(true);
+      setLoadingDatasets((prev) => new Set([...prev, datasetId]));
 
       // Check if we already have tables for this dataset
       const existingTables = databaseMetadata?.projects
@@ -219,7 +221,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error fetching tables:", error);
       throw error;
     } finally {
-      setIsLoadingTables(false);
+      setLoadingDatasets((prev) => {
+        const next = new Set(prev);
+        next.delete(datasetId);
+        return next;
+      });
     }
   };
 
@@ -316,8 +322,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         initializeDriver,
         fetchMetadataIncremental,
         fetchTablesForDataset,
+        loadingDatasets,
         isLoadingDatasets,
-        isLoadingTables,
         loadedDatasets,
         addIntegration,
         editIntegration,
