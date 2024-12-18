@@ -145,6 +145,7 @@ const ChatInputBox = ({
   onSubmit: (message: string) => Promise<void>;
 }) => {
   const [value, setValue] = useState("");
+  const { editorSelectionContent } = useEditor();
 
   const handleSubmit = () => {
     if (!value.trim()) return;
@@ -161,6 +162,13 @@ const ChatInputBox = ({
 
   return (
     <div className="space-y-2 rounded-lg border bg-white p-2">
+      {editorSelectionContent && (
+        <div className="rounded bg-gray-100 p-2 text-sm text-gray-700">
+          <pre className="whitespace-pre-wrap border">
+            {editorSelectionContent}
+          </pre>
+        </div>
+      )}
       <TextareaAutoResize
         value={value}
         onChange={(e) => setValue(e.target.value)}
