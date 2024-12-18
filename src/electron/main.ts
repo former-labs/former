@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { Integration } from '../types/connections.js';
+import type { Integration } from '../types/connections.js';
 import { database } from './database.js';
 import { env } from './env.electron.js';
 import storeUtils from './store.js';
