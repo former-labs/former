@@ -18,14 +18,17 @@ interface Chat {
 interface ChatStore {
   chats: Chat[];
   activeChatId: string | null;
+  shouldFocusActiveChatTextarea: boolean;
   setActiveChatId: (chatId: string) => void;
   setChats: (chats: Chat[]) => void;
   addMessage: (chatId: string, message: ChatMessage) => void;
+  setShouldFocusActiveChatTextarea: (value: boolean) => void;
 }
 
 const useChatStore = create<ChatStore>((set) => ({
   chats: [],
   activeChatId: null,
+  shouldFocusActiveChatTextarea: false,
   setActiveChatId: (chatId) => {
     set({ activeChatId: chatId });
   },
@@ -41,6 +44,7 @@ const useChatStore = create<ChatStore>((set) => ({
       ),
     }));
   },
+  setShouldFocusActiveChatTextarea: (value) => set({ shouldFocusActiveChatTextarea: value }),
 }));
 
 export const useChat = () => {
@@ -56,14 +60,23 @@ export const useChat = () => {
   const submitMessageMutation = api.editor.submitMessage.useMutation();
 
   const createChat = () => {
+    // If there's an active chat with no messages, remove it first
+    let updatedChats = [...chatStore.chats];
+    if (activeChat && activeChat.messages.length === 0) {
+      updatedChats = updatedChats.filter(chat => chat.chatId !== activeChat.chatId);
+    }
+
     const chatId = uuidv4();
     const newChat = { 
       chatId, 
       messages: [],
       createdAt: new Date()
     };
-    chatStore.setChats([newChat, ...chatStore.chats]);
+
+    // Add the new chat to the beginning of the list
+    chatStore.setChats([newChat, ...updatedChats]);
     chatStore.setActiveChatId(chatId);
+    chatStore.setShouldFocusActiveChatTextarea(true);
     return chatId;
   };
 
@@ -99,5 +112,7 @@ export const useChat = () => {
     setActiveChatId: chatStore.setActiveChatId,
     createChat,
     submitMessage,
+    shouldFocusActiveChatTextarea: chatStore.shouldFocusActiveChatTextarea,
+    setShouldFocusActiveChatTextarea: chatStore.setShouldFocusActiveChatTextarea,
   };
 };

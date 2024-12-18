@@ -1,7 +1,11 @@
 "use client";
 
 import { type Driver } from "@/electron/drivers/clients";
-import type { DatabaseMetadata, Integration } from "@/types/connections";
+import {
+  databaseMetadataSchema,
+  type Integration,
+  type DatabaseMetadata,
+} from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface DataContextType {
@@ -139,8 +143,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       // I'm validating here because unsafe casting occurs deep in this funciton
       // Imo we should push this validation deeper into electron itself
       const metadata = await window.electron.database.getMetadata(connectionId);
-      // const validatedMetadata = databaseMetadataSchema.parse(metadata);
-      setDatabaseMetadata(metadata);
+      const validatedMetadata = databaseMetadataSchema.parse(metadata);
+      setDatabaseMetadata(validatedMetadata);
       console.log("metadata", metadata);
     } catch (error) {
       console.error("Error fetching metadata:", error);
