@@ -97,7 +97,7 @@ export const SqlEditor = () => {
   // Add Cmd+K binding for view zone
   useEditorKeybind({
     id: "add-view-zone",
-    callback: () => {
+    callback: async () => {
       if (!codeEditor) return;
       const position = codeEditor.getPosition();
       if (!position) return;
@@ -129,7 +129,7 @@ export const SqlEditor = () => {
   // Add Cmd+L binding to simulate original keybinding
   useEditorKeybind({
     id: "open-chat",
-    callback: () => {
+    callback: async () => {
       // Stop existing keybinding from being triggered and propagate up
       const event = new KeyboardEvent("keydown", {
         key: "l",
@@ -404,7 +404,7 @@ const useEditorKeybind = ({
   diffEditor,
 }: {
   id: string;
-  callback: () => void;
+  callback: () => Promise<void>;
   keybinding: number | null;
   codeEditor: editor.IStandaloneCodeEditor | null;
   diffEditor: editor.IStandaloneDiffEditor | null;
