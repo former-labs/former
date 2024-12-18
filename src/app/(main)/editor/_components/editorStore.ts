@@ -61,7 +61,7 @@ export const useEditor = () => {
   };
 };
 
-const getEditorSelectionContent = ({
+export const getEditorSelectionContent = ({
   editorSelection,
   editorContent
 }: {

@@ -22,7 +22,7 @@ import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
 import React, { type ReactNode, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "./chatStore";
-import { useEditor } from "./editorStore";
+import { getEditorSelectionContent, useEditor } from "./editorStore";
 
 export const ChatSidebar = () => {
   const { createChat, chats, setActiveChatId, activeChat } = useChat();
@@ -145,7 +145,15 @@ const ChatInputBox = ({
   onSubmit: (message: string) => Promise<void>;
 }) => {
   const [value, setValue] = useState("");
-  const { editorSelectionContent } = useEditor();
+  const { activeChat } = useChat();
+  const { editorContent } = useEditor();
+
+  const selectionContent = activeChat?.pendingEditorSelection
+    ? getEditorSelectionContent({
+        editorSelection: activeChat.pendingEditorSelection,
+        editorContent,
+      })
+    : null;
 
   const handleSubmit = () => {
     if (!value.trim()) return;
@@ -161,12 +169,10 @@ const ChatInputBox = ({
   };
 
   return (
-    <div className="space-y-2 rounded-lg border bg-white p-2">
-      {editorSelectionContent && (
-        <div className="rounded bg-gray-100 p-2 text-sm text-gray-700">
-          <pre className="whitespace-pre-wrap border">
-            {editorSelectionContent}
-          </pre>
+    <div className="space-y-2 rounded-lg border bg-white">
+      {selectionContent && (
+        <div className="rounded border pr-3">
+          <StaticEditor value={selectionContent} />
         </div>
       )}
       <TextareaAutoResize
@@ -252,7 +258,6 @@ const CodeBlock = ({
   className?: string;
 }) => {
   const { setEditorContentPending } = useEditor();
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
   if (!React.isValidElement(children)) {
@@ -276,23 +281,6 @@ const CodeBlock = ({
 
   codeContent = codeContent.replace(/\n+$/, "");
 
-  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
-    editorRef.current = editor;
-
-    const updateEditorHeight = () => {
-      const contentHeight = editor.getContentHeight();
-      const editorElement = editor.getDomNode();
-
-      if (editorElement) {
-        editorElement.style.height = `${contentHeight}px`;
-        editor.layout();
-      }
-    };
-
-    editor.onDidContentSizeChange(updateEditorHeight);
-    updateEditorHeight();
-  };
-
   const handleCopy = async () => {
     await navigator.clipboard.writeText(codeContent);
     setIsCopied(true);
@@ -302,25 +290,7 @@ const CodeBlock = ({
   return (
     <div>
       <div className="relative overflow-x-auto rounded-sm border">
-        <Editor
-          onMount={handleEditorDidMount}
-          language="sql"
-          value={codeContent}
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            readOnly: true,
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            lineNumbers: "off",
-            lineDecorationsWidth: 0,
-            padding: { top: 8, bottom: 8 },
-            scrollbar: {
-              ignoreHorizontalScrollbarInContentHeight: true,
-              alwaysConsumeMouseWheel: false,
-            },
-          }}
-        />
+        <StaticEditor value={codeContent} />
       </div>
       <div className="mt-1 flex justify-end gap-1">
         <Button
@@ -347,5 +317,48 @@ const CodeBlock = ({
         </Button>
       </div>
     </div>
+  );
+};
+
+const StaticEditor = ({ value }: { value: string }) => {
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor;
+
+    const updateEditorHeight = () => {
+      const contentHeight = editor.getContentHeight();
+      const editorElement = editor.getDomNode();
+
+      if (editorElement) {
+        editorElement.style.height = `${contentHeight}px`;
+        editor.layout();
+      }
+    };
+
+    editor.onDidContentSizeChange(updateEditorHeight);
+    updateEditorHeight();
+  };
+
+  return (
+    <Editor
+      onMount={handleEditorDidMount}
+      language="sql"
+      value={value}
+      options={{
+        minimap: { enabled: false },
+        fontSize: 14,
+        readOnly: true,
+        automaticLayout: true,
+        scrollBeyondLastLine: false,
+        lineNumbers: "off",
+        lineDecorationsWidth: 0,
+        padding: { top: 8, bottom: 8 },
+        scrollbar: {
+          ignoreHorizontalScrollbarInContentHeight: true,
+          alwaysConsumeMouseWheel: false,
+        },
+      }}
+    />
   );
 };

@@ -108,6 +108,23 @@ export const SqlEditor = () => {
       });
       document.dispatchEvent(event);
     });
+
+    // Add Cmd+K binding for view zone
+    const viewZoneKeybinding = monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK;
+    editor.addCommand(viewZoneKeybinding, () => {
+      const position = editor.getPosition();
+      if (!position) return;
+
+      editor.changeViewZones(function (changeAccessor) {
+        const domNode = document.createElement("div");
+        domNode.style.background = "lightgreen";
+        changeAccessor.addZone({
+          afterLineNumber: position.lineNumber - 1,
+          heightInLines: 3,
+          domNode: domNode,
+        });
+      });
+    });
   };
 
   const handleEditorDidMount = (
