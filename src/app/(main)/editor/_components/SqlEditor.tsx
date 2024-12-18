@@ -8,7 +8,7 @@ import {
   useMonaco,
 } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 import { useQueryResult } from "./queryResultStore";
@@ -26,8 +26,10 @@ export const SqlEditor = () => {
 
   const { executeQuery } = useQueryResult();
 
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
+  const [codeEditor, setCodeEditor] =
+    useState<editor.IStandaloneCodeEditor | null>(null);
+  const [diffEditor, setDiffEditor] =
+    useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
@@ -92,14 +94,43 @@ export const SqlEditor = () => {
     }
   };
 
-  const setupEditorKeybindings = (
-    editor: editor.IStandaloneCodeEditor,
-    monaco: Monaco,
-  ) => {
-    // Override the default Cmd+L binding
-    const keybinding = monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL;
-    editor.addCommand(keybinding, () => {
-      // Simulate the original Cmd+L keybinding by dispatching a new keyboard event
+  // Add Cmd+K binding for view zone
+  useEditorKeybind({
+    id: "add-view-zone",
+    callback: async () => {
+      if (!codeEditor) return;
+      const position = codeEditor.getPosition();
+      if (!position) return;
+
+      codeEditor.changeViewZones(function (changeAccessor) {
+        const domNode = document.createElement("div");
+        domNode.style.background = "lightgreen";
+        changeAccessor.addZone({
+          afterLineNumber: position.lineNumber - 1,
+          heightInLines: 3,
+          domNode: domNode,
+        });
+      });
+    },
+    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK : null,
+    codeEditor,
+    diffEditor,
+  });
+
+  // Add Cmd+Enter binding to execute query
+  useEditorKeybind({
+    id: "execute-query",
+    callback: executeQuery,
+    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
+    codeEditor,
+    diffEditor,
+  });
+
+  // Add Cmd+L binding to simulate original keybinding
+  useEditorKeybind({
+    id: "open-chat",
+    callback: async () => {
+      // Stop existing keybinding from being triggered and propagate up
       const event = new KeyboardEvent("keydown", {
         key: "l",
         code: "KeyL",
@@ -107,15 +138,17 @@ export const SqlEditor = () => {
         bubbles: true,
       });
       document.dispatchEvent(event);
-    });
-  };
+    },
+    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL : null,
+    codeEditor,
+    diffEditor,
+  });
 
   const handleEditorDidMount = (
     editor: editor.IStandaloneCodeEditor,
     monaco: Monaco,
   ) => {
-    editorRef.current = editor;
-    setupEditorKeybindings(editor, monaco);
+    setCodeEditor(editor);
 
     // Add selection change listener
     editor.onDidChangeCursorSelection((e) => {
@@ -128,11 +161,10 @@ export const SqlEditor = () => {
     editor: editor.IStandaloneDiffEditor,
     monaco: Monaco,
   ) => {
-    diffEditorRef.current = editor;
+    setDiffEditor(editor);
 
     // Override the default Cmd+L binding in the modified editor
     const modifiedEditor = editor.getModifiedEditor();
-    setupEditorKeybindings(modifiedEditor, monaco);
 
     // Listen for diff updates instead of content changes
     editor.onDidUpdateDiff(() => {
@@ -161,12 +193,10 @@ export const SqlEditor = () => {
 
   const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
     // Remove existing widgets
-    if (diffEditorRef.current) {
-      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
-      diffWidgetsRef.current.forEach((widget) => {
-        modifiedEditor.removeContentWidget(widget);
-      });
-    }
+    const modifiedEditor = editor.getModifiedEditor();
+    diffWidgetsRef.current.forEach((widget) => {
+      modifiedEditor.removeContentWidget(widget);
+    });
 
     diffWidgetsRef.current = [];
 
@@ -202,7 +232,7 @@ export const SqlEditor = () => {
       editorContentPending,
     });
 
-    console.log(diffEditorRef.current?.getLineChanges());
+    console.log(diffEditor?.getLineChanges());
   };
 
   const setDecorations = () => {
@@ -210,16 +240,14 @@ export const SqlEditor = () => {
   };
 
   const printDecorations = () => {
-    if (diffEditorRef.current) {
-      console.log(
-        diffEditorRef.current.getModel()?.modified.getAllDecorations(),
-      );
+    if (diffEditor) {
+      console.log(diffEditor.getModel()?.modified.getAllDecorations());
     }
   };
 
   const removeWidgets = () => {
-    if (diffEditorRef.current) {
-      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
+    if (diffEditor) {
+      const modifiedEditor = diffEditor.getModifiedEditor();
       diffWidgetsRef.current.forEach((widget) => {
         modifiedEditor.removeContentWidget(widget);
       });
@@ -242,16 +270,14 @@ export const SqlEditor = () => {
   };
 
   const printSelection = () => {
-    if (editorRef.current) {
-      const selection = editorRef.current.getSelection();
+    if (codeEditor) {
+      const selection = codeEditor.getSelection();
       if (selection) {
-        const selectedText = editorRef.current
-          .getModel()
-          ?.getValueInRange(selection);
+        const selectedText = codeEditor.getModel()?.getValueInRange(selection);
         console.log("Selected text:", selectedText);
       }
-    } else if (diffEditorRef.current) {
-      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
+    } else if (diffEditor) {
+      const modifiedEditor = diffEditor.getModifiedEditor();
       const selection = modifiedEditor.getSelection();
       if (selection) {
         const selectedText = modifiedEditor
@@ -273,7 +299,7 @@ export const SqlEditor = () => {
         <Button onClick={setDecorations}>Set decorations</Button>
         <Button onClick={printDecorations}>Print decorations</Button>
         <Button onClick={removeWidgets}>Remove widgets</Button>
-        <Button onClick={() => updateDiffWidgets(diffEditorRef.current!)}>
+        <Button onClick={() => diffEditor && updateDiffWidgets(diffEditor)}>
           Update diff widgets
         </Button>
         <Button onClick={enableIntellisense}>Intellisense</Button>
@@ -285,8 +311,8 @@ export const SqlEditor = () => {
               setRenderSideBySide(newRenderSideBySide);
 
               // Update line numbers when toggling view
-              if (diffEditorRef.current) {
-                diffEditorRef.current.getModifiedEditor().updateOptions({
+              if (diffEditor) {
+                diffEditor.getModifiedEditor().updateOptions({
                   lineNumbers: newRenderSideBySide ? "on" : "off",
                 });
               }
@@ -366,4 +392,53 @@ export const SqlEditor = () => {
       </div>
     </div>
   );
+};
+
+const useEditorKeybind = ({
+  id,
+  callback,
+  keybinding,
+  codeEditor,
+  diffEditor,
+}: {
+  id: string;
+  callback: () => Promise<void>;
+  keybinding: number | null;
+  codeEditor: editor.IStandaloneCodeEditor | null;
+  diffEditor: editor.IStandaloneDiffEditor | null;
+}) => {
+  useEffect(() => {
+    if (!keybinding || !codeEditor) return;
+
+    const disposable = codeEditor.addAction({
+      id,
+      label: id,
+      keybindings: [keybinding],
+      run: () => {
+        void callback();
+      },
+    });
+
+    return () => {
+      disposable.dispose();
+    };
+  }, [callback, codeEditor, keybinding, id]);
+
+  useEffect(() => {
+    if (!keybinding || !diffEditor) return;
+
+    const modifiedEditor = diffEditor.getModifiedEditor();
+    const disposable = modifiedEditor.addAction({
+      id,
+      label: id,
+      keybindings: [keybinding],
+      run: () => {
+        void callback();
+      },
+    });
+
+    return () => {
+      disposable.dispose();
+    };
+  }, [callback, diffEditor, keybinding, id]);
 };

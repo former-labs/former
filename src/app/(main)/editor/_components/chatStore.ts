@@ -1,5 +1,6 @@
 import { useData } from "@/contexts/DataContext";
 import { api } from "@/trpc/react";
+import type { Selection } from "monaco-editor";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { useEditor } from "./editorStore";
@@ -13,6 +14,7 @@ interface Chat {
   chatId: string;
   messages: ChatMessage[];
   createdAt: Date;
+  pendingEditorSelection: Selection | null;
 }
 
 interface ChatStore {
@@ -51,7 +53,7 @@ export const useChat = () => {
   const { databaseMetadata } = useData();
 
   const chatStore = useChatStore();
-  const { editorContent } = useEditor();
+  const { editorContent, editorSelection } = useEditor();
   
   const activeChat = chatStore.chats.find(
     (chat) => chat.chatId === chatStore.activeChatId
@@ -70,7 +72,8 @@ export const useChat = () => {
     const newChat = { 
       chatId, 
       messages: [],
-      createdAt: new Date()
+      createdAt: new Date(),
+      pendingEditorSelection: editorSelection
     };
 
     // Add the new chat to the beginning of the list
@@ -97,6 +100,7 @@ export const useChat = () => {
     const responsePromise = submitMessageMutation.mutateAsync({
       messages: [...activeChat.messages, newMessage],
       editorContent,
+      editorSelection: activeChat.pendingEditorSelection,
       databaseMetadata,
     });
 

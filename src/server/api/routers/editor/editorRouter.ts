@@ -16,11 +16,18 @@ export const editorRouter = createTRPCRouter({
         })
       ).min(1),
       editorContent: z.string(),
+      editorSelection: z.object({
+        startLineNumber: z.number(),
+        startColumn: z.number(),
+        endLineNumber: z.number(),
+        endColumn: z.number(),
+      }).nullable(),
       databaseMetadata: databaseMetadataSchema
     }))
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
       console.log("Editor content received:", input.editorContent);
+      console.log("Editor selection received:", input.editorSelection);
       console.log("Database metadata received:", input.databaseMetadata);
 
       const systemMessage: ChatCompletionMessageParam = {
