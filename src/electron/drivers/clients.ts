@@ -112,6 +112,23 @@ export class BigQueryDriver extends Driver {
       pageToken,
     });
 
+    const parseField = (field: TableField): {
+      name: string;
+      type: string;
+      description: string | null;
+      fields?: Array<{
+        name: string;
+        type: string;
+        description: string | null;
+        fields?: Array<any>;
+      }>;
+    } => ({
+      name: field.name ?? '',
+      type: field.type ?? '',
+      description: field.description ?? null,
+      ...(field.fields && { fields: field.fields.map(parseField) })
+    });
+
     const tablesWithMetadata = await Promise.all(
       tables.map(async (table) => {
         const [metadata] = await table.getMetadata();
@@ -122,11 +139,7 @@ export class BigQueryDriver extends Driver {
           id: table.id,
           name: metadata.friendlyName ?? table.id,
           description: metadata.description ?? null,
-          fields: metadata.schema.fields.map((field: TableField) => ({
-            name: field.name,
-            type: field.type,
-            description: field.description ?? null,
-          })),
+          fields: metadata.schema.fields.map(parseField),
         };
       })
     );

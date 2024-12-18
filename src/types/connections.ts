@@ -40,11 +40,21 @@ export type BigQueryConfig = {
   projectId: string;
 };
 
-
-const fieldSchema = z.object({
+export const fieldSchema: z.ZodType<{
+  name: string;
+  type: string;
+  description: string | null;
+  fields?: Array<{
+    name: string;
+    type: string;
+    description: string | null;
+    fields?: Array<any>;
+  }>;
+}> = z.object({
   name: z.string(),
-  type: z.string(), 
-  description: z.string().nullable()
+  type: z.string(),
+  description: z.string().nullable(),
+  fields: z.lazy(() => z.array(fieldSchema)).optional()
 });
 
 const tableSchema = z.object({
@@ -72,8 +82,6 @@ const projectSchema = z.object({
 export const databaseMetadataSchema = z.object({
   projects: z.array(projectSchema)
 });
-
-
 
 export type DatabaseMetadata = z.infer<typeof databaseMetadataSchema>;
 export type Field = z.infer<typeof fieldSchema>;

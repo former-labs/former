@@ -65,46 +65,84 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
 function FieldItem({
   field,
   searchQuery,
+  level = 0,
 }: {
   field: Field;
   searchQuery: string;
+  level?: number;
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasNestedFields = field.fields && field.fields.length > 0;
+
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-8 w-full justify-start gap-2"
-    >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex w-full items-center justify-between gap-2">
-            <span className="flex-grow truncate text-left">
-              <HighlightedText text={field.name} query={searchQuery} />
-            </span>
-            <Badge variant="secondary" className="ml-auto truncate bg-blue-100">
-              {field.type}
-            </Badge>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-x-2">
-              <div className="font-semibold">
-                <HighlightedText text={field.name} query={searchQuery} />
+    <div className="space-y-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-full justify-start gap-2"
+        onClick={() => hasNestedFields && setIsExpanded(!isExpanded)}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex w-full items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {hasNestedFields &&
+                  (isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  ))}
+                <span className="flex-grow truncate text-left">
+                  <HighlightedText text={field.name} query={searchQuery} />
+                </span>
               </div>
-              <Badge variant="secondary">{field.type}</Badge>
+              <Badge
+                variant="secondary"
+                className="ml-auto truncate bg-blue-100"
+              >
+                {field.type}
+                {hasNestedFields && ` (${field.fields?.length})`}
+              </Badge>
             </div>
-            <div>
-              {field.description ? (
-                <HighlightedText text={field.description} query={searchQuery} />
-              ) : (
-                "No description available"
-              )}
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-x-2">
+                <div className="font-semibold">
+                  <HighlightedText text={field.name} query={searchQuery} />
+                </div>
+                <Badge variant="secondary">
+                  {field.type}
+                  {hasNestedFields && ` (${field.fields?.length})`}
+                </Badge>
+              </div>
+              <div>
+                {field.description ? (
+                  <HighlightedText
+                    text={field.description}
+                    query={searchQuery}
+                  />
+                ) : (
+                  "No description available"
+                )}
+              </div>
             </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </Button>
+          </TooltipContent>
+        </Tooltip>
+      </Button>
+      {isExpanded && hasNestedFields && (
+        <div className={`space-y-1 pl-${level > 0 ? "4" : "6"}`}>
+          {field.fields?.map((nestedField) => (
+            <FieldItem
+              key={nestedField.name}
+              field={nestedField}
+              searchQuery={searchQuery}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
