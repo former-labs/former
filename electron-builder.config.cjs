@@ -9,6 +9,9 @@ module.exports = {
     output: "release/${version}",
     buildResources: "resources",
   },
+  extraMetadata: {
+    main: "dist/electron/main.js",
+  },
   files: ["dist/electron/**/*", "node_modules/**/*"],
   win: {
     target: [

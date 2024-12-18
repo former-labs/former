@@ -1,6 +1,7 @@
 import type { Integration } from '@/types/connections';
-import { IElectronAPI } from '@/types/electron';
+import type { IElectronAPI } from '@/types/electron';
 import { type IpcRendererEvent, contextBridge, ipcRenderer } from 'electron';
+// import { env } from './env.electron';
 
 // Define the type for the callback function
 type IpcCallback = (...args: unknown[]) => void;
@@ -8,9 +9,16 @@ type IpcCallback = (...args: unknown[]) => void;
 contextBridge.exposeInMainWorld(
   'electron',
   {
+    // debug: {
+    //   // A convenient debug object that we can access in the JS console
+    //   // >>> window.electron.debug
+    //   env: {
+    //     NODE_ENV: env.NODE_ENV,
+    //   },
+    // },
     database: {
-      connect: (config: unknown) => 
-        ipcRenderer.invoke('database:connect', config),
+      connect: (integration: Integration) => 
+        ipcRenderer.invoke('database:connect', integration),
       disconnect: (connectionId: string) => 
         ipcRenderer.invoke('database:disconnect', connectionId),
       execute: (connectionId: string, query: string) => 

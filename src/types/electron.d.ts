@@ -1,6 +1,11 @@
 import type { DatabaseMetadata, Integration } from "./connections";
 
 export interface IElectronAPI {
+  // debug: {
+  //   env: {
+  //     NODE_ENV: string;
+  //   };
+  // };
   database: {
     connect: (integration: Integration) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
@@ -30,4 +35,4 @@ declare module 'dotenv' {
     debug?: boolean;
     override?: boolean;
   }): void;
-} 
+}

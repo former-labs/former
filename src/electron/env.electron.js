@@ -14,7 +14,7 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
-  DASHBOARD_URI: z.string(),
+  DASHBOARD_URI: z.string().default("http://localhost:3000"),
 });
 
 export const env = envSchema.parse(process.env);
