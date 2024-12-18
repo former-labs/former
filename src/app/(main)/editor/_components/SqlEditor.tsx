@@ -8,7 +8,7 @@ import {
   useMonaco,
 } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 import { useQueryResult } from "./queryResultStore";
@@ -26,8 +26,10 @@ export const SqlEditor = () => {
 
   const { executeQuery } = useQueryResult();
 
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
+  const [codeEditor, setCodeEditor] =
+    useState<editor.IStandaloneCodeEditor | null>(null);
+  const [diffEditor, setDiffEditor] =
+    useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
@@ -127,11 +129,18 @@ export const SqlEditor = () => {
     });
   };
 
+  // Add Cmd+Enter binding to execute query
+  useEditorKeybind({
+    callback: executeQuery,
+    editor: codeEditor,
+    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
+  });
+
   const handleEditorDidMount = (
     editor: editor.IStandaloneCodeEditor,
     monaco: Monaco,
   ) => {
-    editorRef.current = editor;
+    setCodeEditor(editor);
     setupEditorKeybindings(editor, monaco);
 
     // Add selection change listener
@@ -145,7 +154,7 @@ export const SqlEditor = () => {
     editor: editor.IStandaloneDiffEditor,
     monaco: Monaco,
   ) => {
-    diffEditorRef.current = editor;
+    setDiffEditor(editor);
 
     // Override the default Cmd+L binding in the modified editor
     const modifiedEditor = editor.getModifiedEditor();
@@ -178,8 +187,8 @@ export const SqlEditor = () => {
 
   const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
     // Remove existing widgets
-    if (diffEditorRef.current) {
-      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
+    if (diffEditor) {
+      const modifiedEditor = diffEditor.getModifiedEditor();
       diffWidgetsRef.current.forEach((widget) => {
         modifiedEditor.removeContentWidget(widget);
       });
@@ -219,7 +228,7 @@ export const SqlEditor = () => {
       editorContentPending,
     });
 
-    console.log(diffEditorRef.current?.getLineChanges());
+    console.log(diffEditor?.getLineChanges());
   };
 
   const setDecorations = () => {
@@ -227,16 +236,14 @@ export const SqlEditor = () => {
   };
 
   const printDecorations = () => {
-    if (diffEditorRef.current) {
-      console.log(
-        diffEditorRef.current.getModel()?.modified.getAllDecorations(),
-      );
+    if (diffEditor) {
+      console.log(diffEditor.getModel()?.modified.getAllDecorations());
     }
   };
 
   const removeWidgets = () => {
-    if (diffEditorRef.current) {
-      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
+    if (diffEditor) {
+      const modifiedEditor = diffEditor.getModifiedEditor();
       diffWidgetsRef.current.forEach((widget) => {
         modifiedEditor.removeContentWidget(widget);
       });
@@ -259,16 +266,14 @@ export const SqlEditor = () => {
   };
 
   const printSelection = () => {
-    if (editorRef.current) {
-      const selection = editorRef.current.getSelection();
+    if (codeEditor) {
+      const selection = codeEditor.getSelection();
       if (selection) {
-        const selectedText = editorRef.current
-          .getModel()
-          ?.getValueInRange(selection);
+        const selectedText = codeEditor.getModel()?.getValueInRange(selection);
         console.log("Selected text:", selectedText);
       }
-    } else if (diffEditorRef.current) {
-      const modifiedEditor = diffEditorRef.current.getModifiedEditor();
+    } else if (diffEditor) {
+      const modifiedEditor = diffEditor.getModifiedEditor();
       const selection = modifiedEditor.getSelection();
       if (selection) {
         const selectedText = modifiedEditor
@@ -290,7 +295,7 @@ export const SqlEditor = () => {
         <Button onClick={setDecorations}>Set decorations</Button>
         <Button onClick={printDecorations}>Print decorations</Button>
         <Button onClick={removeWidgets}>Remove widgets</Button>
-        <Button onClick={() => updateDiffWidgets(diffEditorRef.current!)}>
+        <Button onClick={() => diffEditor && updateDiffWidgets(diffEditor)}>
           Update diff widgets
         </Button>
         <Button onClick={enableIntellisense}>Intellisense</Button>
@@ -302,8 +307,8 @@ export const SqlEditor = () => {
               setRenderSideBySide(newRenderSideBySide);
 
               // Update line numbers when toggling view
-              if (diffEditorRef.current) {
-                diffEditorRef.current.getModifiedEditor().updateOptions({
+              if (diffEditor) {
+                diffEditor.getModifiedEditor().updateOptions({
                   lineNumbers: newRenderSideBySide ? "on" : "off",
                 });
               }
@@ -383,4 +388,31 @@ export const SqlEditor = () => {
       </div>
     </div>
   );
+};
+
+const useEditorKeybind = ({
+  callback,
+  editor,
+  keybinding,
+}: {
+  callback: () => void;
+  editor: editor.IStandaloneCodeEditor | null;
+  keybinding: number | null;
+}) => {
+  useEffect(() => {
+    if (!editor || !keybinding) return;
+
+    const disposable = editor.addAction({
+      id: "execute-query",
+      label: "Execute Query",
+      keybindings: [keybinding],
+      run: () => {
+        void callback();
+      },
+    });
+
+    return () => {
+      disposable?.dispose();
+    };
+  }, [callback, editor, keybinding]);
 };

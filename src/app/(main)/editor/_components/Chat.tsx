@@ -321,11 +321,7 @@ const CodeBlock = ({
 };
 
 const StaticEditor = ({ value }: { value: string }) => {
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
-    editorRef.current = editor;
-
     const updateEditorHeight = () => {
       const contentHeight = editor.getContentHeight();
       const editorElement = editor.getDomNode();
