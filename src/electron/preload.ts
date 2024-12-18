@@ -1,4 +1,4 @@
-import type { Integration } from '@/types/electron';
+import type { Integration } from '@/types/connections';
 import { type IpcRendererEvent, contextBridge, ipcRenderer } from 'electron';
 
 // Define the type for the callback function

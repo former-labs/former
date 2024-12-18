@@ -23,12 +23,22 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export interface DatabaseConfig {
-  id: string;
-  type: 'bigquery' | 'postgres';
-  projectId?: string;
+export type DatabaseType = 'bigquery' | 'postgres';
+
+export type Integration = {
+  id: string | null;
+  type: DatabaseType;
+  name: string;
   credentials: DatabaseCredentials;
-}
+  config: IntegrationConfig | null;
+  createdAt: string;
+};
+
+export type IntegrationConfig = BigQueryConfig;
+
+export type BigQueryConfig = {
+  projectId: string;
+};
 
 
 export const databaseMetadataSchema = z.object({
@@ -53,5 +63,7 @@ export const databaseMetadataSchema = z.object({
     }))
   }))
 });
+
+
 
 export type DatabaseMetadata = z.infer<typeof databaseMetadataSchema>;
