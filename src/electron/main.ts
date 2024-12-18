@@ -28,13 +28,11 @@ function createWindow() {
     }
   });
 
-  const url = isDev ? 'http://localhost:3000' : env.DASHBOARD_URI;
-  
   if (isDev) {
     win.webContents.openDevTools();
   }
 
-  void win.loadURL(url).catch(err => {
+  void win.loadURL(env.DASHBOARD_URI).catch(err => {
     console.error('Failed to load URL:', err);
   });
 }
