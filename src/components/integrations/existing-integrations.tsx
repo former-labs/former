@@ -7,7 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type Integration, useData } from "@/contexts/DataContext";
+import { useData } from "@/contexts/DataContext";
+import { Integration } from "@/types/connections";
 import { EditIcon, Trash2 } from "lucide-react";
 
 interface ExistingIntegrationsProps {
@@ -98,7 +99,7 @@ export function ExistingIntegrations({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => handleDelete(integration.id!)}
+                      onClick={() => handleDelete(integration.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

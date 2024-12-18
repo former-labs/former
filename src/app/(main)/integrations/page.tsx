@@ -33,13 +33,16 @@ export default function IntegrationsPage() {
   >(undefined);
   const { addIntegration, editIntegration } = useData();
 
-  const handleCreateIntegration = (integration: Integration) => {
+  const handleCreateIntegration = (integration: Omit<Integration, "id">) => {
     addIntegration(integration);
     handleCloseModal();
   };
 
-  const handleUpdateIntegration = (integration: Integration) => {
-    editIntegration(integration.id!, integration);
+  const handleUpdateIntegration = (
+    id: string,
+    integration: Omit<Integration, "id">,
+  ) => {
+    editIntegration(id, integration);
     handleCloseModal();
   };
 
@@ -64,9 +67,15 @@ export default function IntegrationsPage() {
     setOpenPostgresModal(false);
   };
 
-  const handleModalSubmit = (integration: Integration) => {
-    if (integration.id) {
-      handleUpdateIntegration(integration);
+  const handleModalSubmit = ({
+    id,
+    integration,
+  }: {
+    id: string | null;
+    integration: Omit<Integration, "id">;
+  }) => {
+    if (id) {
+      handleUpdateIntegration(id, integration);
     } else {
       handleCreateIntegration(integration);
     }

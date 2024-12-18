@@ -19,8 +19,8 @@ interface DataContextType {
   isLoadingDatasets: boolean;
   isLoadingTables: boolean;
   integrations: Integration[];
-  addIntegration: (integration: Integration) => void;
-  editIntegration: (id: string, updates: Integration) => void;
+  addIntegration: (integration: Omit<Integration, "id">) => void;
+  editIntegration: (id: string, updates: Omit<Integration, "id">) => void;
   removeIntegration: (id: string) => void;
   executeQuery: (query: string) => Promise<unknown>;
 }
@@ -178,20 +178,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
 
-  const addIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
+  const addIntegration = (integration: Omit<Integration, "id">) => {
     const newIntegration: Integration = {
       ...integration,
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
     };
     setIntegrations((prev) => [...prev, newIntegration]);
     console.log("newIntegration", newIntegration);
     setActiveIntegration(newIntegration);
   };
 
-  const editIntegration = (id: string, updates: Integration) => {
+  const editIntegration = (id: string, updates: Omit<Integration, "id">) => {
     setIntegrations((prev) =>
       prev.map((integration) =>
         integration.id === id

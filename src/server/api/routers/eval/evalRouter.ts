@@ -1,6 +1,5 @@
 import { adminProtectedProcedure, createTRPCRouter } from "@/server/api/trpc";
-import { integrationTable } from "@/server/db/schema";
-import { and, eq } from "drizzle-orm";
+// import { integrationTable } from "@/server/db/schema";
 import { z } from "zod";
 
 export const evalRouter = createTRPCRouter({
@@ -12,6 +11,9 @@ export const evalRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // I've commented this out because we don't have an integration table so we get type errors?
+
+      /*
       try {
         // Get the integration
         const [integration] = await ctx.db
@@ -43,5 +45,6 @@ export const evalRouter = createTRPCRouter({
       } catch (error) {
         throw new Error(error instanceof Error ? error.message : "Unknown error occurred");
       }
+      */
     }),
 });

@@ -26,7 +26,7 @@ export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 export type DatabaseType = 'bigquery' | 'postgres';
 
 export type Integration = {
-  id: string | null;
+  id: string;
   type: DatabaseType;
   name: string;
   credentials: DatabaseCredentials;

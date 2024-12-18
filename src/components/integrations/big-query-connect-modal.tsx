@@ -42,7 +42,10 @@ export interface BigQueryConnectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   integration?: Integration;
-  onSubmit: (integration: Integration) => void;
+  onSubmit: (params: {
+    id: string | null;
+    integration: Omit<Integration, "id">;
+  }) => void;
 }
 
 export function BigQueryConnectModal({
@@ -107,12 +110,14 @@ export function BigQueryConnectModal({
 
       onSubmit({
         id: integration?.id ?? null,
-        type: "bigquery",
-        createdAt: integration?.createdAt ?? new Date().toISOString(),
-        credentials,
-        name: values.name,
-        config: {
-          projectId: values.projectId,
+        integration: {
+          type: "bigquery",
+          createdAt: integration?.createdAt ?? new Date().toISOString(),
+          credentials,
+          name: values.name,
+          config: {
+            projectId: values.projectId,
+          },
         },
       });
 
