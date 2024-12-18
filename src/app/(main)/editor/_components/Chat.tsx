@@ -169,7 +169,7 @@ const ChatInputBox = ({
   };
 
   return (
-    <div className="space-y-2 rounded-lg border bg-white">
+    <div className="space-y-2 rounded-lg border bg-white p-2">
       {selectionContent && (
         <div className="rounded border pr-3">
           <StaticEditor value={selectionContent} />
