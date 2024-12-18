@@ -1,12 +1,16 @@
 import { useData } from "@/contexts/DataContext";
+import { z } from "zod";
 import { create } from "zustand";
 import { useEditor } from "./editorStore";
 
+const resultRowSchema = z.array(z.record(z.union([z.string(), z.number(), z.boolean(), z.date()])));
+export type ResultRow = z.infer<typeof resultRowSchema>[number];
+
 interface QueryResultStore {
-  result: unknown[] | null;
+  result: ResultRow[] | null;
   resultLoading: boolean;
   resultError: string | null;
-  setResult: (result: unknown[] | null) => void;
+  setResult: (result: ResultRow[] | null) => void;
   setResultLoading: (resultLoading: boolean) => void;
   setResultError: (resultError: string | null) => void;
 }
@@ -32,9 +36,10 @@ export const useQueryResult = () => {
     try {
       // Use pending content if available, otherwise use current content
       const query = editorSelectionContent ?? editorContent;
-      const result = await executeQuery(query);
-      console.log("result", result);
-      store.setResult(result);
+      const rawResult = await executeQuery(query);
+      const validatedResult = resultRowSchema.parse(rawResult);
+      store.setResult(validatedResult);
+      console.log("Execute result", validatedResult);
     } catch (error) {
       console.error("Failed to execute query:", error);
       store.setResultError((error as Error).message);
@@ -48,6 +53,6 @@ export const useQueryResult = () => {
     result: store.result,
     resultLoading: store.resultLoading,
     resultError: store.resultError,
-    executeQuery : handleExecuteQuery,
+    executeQuery: handleExecuteQuery,
   };
 };

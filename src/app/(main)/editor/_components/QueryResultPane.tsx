@@ -1,6 +1,9 @@
 "use client";
 
-import { useQueryResult } from "./queryResultStore";
+import { AllCommunityModule, ColDef, ModuleRegistry } from "ag-grid-community";
+import { AgGridReact } from "ag-grid-react";
+import { useMemo } from "react";
+import { ResultRow, useQueryResult } from "./queryResultStore";
 
 export const QueryResultPane = () => {
   const { result, resultLoading, resultError } = useQueryResult();
@@ -34,8 +37,54 @@ export const QueryResultPane = () => {
   return (
     <div className="h-full overflow-auto bg-gray-50 p-4">
       <pre className="whitespace-pre-wrap">
-        {JSON.stringify(result, null, 2)}
+        {/* {JSON.stringify(result, null, 2)} */}
+        <TableDataView data={result} />
       </pre>
+    </div>
+  );
+};
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+const TableDataView = ({ data }: { data: ResultRow[] }) => {
+  const columnDefs = useMemo<ColDef[]>(() => {
+    if (!data?.[0]) return [];
+    return Object.keys(data[0]).map((key) => ({
+      field: key,
+      // filter: true,
+    }));
+  }, [data]);
+
+  const defaultColDef = useMemo<ColDef>(() => {
+    return {
+      // filter: true,
+      // editable: true,
+    };
+  }, []);
+
+  return (
+    <div className="ag-theme-quartz h-[300px] w-full">
+      <AgGridReact
+        rowData={data}
+        columnDefs={columnDefs}
+        defaultColDef={defaultColDef}
+        suppressClickEdit={true}
+        pagination={true}
+        rowSelection="multiple"
+        domLayout="normal"
+        ensureDomOrder={true}
+        suppressColumnVirtualisation={true}
+        onGridReady={(params) => {
+          params.api.sizeColumnsToFit();
+          window.addEventListener("resize", () => {
+            params.api.sizeColumnsToFit();
+          });
+        }}
+        onSelectionChanged={(event) => console.log("Row Selected!")}
+        onCellValueChanged={(event) =>
+          console.log(`New Cell Value: ${event.value}`)
+        }
+      />
     </div>
   );
 };
