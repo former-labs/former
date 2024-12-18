@@ -3,8 +3,8 @@
 import { type Driver } from "@/electron/drivers/clients";
 import {
   databaseMetadataSchema,
-  type Integration,
   type DatabaseMetadata,
+  type Integration,
 } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
