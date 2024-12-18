@@ -33,14 +33,16 @@ export default function IntegrationsPage() {
   >(undefined);
   const { addIntegration, editIntegration } = useData();
 
-  const handleCreateIntegration = (integration: Omit<Integration, "id">) => {
+  const handleCreateIntegration = (
+    integration: Omit<Integration, "id" | "createdAt">,
+  ) => {
     addIntegration(integration);
     handleCloseModal();
   };
 
   const handleUpdateIntegration = (
     id: string,
-    integration: Omit<Integration, "id">,
+    integration: Omit<Integration, "id" | "createdAt">,
   ) => {
     editIntegration(id, integration);
     handleCloseModal();
@@ -72,7 +74,7 @@ export default function IntegrationsPage() {
     integration,
   }: {
     id: string | null;
-    integration: Omit<Integration, "id">;
+    integration: Omit<Integration, "id" | "createdAt">;
   }) => {
     if (id) {
       handleUpdateIntegration(id, integration);

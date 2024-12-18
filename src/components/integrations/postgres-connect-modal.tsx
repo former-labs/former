@@ -49,7 +49,7 @@ export interface PostgresConnectModalProps {
   integration?: Integration;
   onSubmit: (params: {
     id: string | null;
-    integration: Omit<Integration, "id">;
+    integration: Omit<Integration, "id" | "createdAt">;
   }) => void;
 }
 
@@ -183,7 +183,6 @@ export function PostgresConnectModal({
       id: integration?.id ?? null,
       integration: {
         type: "postgres",
-        createdAt: integration?.createdAt ?? new Date().toISOString(),
         credentials,
         name: values.name,
         config: null,

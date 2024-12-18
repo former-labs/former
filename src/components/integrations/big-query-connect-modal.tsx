@@ -44,7 +44,7 @@ export interface BigQueryConnectModalProps {
   integration?: Integration;
   onSubmit: (params: {
     id: string | null;
-    integration: Omit<Integration, "id">;
+    integration: Omit<Integration, "id" | "createdAt">;
   }) => void;
 }
 
@@ -112,7 +112,6 @@ export function BigQueryConnectModal({
         id: integration?.id ?? null,
         integration: {
           type: "bigquery",
-          createdAt: integration?.createdAt ?? new Date().toISOString(),
           credentials,
           name: values.name,
           config: {
