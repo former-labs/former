@@ -186,6 +186,10 @@ export class BigQueryDriver extends Driver {
     });
 
     for (const dataset of datasets) {
+      if (!dataset.projectId) {
+        continue;
+      }
+
       let projectIndex = projects.findIndex(p => p.id === dataset.projectId);
       if (projectIndex === -1) {
         projects.push({
@@ -197,16 +201,26 @@ export class BigQueryDriver extends Driver {
         projectIndex = projects.length - 1;
       }
       
-      // Get table count for this dataset
-      const [tables] = await this.client.dataset(dataset.id!).getTables();
-      
-      projects[projectIndex].datasets.push({
-        id: dataset.id ?? 'unknown',
-        name: dataset.id ?? 'unknown',
-        description: null,
-        tableCount: tables.length,
-        tables: []
-      });
+      try {
+        const [tables] = await this.client.dataset(dataset.id!).getTables();
+        
+        const project = projects[projectIndex];
+        if (!project) {
+          console.error(`Project at index ${projectIndex} not found, skipping dataset`);
+          continue;
+        }
+
+        project.datasets.push({
+          id: dataset.id ?? 'unknown',
+          name: dataset.id ?? 'unknown',
+          description: null,
+          tableCount: tables.length,
+          tables: []
+        });
+      } catch (error) {
+        console.error(`Error processing dataset ${dataset.id}: ${error}`);
+        continue;
+      }
     }
 
     return { projects };
