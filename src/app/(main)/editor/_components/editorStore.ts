@@ -70,6 +70,13 @@ const getEditorSelectionContent = ({
 }) => {
   if (!editorSelection || !editorContent) return null;
 
+  if (
+    editorSelection.startLineNumber === editorSelection.endLineNumber &&
+    editorSelection.startColumn === editorSelection.endColumn
+  ) {
+    return null;
+  }
+
   const getPositionOffset = (content: string, lineNumber: number, column: number) => {
     let offset = 0;
     let currentLine = 1;

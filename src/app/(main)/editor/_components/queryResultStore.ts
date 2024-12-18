@@ -23,7 +23,7 @@ const useQueryResultStore = create<QueryResultStore>((set) => ({
 export const useQueryResult = () => {
   const store = useQueryResultStore();
   const { executeQuery } = useData();
-  const { editorContent, editorContentPending } = useEditor();
+  const { editorSelectionContent, editorContent } = useEditor();
 
   const handleExecuteQuery = async () => {
     store.setResultLoading(true);
@@ -31,8 +31,8 @@ export const useQueryResult = () => {
     
     try {
       // Use pending content if available, otherwise use current content
-      const content = editorContentPending ?? editorContent;
-      const result = await executeQuery(content);
+      const query = editorSelectionContent ?? editorContent;
+      const result = await executeQuery(query);
       console.log("result", result);
       store.setResult(result);
     } catch (error) {
