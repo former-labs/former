@@ -1,6 +1,6 @@
-import { BigQuery } from "@google-cloud/bigquery";
+import { BigQuery, type TableField } from "@google-cloud/bigquery";
 import pkg from 'pg';
-import type { BigQueryCredentials, DatabaseCredentials, DatabaseMetadata, PostgresCredentials } from "../../types/connections.js";
+import type { BigQueryCredentials, DatabaseCredentials, DatabaseMetadata, PostgresCredentials, Table } from "../../types/connections.js";
 const { Client } = pkg;
 
 
@@ -40,53 +40,18 @@ export abstract class Driver {
   abstract connect(): Promise<void>;
   abstract disconnect(): Promise<void>;
   abstract executeQuery(query: string): Promise<any[]>;
+  abstract getProjectId(): string;
+  abstract getProjectName(): string;
+  abstract fetchMetadata(): Promise<DatabaseMetadata>;
   abstract fetchDatasets(pageToken?: string): Promise<{
     datasets: Array<{ id: string; name: string }>;
     nextPageToken?: string;
   }>;
   abstract fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
-    tables: Array<{
-      id: string;
-      name: string;
-      fields: Array<{
-        name: string;
-        type: string;
-        description: string | null;
-      }>;
-    }>;
+    tables: Table[];
     nextPageToken?: string;
   }>;
 
-  abstract getProjectId(): string;
-  abstract getProjectName(): string;
-
-  async fetchMetadata(): Promise<DatabaseMetadata> {
-    const metadata: DatabaseMetadata = {
-      projects: [{
-        id: this.getProjectId(),
-        name: this.getProjectName(),
-        description: null,
-        datasets: [],
-      }]
-    };
-
-    let datasetsPageToken: string | undefined;
-    do {
-      const { datasets, nextPageToken } = await this.fetchDatasets(datasetsPageToken);
-      const project = metadata.projects[0];
-      if (project) {
-        project.datasets.push(...datasets.map(d => ({
-          id: d.id,
-          name: d.name,
-          description: null,
-          tables: []
-        })));
-      }
-      datasetsPageToken = nextPageToken;
-    } while (datasetsPageToken);
-
-    return metadata;
-  }
 }
 
 export class BigQueryDriver extends Driver {
@@ -117,7 +82,7 @@ export class BigQueryDriver extends Driver {
     }>;
     nextPageToken?: string;
   }> {
-    const MAX_RESULTS_PER_PAGE = 1000;
+    const MAX_RESULTS_PER_PAGE = 10;
     
     const [datasets, , response] = await this.client.getDatasets({
       maxResults: MAX_RESULTS_PER_PAGE,
@@ -134,15 +99,7 @@ export class BigQueryDriver extends Driver {
   }
 
   async fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
-    tables: Array<{
-      id: string;
-      name: string;
-      fields: Array<{
-        name: string;
-        type: string;
-        description: string | null;
-      }>;
-    }>;
+    tables: Table[];
     nextPageToken?: string;
   }> {
     const MAX_RESULTS_PER_PAGE = 1000;
@@ -156,13 +113,17 @@ export class BigQueryDriver extends Driver {
     const tablesWithMetadata = await Promise.all(
       tables.map(async (table) => {
         const [metadata] = await table.getMetadata();
+        if (!table.id) {
+          throw new Error(`Table ID is undefined for dataset ${datasetId}`);
+        }
         return {
-          id: table.id ?? 'unknown',
-          name: metadata.tableReference.tableId ?? 'unknown',
-          fields: metadata.schema.fields.map((field: any) => ({
+          id: table.id,
+          name: metadata.friendlyName,
+          description: metadata.description ?? null,
+          fields: metadata.schema.fields.map((field: TableField) => ({
             name: field.name,
             type: field.type,
-            description: field.description || null,
+            description: field.description ?? null,
           })),
         };
       })
@@ -208,6 +169,47 @@ export class BigQueryDriver extends Driver {
 
   getProjectName(): string {
     return this.projectId;
+  }
+
+  async fetchMetadata(): Promise<DatabaseMetadata> {
+    const metadata: DatabaseMetadata = {
+      projects: [{
+        id: this.getProjectId(),
+        name: this.getProjectName(),
+        description: null,
+        datasets: [],
+      }]
+    };
+
+    let datasetsPageToken: string | undefined;
+    do {
+      const { datasets, nextPageToken } = await this.fetchDatasets(datasetsPageToken);
+      const project = metadata.projects[0];
+      if (project) {
+        // Fetch tables for each dataset
+        for (const dataset of datasets) {
+          const datasetInfo = {
+            id: dataset.id,
+            name: dataset.name,
+            description: null,
+            tables: [] as Table[],
+          };
+          
+          let tablesPageToken: string | undefined;
+          do {
+            const { tables, nextPageToken: tableNextPageToken } = 
+              await this.fetchTablesForDataset(dataset.id, tablesPageToken);
+            datasetInfo.tables.push(...tables);
+            tablesPageToken = tableNextPageToken;
+          } while (tablesPageToken);
+          
+          project.datasets.push(datasetInfo);
+        }
+      }
+      datasetsPageToken = nextPageToken;
+    } while (datasetsPageToken);
+
+    return metadata;
   }
 }
 
@@ -325,7 +327,6 @@ export class PostgresDriver extends Driver {
     datasets: Array<{ id: string; name: string }>;
     nextPageToken?: string;
   }> {
-    console.log("fetchDatasets for postgres", this.credentials.database);
     const result = await this.client.query(
       `SELECT schema_name as id FROM information_schema.schemata 
        WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`
@@ -340,15 +341,7 @@ export class PostgresDriver extends Driver {
   }
 
   async fetchTablesForDataset(datasetId: string): Promise<{
-    tables: Array<{
-      id: string;
-      name: string;
-      fields: Array<{
-        name: string;
-        type: string;
-        description: string | null;
-      }>;
-    }>;
+    tables: Table[];
     nextPageToken?: string;
   }> {
     const result = await this.client.query(
@@ -371,6 +364,7 @@ export class PostgresDriver extends Driver {
         tables.set(row.table_name, {
           id: row.table_name,
           name: row.table_name,
+          description: row.description,
           fields: []
         });
       }
@@ -407,10 +401,8 @@ export const createDriver = ({
 }): Driver => {
   switch (type) {
     case "bigquery":
-      console.log("bigquery projectId", projectId);
       return new BigQueryDriver(credentials as BigQueryCredentials, projectId!);
     case "postgres":
-      console.log("postgres credentials", credentials);
       return new PostgresDriver(credentials as PostgresCredentials);
     default:
       throw new Error(`Unsupported database type: ${type}`);

@@ -15,7 +15,6 @@ export const database = {
 
       let driver: Driver;
       const connectionId = integration.id ?? crypto.randomUUID();
-      console.log('integration', integration);
 
       switch (integration.type) {
         case 'bigquery':
@@ -32,7 +31,6 @@ export const database = {
       await driver.connect();
       connections.set(connectionId, driver);
 
-      console.log('connections', connections);
       return { success: true, connectionId };
     } catch (error) {
       console.error('Failed to create connection:', error);

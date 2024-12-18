@@ -1,9 +1,13 @@
 "use client";
 
-import { AllCommunityModule, ColDef, ModuleRegistry } from "ag-grid-community";
+import {
+  type ColDef,
+  AllCommunityModule,
+  ModuleRegistry,
+} from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useMemo } from "react";
-import { ResultRow, useQueryResult } from "./queryResultStore";
+import { type ResultRow, useQueryResult } from "./queryResultStore";
 
 export const QueryResultPane = () => {
   const { result, resultLoading, resultError } = useQueryResult();
@@ -40,7 +44,6 @@ export const QueryResultPane = () => {
     </div>
   );
 };
-
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const TableDataView = ({ data }: { data: ResultRow[] }) => {
@@ -77,7 +80,7 @@ const TableDataView = ({ data }: { data: ResultRow[] }) => {
             params.api.sizeColumnsToFit();
           });
         }}
-        onSelectionChanged={(event) => console.log("Row Selected!")}
+        onSelectionChanged={(event) => console.log("Row Selected!", event)}
         onCellValueChanged={(event) =>
           console.log(`New Cell Value: ${event.value}`)
         }
