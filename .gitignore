@@ -48,3 +48,7 @@ yarn-error.log*
 
 # idea files
 .idea
+
+# releases
+# we probably should commit this to something at one point
+/release
