@@ -1,11 +1,11 @@
 "use client";
 
+import { BigQueryConnectModal } from "@/app/(main)/integrations/_components/big-query-connect-modal";
+import { ExistingIntegrations } from "@/app/(main)/integrations/_components/existing-integrations";
+import { IntegrationCard } from "@/app/(main)/integrations/_components/integration-card";
+import { PostgresConnectModal } from "@/app/(main)/integrations/_components/postgres-connect-modal";
 import BigQueryLogo from "@/components/assets/bigquery.svg";
 import PostgresLogo from "@/components/assets/postgres.svg";
-import { BigQueryConnectModal } from "@/components/integrations/big-query-connect-modal";
-import { ExistingIntegrations } from "@/components/integrations/existing-integrations";
-import { IntegrationCard } from "@/components/integrations/integration-card";
-import { PostgresConnectModal } from "@/components/integrations/postgres-connect-modal";
 import { useData } from "@/contexts/DataContext";
 import { type Integration } from "@/types/connections";
 import { useState } from "react";

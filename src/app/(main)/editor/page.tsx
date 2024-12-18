@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -23,7 +24,7 @@ const SqlEditor = dynamic(
   },
 );
 
-export default function Page() {
+export default function EditorPage() {
   const { databaseMetadata } = useData();
   const { createChat } = useChat();
 
@@ -42,10 +43,13 @@ export default function Page() {
         <div className="text-lg text-gray-500">
           Please connect a database to continue
         </div>
-        <div className="text-gray-500">
-          tbh we can probs let ppl edit regardless but for now this simplifies
-          the cases i need to handle
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => (window.location.href = "/integrations")}
+          className="mt-4"
+        >
+          Connect Database
+        </Button>
       </div>
     );
   }

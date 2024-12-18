@@ -151,7 +151,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const metadata =
         await window.electron.database.getProjectsAndDatasets(connectionId);
       setDatabaseMetadata(metadata);
-      console.log("METADATA", metadata);
     } catch (error) {
       console.error("Error fetching metadata:", error);
       throw error;
@@ -192,8 +191,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           connectionId,
           datasetId,
         );
-
-      console.log("TABLES", tables);
 
       setDatabaseMetadata((prev) => {
         if (!prev) return prev;
