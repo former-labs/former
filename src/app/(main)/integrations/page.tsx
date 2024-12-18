@@ -6,7 +6,8 @@ import { BigQueryConnectModal } from "@/components/integrations/big-query-connec
 import { ExistingIntegrations } from "@/components/integrations/existing-integrations";
 import { IntegrationCard } from "@/components/integrations/integration-card";
 import { PostgresConnectModal } from "@/components/integrations/postgres-connect-modal";
-import { type Integration, useData } from "@/contexts/DataContext";
+import { useData } from "@/contexts/DataContext";
+import { type Integration } from "@/types/connections";
 import { useState } from "react";
 
 const integrationTypes = [

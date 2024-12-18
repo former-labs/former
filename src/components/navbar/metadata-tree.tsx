@@ -16,35 +16,352 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
-import type { DatabaseMetadata } from "@/types/connections";
+import type { Dataset, Field, Project, Table } from "@/types/connections";
 import {
   ArrowRight,
   ChevronDown,
   ChevronRight,
   Database,
   Search,
-  Table,
+  Table as TableIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 
-type TableWithCounts =
-  DatabaseMetadata["projects"][0]["datasets"][0]["tables"][0] & {
-    _originalFieldCount?: number;
-  };
+type TableWithCounts = Table & {
+  _originalFieldCount?: number;
+};
 
-type DatasetWithCounts = DatabaseMetadata["projects"][0]["datasets"][0] & {
+type DatasetWithCounts = Dataset & {
   _originalTableCount?: number;
   tables: TableWithCounts[];
 };
 
-type ProjectWithCounts = DatabaseMetadata["projects"][0] & {
+type ProjectWithCounts = Project & {
   _originalDatasetCount?: number;
   datasets: DatasetWithCounts[];
 };
 
+// Helper component for highlighting search matches
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  if (!query) return text;
+  const index = text.toLowerCase().indexOf(query.toLowerCase());
+  if (index === -1) return text;
+  return (
+    <>
+      {text.slice(0, index)}
+      <span className="bg-yellow-200">
+        {text.slice(index, index + query.length)}
+      </span>
+      {text.slice(index + query.length)}
+    </>
+  );
+}
+
+// Component for field items
+function FieldItem({
+  field,
+  searchQuery,
+}: {
+  field: Field;
+  searchQuery: string;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 w-full justify-start gap-2"
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className="flex-grow truncate text-left">
+              <HighlightedText text={field.name} query={searchQuery} />
+            </span>
+            <Badge variant="secondary" className="ml-auto truncate bg-blue-100">
+              {field.type}
+            </Badge>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-x-2">
+              <div className="font-semibold">
+                <HighlightedText text={field.name} query={searchQuery} />
+              </div>
+              <Badge variant="secondary">{field.type}</Badge>
+            </div>
+            <div>
+              {field.description ? (
+                <HighlightedText text={field.description} query={searchQuery} />
+              ) : (
+                "No description available"
+              )}
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </Button>
+  );
+}
+
+// Component for table items
+function TableItem({
+  table,
+  searchQuery,
+  isExpanded,
+  onToggle,
+}: {
+  table: TableWithCounts;
+  searchQuery: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-full justify-start gap-2"
+        onClick={onToggle}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex w-full items-center gap-2">
+              <TableIcon className="h-4 w-4" />
+              <span className="truncate">
+                <HighlightedText text={table.name} query={searchQuery} />
+              </span>
+              <span className="ml-auto flex items-center gap-2">
+                <Badge variant="secondary">
+                  {table._originalFieldCount ?? table.fields?.length ?? 0}
+                </Badge>
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">
+                  <HighlightedText text={table.name} query={searchQuery} />
+                </span>
+                <Badge variant="secondary">
+                  {table._originalFieldCount ?? table.fields?.length ?? 0}{" "}
+                  fields
+                </Badge>
+              </div>
+              <div>
+                {table?.description ? (
+                  <HighlightedText
+                    text={table.description}
+                    query={searchQuery}
+                  />
+                ) : (
+                  "No description available"
+                )}
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </Button>
+      {isExpanded && (
+        <div className="space-y-1 pl-4">
+          {table.fields?.map((field) => (
+            <FieldItem
+              key={field.name}
+              field={field}
+              searchQuery={searchQuery}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Component for dataset items
+function DatasetItem({
+  dataset,
+  searchQuery,
+  isExpanded,
+  onToggle,
+  expandedTables,
+  toggleTable,
+}: {
+  dataset: DatasetWithCounts;
+  searchQuery: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  expandedTables: Set<string>;
+  toggleTable: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-full justify-start gap-2"
+        onClick={onToggle}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex w-full items-center gap-2">
+              <Database className="h-4 w-4" />
+              <span className="truncate">
+                <HighlightedText text={dataset.name} query={searchQuery} />
+              </span>
+              <span className="ml-auto flex items-center gap-2">
+                <Badge variant="secondary">
+                  {dataset._originalTableCount ?? dataset.tables.length}
+                </Badge>
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">
+                  <HighlightedText text={dataset.name} query={searchQuery} />
+                </span>
+                <Badge variant="secondary">
+                  {dataset._originalTableCount ?? dataset.tables.length} tables
+                </Badge>
+              </div>
+              <div>
+                {dataset.description ? (
+                  <HighlightedText
+                    text={dataset.description}
+                    query={searchQuery}
+                  />
+                ) : (
+                  "No description available"
+                )}
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </Button>
+      {isExpanded && (
+        <div className="space-y-1 pl-4">
+          {dataset.tables.map((table) => (
+            <TableItem
+              key={table.id}
+              table={table}
+              searchQuery={searchQuery}
+              isExpanded={expandedTables.has(table.id)}
+              onToggle={() => toggleTable(table.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Component for project items
+function ProjectItem({
+  project,
+  searchQuery,
+  isExpanded,
+  onToggle,
+  expandedDatasets,
+  toggleDataset,
+  expandedTables,
+  toggleTable,
+}: {
+  project: ProjectWithCounts;
+  searchQuery: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  expandedDatasets: Set<string>;
+  toggleDataset: (id: string) => void;
+  expandedTables: Set<string>;
+  toggleTable: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-full justify-start gap-2"
+        onClick={onToggle}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex w-full items-center gap-2">
+              <Database className="h-4 w-4" />
+              <span className="truncate">
+                <HighlightedText text={project.name} query={searchQuery} />
+              </span>
+              <span className="ml-auto flex items-center gap-2">
+                <Badge variant="secondary">
+                  {project._originalDatasetCount ?? project.datasets.length}
+                </Badge>
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">
+                  <HighlightedText text={project.name} query={searchQuery} />
+                </span>
+                <Badge variant="secondary">
+                  {project._originalDatasetCount ?? project.datasets.length}{" "}
+                  datasets
+                </Badge>
+              </div>
+              <div>
+                {project.description ? (
+                  <HighlightedText
+                    text={project.description}
+                    query={searchQuery}
+                  />
+                ) : (
+                  "No description available"
+                )}
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </Button>
+      {isExpanded && (
+        <div className="space-y-1 pl-4">
+          {project.datasets.map((dataset) => (
+            <DatasetItem
+              key={dataset.id}
+              dataset={dataset}
+              searchQuery={searchQuery}
+              isExpanded={expandedDatasets.has(dataset.id)}
+              onToggle={() => toggleDataset(dataset.id)}
+              expandedTables={expandedTables}
+              toggleTable={toggleTable}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Main component
 export function MetadataTree() {
   const router = useRouter();
   const {
@@ -108,21 +425,6 @@ export function MetadataTree() {
       }
       return next;
     });
-  };
-
-  const highlightMatch = (text: string, query: string) => {
-    if (!query) return text;
-    const index = text.toLowerCase().indexOf(query.toLowerCase());
-    if (index === -1) return text;
-    return (
-      <>
-        {text.slice(0, index)}
-        <span className="bg-yellow-200">
-          {text.slice(index, index + query.length)}
-        </span>
-        {text.slice(index + query.length)}
-      </>
-    );
   };
 
   const { filteredProjects, expandedFromSearch } = useMemo<{
@@ -301,261 +603,50 @@ export function MetadataTree() {
           </div>
         )}
 
-        <div className="mb-2 px-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+        {activeIntegration && (
+          <>
+            <div className="mb-2 px-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
 
-        <div className="max-h-[calc(100vh-200px)] space-y-1 overflow-y-auto">
-          {isFetchingMetadata ? (
-            <div className="flex h-32 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
-            </div>
-          ) : !databaseMetadata && activeIntegration ? (
-            <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
-              <div className="text-center text-sm text-muted-foreground">
-                No metadata found for <strong>{activeIntegration.name}</strong>
-              </div>
-            </div>
-          ) : (
-            filteredProjects?.map((project: ProjectWithCounts) => (
-              <div key={project.id} className="space-y-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-full justify-start gap-2"
-                  onClick={() => toggleProject(project.id)}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex w-full items-center gap-2">
-                        <Database className="h-4 w-4" />
-                        <span className="truncate">
-                          {highlightMatch(project.name, searchQuery)}
-                        </span>
-                        <span className="ml-auto flex items-center gap-2">
-                          <Badge variant="secondary">
-                            {project._originalDatasetCount ||
-                              project.datasets.length}
-                          </Badge>
-                          {expandedProjects.has(project.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">
-                            {highlightMatch(project.name, searchQuery)}
-                          </span>
-                          <Badge variant="secondary">
-                            {project._originalDatasetCount ||
-                              project.datasets.length}{" "}
-                            datasets
-                          </Badge>
-                        </div>
-                        <div>
-                          {project.description
-                            ? highlightMatch(project.description, searchQuery)
-                            : "No description available"}
-                        </div>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </Button>
-                {expandedProjects.has(project.id) && (
-                  <div className="space-y-1 pl-4">
-                    {project.datasets.map((dataset: DatasetWithCounts) => (
-                      <div key={dataset.id} className="space-y-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-full justify-start gap-2"
-                          onClick={() => toggleDataset(dataset.id)}
-                        >
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex w-full items-center gap-2">
-                                <Database className="h-4 w-4" />
-                                <span className="truncate">
-                                  {highlightMatch(dataset.name, searchQuery)}
-                                </span>
-                                <span className="ml-auto flex items-center gap-2">
-                                  <Badge variant="secondary">
-                                    {dataset._originalTableCount ||
-                                      dataset.tables.length}
-                                  </Badge>
-                                  {expandedDatasets.has(dataset.id) ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold">
-                                    {highlightMatch(dataset.name, searchQuery)}
-                                  </span>
-                                  <Badge variant="secondary">
-                                    {dataset._originalTableCount ||
-                                      dataset.tables.length}{" "}
-                                    tables
-                                  </Badge>
-                                </div>
-                                <div>
-                                  {dataset.description
-                                    ? highlightMatch(
-                                        dataset.description,
-                                        searchQuery,
-                                      )
-                                    : "No description available"}
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </Button>
-                        {expandedDatasets.has(dataset.id) && (
-                          <div className="space-y-1 pl-4">
-                            {dataset.tables.map((table: TableWithCounts) => (
-                              <div key={table.id} className="space-y-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-full justify-start gap-2"
-                                  onClick={() => toggleTable(table.id)}
-                                >
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="flex w-full items-center gap-2">
-                                        <Table className="h-4 w-4" />
-                                        <span className="truncate">
-                                          {highlightMatch(
-                                            table.name,
-                                            searchQuery,
-                                          )}
-                                        </span>
-                                        <span className="ml-auto flex items-center gap-2">
-                                          <Badge variant="secondary">
-                                            {table._originalFieldCount ||
-                                              table.fields?.length ||
-                                              0}
-                                          </Badge>
-                                          {expandedTables.has(table.id) ? (
-                                            <ChevronDown className="h-4 w-4" />
-                                          ) : (
-                                            <ChevronRight className="h-4 w-4" />
-                                          )}
-                                        </span>
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-semibold">
-                                            {highlightMatch(
-                                              table.name,
-                                              searchQuery,
-                                            )}
-                                          </span>
-                                          <Badge variant="secondary">
-                                            {table._originalFieldCount ||
-                                              table.fields?.length ||
-                                              0}{" "}
-                                            fields
-                                          </Badge>
-                                        </div>
-                                        <div>
-                                          {table?.description
-                                            ? highlightMatch(
-                                                table.description,
-                                                searchQuery,
-                                              )
-                                            : "No description available"}
-                                        </div>
-                                      </div>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </Button>
-                                {expandedTables.has(table.id) && (
-                                  <div className="space-y-1 pl-4">
-                                    {table.fields?.map((field) => (
-                                      <Button
-                                        key={field.name}
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-full justify-start gap-2"
-                                      >
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <div className="flex w-full items-center justify-between gap-2">
-                                              <span className="flex-grow truncate text-left">
-                                                {highlightMatch(
-                                                  field.name,
-                                                  searchQuery,
-                                                )}
-                                              </span>
-                                              <Badge
-                                                variant="secondary"
-                                                className="ml-auto truncate bg-blue-100"
-                                              >
-                                                {field.type}
-                                              </Badge>
-                                            </div>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <div className="flex flex-col gap-1">
-                                              <div className="flex items-center gap-x-2">
-                                                <div className="font-semibold">
-                                                  {highlightMatch(
-                                                    field.name,
-                                                    searchQuery,
-                                                  )}
-                                                </div>
-                                                <Badge variant="secondary">
-                                                  {field.type}
-                                                </Badge>
-                                              </div>
-                                              <div>
-                                                {field.description
-                                                  ? highlightMatch(
-                                                      field.description,
-                                                      searchQuery,
-                                                    )
-                                                  : "No description available"}
-                                              </div>
-                                            </div>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </Button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+            <div className="max-h-[calc(100vh-200px)] space-y-1 overflow-y-auto">
+              {isFetchingMetadata ? (
+                <div className="flex h-32 items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
+                </div>
+              ) : !databaseMetadata && activeIntegration ? (
+                <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
+                  <div className="text-center text-sm text-muted-foreground">
+                    No metadata found for{" "}
+                    <strong>{activeIntegration.name}</strong>
                   </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                </div>
+              ) : (
+                filteredProjects?.map((project) => (
+                  <ProjectItem
+                    key={project.id}
+                    project={project}
+                    searchQuery={searchQuery}
+                    isExpanded={expandedProjects.has(project.id)}
+                    onToggle={() => toggleProject(project.id)}
+                    expandedDatasets={expandedDatasets}
+                    toggleDataset={toggleDataset}
+                    expandedTables={expandedTables}
+                    toggleTable={toggleTable}
+                  />
+                ))
+              )}
+            </div>
+          </>
+        )}
       </SidebarGroup>
     </TooltipProvider>
   );

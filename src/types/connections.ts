@@ -23,35 +23,59 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export interface DatabaseConfig {
-  id: string;
-  type: 'bigquery' | 'postgres';
-  projectId?: string;
+export type DatabaseType = 'bigquery' | 'postgres';
+
+export type Integration = {
+  id: string | null;
+  type: DatabaseType;
+  name: string;
   credentials: DatabaseCredentials;
-}
+  config: IntegrationConfig | null;
+  createdAt: string;
+};
+
+export type IntegrationConfig = BigQueryConfig;
+
+export type BigQueryConfig = {
+  projectId: string;
+};
 
 
-export const databaseMetadataSchema = z.object({
-  projects: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string().nullable(),
-    datasets: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      description: z.string().nullable(),
-      tables: z.array(z.object({
-        id: z.string(),
-        name: z.string(),
-        description: z.string().nullable(),
-        fields: z.array(z.object({
-          name: z.string(),
-          type: z.string(),
-          description: z.string().nullable()
-        }))
-      }))
-    }))
-  }))
+const fieldSchema = z.object({
+  name: z.string(),
+  type: z.string(), 
+  description: z.string().nullable()
 });
 
+const tableSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  fields: z.array(fieldSchema)
+});
+
+const datasetSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  tables: z.array(tableSchema)
+});
+
+const projectSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  datasets: z.array(datasetSchema)
+});
+
+export const databaseMetadataSchema = z.object({
+  projects: z.array(projectSchema)
+});
+
+
+
 export type DatabaseMetadata = z.infer<typeof databaseMetadataSchema>;
+export type Field = z.infer<typeof fieldSchema>;
+export type Table = z.infer<typeof tableSchema>;
+export type Dataset = z.infer<typeof datasetSchema>;
+export type Project = z.infer<typeof projectSchema>;

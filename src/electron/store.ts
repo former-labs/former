@@ -1,4 +1,4 @@
-import { Integration } from '@/types/electron';
+import { type Integration } from "@/types/connections";
 import Store from 'electron-store';
 
 // Defines what data we store

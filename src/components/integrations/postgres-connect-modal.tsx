@@ -16,18 +16,24 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import type { Integration } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
-import type { PostgresCredentials } from "@/types/connections";
+import type { Integration, PostgresCredentials } from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+const POSTGRES_CONNECTION_STRING_REGEX =
+  /^postgres(?:ql)?:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
+
+const connectionStringSchema = z
+  .string()
+  .regex(POSTGRES_CONNECTION_STRING_REGEX, "Invalid connection string format");
+
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  connectionString: z.string().optional(),
+  connectionString: connectionStringSchema.optional().or(z.literal("")),
   host: z.string().min(1, "Host is required"),
   port: z.number().min(1, "Port is required"),
   database: z.string().min(1, "Database name is required"),
@@ -55,6 +61,7 @@ export function PostgresConnectModal({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       connectionString: "",
@@ -68,14 +75,15 @@ export function PostgresConnectModal({
 
   useEffect(() => {
     if (integration) {
+      const credentials = integration.credentials as PostgresCredentials;
       form.reset({
         name: integration.name,
         connectionString: "",
-        host: (integration.credentials as PostgresCredentials).host,
-        port: (integration.credentials as PostgresCredentials).port,
-        database: (integration.credentials as PostgresCredentials).database,
-        user: (integration.credentials as PostgresCredentials).user,
-        password: (integration.credentials as PostgresCredentials).password,
+        host: credentials.host,
+        port: credentials.port,
+        database: credentials.database,
+        user: credentials.user,
+        password: credentials.password,
       });
     }
   }, [integration, form]);
@@ -99,27 +107,21 @@ export function PostgresConnectModal({
   const parseConnectionString = (
     connString: string,
   ): PostgresCredentials | null => {
-    try {
-      const regex = /^postgres(?:ql)?:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
-      const match = regex.exec(connString);
+    const match = POSTGRES_CONNECTION_STRING_REGEX.exec(connString);
 
-      if (!match) {
-        throw new Error("Invalid connection string format");
-      }
-
-      const [, user, password, host, port, database] = match;
-
-      return {
-        host: decodeURIComponent(host ?? ""),
-        port: parseInt(port ?? "5432"),
-        database: decodeURIComponent(database ?? ""),
-        user: decodeURIComponent(user ?? ""),
-        password: decodeURIComponent(password ?? ""),
-      };
-    } catch (error) {
-      console.error("Failed to parse connection string:", error);
+    if (!match) {
       return null;
     }
+
+    const [, user, password, host, port, database] = match;
+
+    return {
+      host: decodeURIComponent(host ?? ""),
+      port: parseInt(port ?? "5432"),
+      database: decodeURIComponent(database ?? ""),
+      user: decodeURIComponent(user ?? ""),
+      password: decodeURIComponent(password ?? ""),
+    };
   };
 
   const handleConnectionStringChange = (value: string) => {
@@ -131,6 +133,22 @@ export function PostgresConnectModal({
       form.setValue("database", parsed.database);
       form.setValue("user", parsed.user);
       form.setValue("password", parsed.password);
+    }
+  };
+
+  const handleConnectionStringBlur = async () => {
+    const connectionString = form.getValues("connectionString");
+    if (connectionString) {
+      try {
+        await connectionStringSchema.parseAsync(connectionString);
+      } catch {
+        form.setError("connectionString", {
+          type: "manual",
+          message: "Invalid connection string format",
+        });
+      }
+    } else {
+      form.clearErrors("connectionString");
     }
   };
 
@@ -164,8 +182,13 @@ export function PostgresConnectModal({
       createdAt: integration?.createdAt ?? new Date().toISOString(),
       credentials,
       name: values.name,
+      config: null,
     });
   };
+
+  const {
+    formState: { isValid, errors },
+  } = form;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,6 +239,10 @@ export function PostgresConnectModal({
                       onChange={(e) =>
                         handleConnectionStringChange(e.target.value)
                       }
+                      onBlur={() => {
+                        field.onBlur();
+                        void handleConnectionStringBlur();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -363,7 +390,11 @@ export function PostgresConnectModal({
               />
             </div>
 
-            <Button type="submit" className="w-full">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!isValid || Object.keys(errors).length > 0}
+            >
               {integration ? "Save Changes" : "Connect"}
             </Button>
           </form>

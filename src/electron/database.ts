@@ -1,21 +1,31 @@
-import type { BigQueryCredentials, DatabaseConfig, PostgresCredentials } from "../types/connections.js";
+import type { BigQueryCredentials, Integration, PostgresCredentials } from "../types/connections.js";
 import { BigQueryDriver, type Driver, PostgresDriver } from "./drivers/clients.js";
 
 const connections = new Map<string, Driver>();
 
 export const database = {
-  async connect(config: DatabaseConfig) {
+  async connect(integration: Integration) {
     try {
-      let driver: Driver;
-      const connectionId = config.id;
-      console.log('config', config);
+      console.log('Integration received:', {
+        type: integration.type,
+        typeOf: typeof integration.type,
+        name: integration.name,
+        config: integration.config
+      });
 
-      if (config.type === 'bigquery' && config.projectId) {
-        driver = new BigQueryDriver(config.credentials as BigQueryCredentials, config.projectId);
-      } else if (config.type === 'postgres') {
-        driver = new PostgresDriver(config.credentials as PostgresCredentials);
-      } else {
-        throw new Error(`Invalid database type: ${config.type}`);
+      let driver: Driver;
+      const connectionId = integration.id ?? crypto.randomUUID();
+      console.log('integration', integration);
+
+      switch (integration.type) {
+        case 'bigquery':
+          driver = new BigQueryDriver(integration.credentials as BigQueryCredentials, integration.config?.projectId ?? '');
+          break;
+        case 'postgres':
+          driver = new PostgresDriver(integration.credentials as PostgresCredentials);
+          break;
+        default:
+          throw new Error(`Invalid database type: ${integration.type} \n\n Integration: \n${JSON.stringify(integration)}`);
       }
 
       console.log('driver', driver);

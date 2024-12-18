@@ -3,19 +3,10 @@
 import { type Driver } from "@/electron/drivers/clients";
 import {
   databaseMetadataSchema,
-  type DatabaseConfig,
-  type DatabaseCredentials,
   type DatabaseMetadata,
+  type Integration,
 } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
-
-export type Integration = {
-  id: string | null;
-  type: "bigquery" | "postgres";
-  name: string;
-  credentials: DatabaseCredentials;
-  createdAt: string;
-};
 
 interface DataContextType {
   activeIntegration: Integration | null;
@@ -127,15 +118,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const initializeDriver = async (integration: Integration) => {
     console.log("initializeDriver", integration);
     try {
-      const config: DatabaseConfig = {
-        id: integration.id ?? crypto.randomUUID(),
-        type: integration.type,
-        projectId: integration.id ?? undefined,
-        credentials: integration.credentials,
-      };
-
-      console.log("config", config);
-      const result = await window.electron.database.connect(config);
+      const result = await window.electron.database.connect(integration);
       console.log("result", result);
 
       if (!result.success) {
@@ -155,6 +138,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       setIsFetchingMetadata(true);
+      setDatabaseMetadata(null);
       console.log("Fetching metadata for", connectionId);
       // I'm validating here because unsafe casting occurs deep in this funciton
       // Imo we should push this validation deeper into electron itself
@@ -191,6 +175,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         void window.electron.database.disconnect(activeIntegration.id);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
 
   const addIntegration = (
@@ -222,7 +207,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const removeIntegration = (id: string) => {
-    setIntegrations((prev) => prev.filter((i) => i.id !== id));
+    setIntegrations((prev) => {
+      const filtered = prev.filter((i) => i.id !== id);
+      if (activeIntegration?.id === id) {
+        // If removed integration was active, set new active integration
+        setActiveIntegration(filtered[0] ?? null);
+      }
+      return filtered;
+    });
   };
 
   const executeQuery = async (query: string) => {

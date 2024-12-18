@@ -20,10 +20,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { type Integration } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import type { BigQueryCredentials } from "@/types/connections";
+import type { BigQueryCredentials, Integration } from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -112,6 +111,9 @@ export function BigQueryConnectModal({
         createdAt: integration?.createdAt ?? new Date().toISOString(),
         credentials,
         name: values.name,
+        config: {
+          projectId: values.projectId,
+        },
       });
 
       toast({
