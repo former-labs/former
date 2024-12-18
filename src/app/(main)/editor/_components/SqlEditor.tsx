@@ -193,12 +193,10 @@ export const SqlEditor = () => {
 
   const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
     // Remove existing widgets
-    if (diffEditor) {
-      const modifiedEditor = diffEditor.getModifiedEditor();
-      diffWidgetsRef.current.forEach((widget) => {
-        modifiedEditor.removeContentWidget(widget);
-      });
-    }
+    const modifiedEditor = editor.getModifiedEditor();
+    diffWidgetsRef.current.forEach((widget) => {
+      modifiedEditor.removeContentWidget(widget);
+    });
 
     diffWidgetsRef.current = [];
 
