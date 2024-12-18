@@ -1,4 +1,5 @@
 import type { Integration } from '@/types/connections';
+import { IElectronAPI } from '@/types/electron';
 import { type IpcRendererEvent, contextBridge, ipcRenderer } from 'electron';
 
 // Define the type for the callback function
@@ -38,5 +39,5 @@ contextBridge.exposeInMainWorld(
       setActiveIntegrationId: (id: string | null) => 
         ipcRenderer.invoke('store:setActiveIntegrationId', id),
     },
-  }
-); 
+  } as IElectronAPI
+);

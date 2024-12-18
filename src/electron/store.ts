@@ -17,8 +17,10 @@ const store = new Store<StoreSchema>({
 
 // Export everything as a single object
 const storeUtils = {
-  get: (key: keyof StoreSchema) => store.get(key),
-  set: (key: keyof StoreSchema, value: any) => store.set(key, value),
+  getIntegrations: () => store.get('integrations'),
+  setIntegrations: (integrations: Integration[]) => store.set('integrations', integrations),
+  getActiveIntegrationId: () => store.get('activeIntegrationId'),
+  setActiveIntegrationId: (id: string | null) => store.set('activeIntegrationId', id),
   store
 };
 
