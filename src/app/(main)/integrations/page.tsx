@@ -1,205 +1,138 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { api } from "@/trpc/react";
-import { Power } from "lucide-react";
-import Image from "next/image";
+import BigQueryLogo from "@/components/assets/bigquery.svg";
+import PostgresLogo from "@/components/assets/postgres.svg";
+import { BigQueryConnectModal } from "@/components/integrations/big-query-connect-modal";
+import { ExistingIntegrations } from "@/components/integrations/existing-integrations";
+import { IntegrationCard } from "@/components/integrations/integration-card";
+import { PostgresConnectModal } from "@/components/integrations/postgres-connect-modal";
+import { useData } from "@/contexts/DataContext";
+import { type Integration } from "@/types/connections";
+import { useState } from "react";
 
-// Define the IntegrationCardProps type
-type IntegrationCardProps = {
-  integration: {
-    name: string;
-    displayName: string;
-    icon: string;
-    connected: boolean;
-    createdAt: string;
-    description?: string; // Add this if description is used
-  };
-  onDisconnect?: (id: string) => void;
-};
-
-// Define a map for integration types based on schema
-const integrationTypeMap: Record<
-  string,
+const integrationTypes = [
   {
-    name: string;
-    displayName: string;
-    icon: string;
-    description: string;
-  }
-> = {
-  google_analytics: {
-    name: "Google Analytics",
-    displayName: "Google Analytics (GA4)",
-    icon: "https://storage.googleapis.com/verve-assets/logos/google-analytics.svg",
-    description:
-      "Connect your Google Analytics 4 property to analyze your website traffic and user behavior.",
+    name: "BigQuery",
+    icon: BigQueryLogo,
+    description: "Connect your BigQuery account to start analyzing your data.",
+    type: "bigquery" as const,
   },
-};
+  {
+    name: "Postgres",
+    icon: PostgresLogo,
+    description: "Connect to your Postgres database to analyze your data.",
+    type: "postgres" as const,
+  },
+];
 
 export default function IntegrationsPage() {
-  const { activeRole } = useAuth();
-  const workspaceId = activeRole?.workspaceId ?? "";
+  const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
+  const [openPostgresModal, setOpenPostgresModal] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState<
+    Integration | undefined
+  >(undefined);
+  const { addIntegration, editIntegration } = useData();
 
-  const { toast } = useToast();
-  const { data: integrations, refetch: refetchIntegrations } =
-    api.integration.listIntegrations.useQuery(undefined, {
-      enabled: !!workspaceId,
-    });
+  const handleCreateIntegration = (
+    integration: Omit<Integration, "id" | "createdAt">,
+  ) => {
+    addIntegration(integration);
+    handleCloseModal();
+  };
 
-  const deleteIntegrationMutation =
-    api.integration.deleteIntegration.useMutation({
-      onSuccess: () => {
-        toast({
-          title: "Integration deleted",
-          description: "The integration has been removed successfully.",
-        });
-        void refetchIntegrations();
-      },
-      onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
+  const handleUpdateIntegration = (
+    id: string,
+    integration: Omit<Integration, "id" | "createdAt">,
+  ) => {
+    editIntegration(id, integration);
+    handleCloseModal();
+  };
 
-  const handleDelete = (integrationId: string) => {
-    deleteIntegrationMutation.mutate({ integrationId });
-    void refetchIntegrations();
+  const handleOpenModal = ({
+    type,
+    integration,
+  }: {
+    type: "bigquery" | "postgres";
+    integration?: Integration;
+  }) => {
+    setSelectedIntegration(integration);
+    if (type === "bigquery") {
+      setOpenBigQueryModal(true);
+    } else {
+      setOpenPostgresModal(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedIntegration(undefined);
+    setOpenBigQueryModal(false);
+    setOpenPostgresModal(false);
+  };
+
+  const handleModalSubmit = ({
+    id,
+    integration,
+  }: {
+    id: string | null;
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => {
+    if (id) {
+      handleUpdateIntegration(id, integration);
+    } else {
+      handleCreateIntegration(integration);
+    }
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Integrations</h1>
-      </div>
+    <div className="mx-auto max-w-[1300px] px-6 py-10">
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="mb-1 text-[22px] font-semibold leading-7">
+            Integrations
+          </h1>
+          <p className="text-[14px] text-muted-foreground">
+            Connect your data sources and manage existing connections.
+          </p>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {integrations?.map((integration) => {
-          const integrationConfig = integrationTypeMap[integration.type];
-          return (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {integrationTypes.map((integration) => (
             <IntegrationCard
-              key={integration.id}
-              integration={{
-                name: integrationConfig?.name ?? integration.type,
-                displayName: integrationConfig?.displayName ?? integration.type,
-                icon: integrationConfig?.icon ?? "",
-                connected: true,
-                createdAt: integration.createdAt.toISOString(),
-                description: integrationConfig?.description,
-              }}
-              onDisconnect={() => handleDelete(integration.id)}
+              key={integration.name}
+              name={integration.name}
+              description={integration.description}
+              icon={integration.icon}
+              onClick={() =>
+                handleOpenModal({
+                  type: integration.type,
+                  integration: undefined,
+                })
+              }
             />
-          );
-        })}
+          ))}
+        </div>
 
-        <AddIntegrationCard />
+        <div className="mt-8">
+          <ExistingIntegrations onEditIntegration={handleOpenModal} />
+        </div>
       </div>
+
+      <BigQueryConnectModal
+        open={openBigQueryModal}
+        onOpenChange={(open) => {
+          if (!open) handleCloseModal();
+        }}
+        integration={selectedIntegration}
+        onSubmit={(integration) => handleModalSubmit(integration)}
+      />
+      <PostgresConnectModal
+        open={openPostgresModal}
+        onOpenChange={(open) => {
+          if (!open) handleCloseModal();
+        }}
+        integration={selectedIntegration}
+        onSubmit={(integration) => handleModalSubmit(integration)}
+      />
     </div>
   );
 }
-
-const AddIntegrationCard = () => {
-  const { toast } = useToast();
-
-  const connectGoogleAnalytics =
-    api.integration.connectGoogleAnalytics.useMutation({
-      onSuccess: (data) => {
-        window.location.href = data.redirectUrl;
-      },
-      onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
-
-  const handleConnectGA = () => {
-    connectGoogleAnalytics.mutate();
-  };
-
-  return (
-    <Card
-      className="flex cursor-pointer items-center justify-center p-6 transition-colors hover:bg-muted/50"
-      onClick={handleConnectGA}
-      role="button"
-      tabIndex={0}
-    >
-      <div className="flex max-w-xs flex-col items-center space-y-2">
-        <div className="relative flex h-4 w-4 flex-col">
-          <Image
-            src="https://storage.googleapis.com/verve-assets/logos/google-analytics.svg"
-            alt="Google Analytics logo"
-            fill
-            className="object-contain"
-          />
-        </div>
-        <p className="text-sm font-medium">Add Google Analytics Integration</p>
-      </div>
-    </Card>
-  );
-};
-
-const IntegrationCard = ({
-  integration,
-  onDisconnect,
-}: IntegrationCardProps) => {
-  return (
-    <Card className="space-y-4 p-6">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="relative h-10 w-10">
-            <Image
-              src={integration.icon}
-              alt={`${integration.name} logo`}
-              fill
-              className="object-contain"
-            />
-          </div>
-          <div>
-            <h3 className="font-medium">{integration.displayName}</h3>
-            <Badge variant="secondary" className="text-xs">
-              Connected{" "}
-              {new Date(integration.createdAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Badge>
-          </div>
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => onDisconnect?.(integration.name)}
-              >
-                <Power className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Disconnect</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <p className="text-sm text-muted-foreground">{integration.description}</p>
-    </Card>
-  );
-};

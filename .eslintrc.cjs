@@ -74,6 +74,12 @@ const config = {
 
     "@typescript-eslint/restrict-template-expressions": "off",
     "@typescript-eslint/no-redundant-type-constituents": "off",
+
+    /*
+      Matty has disabled this because he tried but its kind of annoying
+      but probably a skill issue.
+    */
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
   },
 };
 module.exports = config;

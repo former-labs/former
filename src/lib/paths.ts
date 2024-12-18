@@ -14,10 +14,10 @@ export const PATH_CONVERSATION_PENDING = "/chat";
 export const PATH_CONVERSATION_SINGLE = (conversationId: string) =>
   `/chat/${conversationId}`;
 
-export const PATH_DASHBOARD = "/dashboard";
-export const PATH_DASHBOARD_SINGLE = (dashboardId: string) => `/dashboard/${dashboardId}`;
-
 export const PATH_ONBOARDING = "/onboarding";
 
 export const PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK = "/auth/callback/";
 
+export const PATH_EDITOR = "/editor";
+
+export const PATH_INTEGRATIONS = "/integrations";

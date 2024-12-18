@@ -4,13 +4,13 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
 import { AuthProvider } from "@/contexts/AuthContext";
-import { GoogleAnalyticsProvider } from "@/contexts/GoogleAnalyticsContext";
 import { TRPCReactProvider } from "@/trpc/react";
 import Script from "next/script";
+import { DataProvider } from "@/contexts/DataContext";
 
 export const metadata: Metadata = {
-  title: "Werve",
-  description: "Werve",
+  title: "Yerve",
+  description: "Yerve",
   icons: [{ rel: "icon", url: "/favicon.svg" }],
 };
 
@@ -55,7 +55,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         )}
         <TRPCReactProvider>
           <AuthProvider>
-            <GoogleAnalyticsProvider>{children}</GoogleAnalyticsProvider>
+            <DataProvider>{children}</DataProvider>
           </AuthProvider>
         </TRPCReactProvider>
       </body>

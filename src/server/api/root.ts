@@ -1,9 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
-import { conversationRouter } from "./routers/conversation/conversationRouter";
-import { dashboardRouter } from "./routers/dashboard/dashboardRouter";
+import { editorRouter } from "./routers/editor/editorRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
-import { googleAnalyticsRouter } from "./routers/googleAnalytics/googleAnalyticsRouter";
-import { integrationRouter } from "./routers/integrationRouter";
 import { onboardingRouter } from "./routers/onboardingRouter";
 import { userRouter } from "./routers/userRouter";
 
@@ -13,12 +10,9 @@ import { userRouter } from "./routers/userRouter";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  conversation: conversationRouter,
+  editor: editorRouter,
   onboarding: onboardingRouter,
-  integration: integrationRouter,
   eval: evalRouter,
-  googleAnalytics: googleAnalyticsRouter,
-  dashboard: dashboardRouter,
   user: userRouter,
 });
 

@@ -1,110 +1,50 @@
 import { adminProtectedProcedure, createTRPCRouter } from "@/server/api/trpc";
-import { getAgentResponse } from "@/server/googleAnalytics/getAgentResponse";
-import {
-  executeGoogleAnalyticsReport,
-  getReportingMetadata,
-  verveGa4AnalyticsDataClient,
-} from "@/server/googleAnalytics/googleAnalytics";
-import { googleAnalyticsReportParametersSchema } from "@/server/googleAnalytics/reportParametersSchema";
+// import { integrationTable } from "@/server/db/schema";
 import { z } from "zod";
-import { evalTestDate, evalTestList } from "./evalTestListAndFilter";
-import { verifyEvalResponse } from "./verifyEvalResponse";
 
 export const evalRouter = createTRPCRouter({
-  listEvalTests: adminProtectedProcedure
-    .query(async () => {
-      return evalTestList;
-    }),
-
-  runEvalTest: adminProtectedProcedure
+  evalSql: adminProtectedProcedure
     .input(
       z.object({
-        evalId: z.enum(evalTestList.map((t) => t.id) as [string, ...string[]]),
-      }),
+        integrationId: z.string(),
+        query: z.string(),
+      })
     )
-    .mutation(async ({ input }) => {
-      const evalTest = evalTestList.find((t) => t.id === input.evalId);
-      if (!evalTest) {
-        throw new Error("Eval test not found");
-      }
+    .mutation(async ({ ctx, input }) => {
+      // I've commented this out because we don't have an integration table so we get type errors?
 
-      console.log("Running eval test:", evalTest.inputPrompt);
-
-      const agentResponse = await getAgentResponse({
-        formattedConversationHistory: [],
-        prompt: evalTest.inputPrompt,
-        currentDate: evalTestDate,
-      });
-
-      console.log(agentResponse.googleAnalyticsReportParameters);
-
-      const verification = verifyEvalResponse({
-        outputQuery: agentResponse.googleAnalyticsReportParameters,
-        targetQuery: evalTest.targetParameters,
-      });
-
-      return {
-        success: verification.success,
-        reason: verification.success
-          ? "Query matches target parameters"
-          : "Query does not match target parameters",
-        agentResponse: agentResponse.googleAnalyticsReportParameters,
-      };
-    }),
-
-  executeGoogleAnalyticsReport: adminProtectedProcedure
-    .input(
-      z.object({
-        parameters: googleAnalyticsReportParametersSchema,
-      }),
-    )
-    .mutation(async ({ input }) => {
+      /*
       try {
-        console.log("executeGoogleAnalyticsReport", input.parameters);
+        // Get the integration
+        const [integration] = await ctx.db
+          .select()
+          .from(integrationTable)
+          .where(
+            and(
+              eq(integrationTable.id, input.integrationId),
+              eq(integrationTable.workspaceId, ctx.activeWorkspaceId)
+            )
+          );
 
-        // Hardcoded to ours for now
-        const propertyId = "447821713";
+        if (!integration) {
+          throw new Error("Integration not found");
+        }
 
-        const report = await executeGoogleAnalyticsReport({
-          parameters: input.parameters,
-          propertyId,
-          analyticsDataClient: verveGa4AnalyticsDataClient,
-        });
-        return {
-          success: true as const,
-          data: report,
-        };
+        // Execute query based on integration type
+        if (integration.type === "bigquery") {
+          // Execute BigQuery SQL
+          const credentials = integration.credentials as Record<string, unknown>;
+          // TODO: Implement BigQuery execution logic
+          return {
+            rows: [],
+            message: "BigQuery execution not implemented yet"
+          };
+        }
+
+        throw new Error(`Unsupported integration type: ${integration.type}`);
       } catch (error) {
-        console.log(error);
-        return {
-          success: false as const,
-          error:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        };
+        throw new Error(error instanceof Error ? error.message : "Unknown error occurred");
       }
-    }),
-
-  getGoogleAnalyticsMetadata: adminProtectedProcedure
-    .query(async ({ input }) => {
-      try {
-        // Hardcoded to ours for now
-        const propertyId = "447821713";
-
-        const metadata = await getReportingMetadata({
-          propertyId,
-          analyticsDataClient: verveGa4AnalyticsDataClient,
-        });
-
-        return {
-          success: true as const,
-          data: metadata,
-        };
-      } catch (error) {
-        return {
-          success: false as const,
-          error:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        };
-      }
+      */
     }),
 });

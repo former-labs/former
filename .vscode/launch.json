@@ -23,6 +23,33 @@
         "uriFormat": "%s",
         "action": "debugWithChrome"
       }
+    },
+    {
+      "name": "Electron: Main Process",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+      },
+      "args": ["./dist/electron/main.js"],
+      "outputCapture": "std",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Electron: Renderer Process",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}",
+      "timeout": 30000
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Electron: All",
+      "configurations": ["Electron: Main Process", "Electron: Renderer Process"]
     }
   ]
 }

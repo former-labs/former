@@ -1,8 +1,5 @@
-import { type ViewData } from "@/components/charting/chartTypes";
 import { relations } from "drizzle-orm";
-import { integer, json, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { type GoogleAnalyticsReportParameters } from "../googleAnalytics/reportParametersSchema";
-import { encryptedJson } from "./encryptedJsonFieldType";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // /**
 //  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -86,16 +83,6 @@ export const roleRelations = relations(roleTable, ({ one }) => ({
   }),
 }));
 
-export const integrationTable = pgTable("integration", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-  type: text("type", { enum: ["google_analytics"] }).notNull(),
-  credentials: encryptedJson("credentials").notNull(),
-  metadata: json("metadata").notNull(),
-});
-
 
 // Conversation
 /*
@@ -133,60 +120,11 @@ export const messageItemsTable = pgTable("message_item", {
   messageId: uuid("message_id")
     .notNull()
     .references(() => messageTable.id),
-  googleAnalyticsReportId: uuid("google_analytics_report_id").references(() => googleAnalyticsReportTable.id),
-  plotViewId: uuid("plot_view_id").references(() => plotViewTable.id),
-});
-
-export const googleAnalyticsReportTable = pgTable("google_analytics_report", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	createdAt: createdAtField,
-	updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-	title: text("title").notNull(),
-	description: text("description").notNull(),
-	reportParameters: json("report_parameters").$type<GoogleAnalyticsReportParameters>().notNull(),
-});
-
-export const plotViewTable = pgTable("plot_view", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	createdAt: createdAtField,
-	updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-	viewData: json("view_data").$type<ViewData>().notNull(),
-});
-
-export const dashboardTable = pgTable("dashboard", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	createdAt: createdAtField,
-	updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-	title: text("title").notNull(),
-	description: text("description"),
-});
-
-export const dashboardItemsTable = pgTable("dashboard_item", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	createdAt: createdAtField,
-	updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-	dashboardId: uuid("dashboard_id")
-    .references(() => dashboardTable.id)
-    .notNull(),
-	gridX: integer("grid_x").notNull(),
-	gridY: integer("grid_y").notNull(),
-	gridWidth: integer("grid_width").notNull(),
-	gridHeight: integer("grid_height").notNull(),
-	plotViewId: uuid("plot_view_id")
-		.references(() => plotViewTable.id),
-  googleAnalyticsReportId: uuid("google_analytics_report_id")
-    .references(() => googleAnalyticsReportTable.id)
-    .notNull(),
 });
 
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type MessageItemSelect = typeof messageItemsTable.$inferSelect;
-export type GoogleAnalyticsReportSelect = typeof googleAnalyticsReportTable.$inferSelect;
 export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
 export type UserSelect = typeof userTable.$inferSelect;
 export type RoleSelect = typeof roleTable.$inferSelect;
@@ -194,7 +132,3 @@ export type RoleSelectWithRelations = RoleSelect & {
   user: UserSelect;
   workspace: WorkspaceSelect;
 };
-
-export type PlotViewSelect = typeof plotViewTable.$inferSelect;
-export type DashboardSelect = typeof dashboardTable.$inferSelect;
-export type DashboardItemSelect = typeof dashboardItemsTable.$inferSelect;

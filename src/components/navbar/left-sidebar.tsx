@@ -2,15 +2,14 @@
 
 import {
   AudioWaveform,
-  BarChart,
   BookOpen,
   Bot,
+  Code,
   Command,
   GalleryVerticalEnd,
-  MessageSquare,
+  Plug,
   Settings2,
   SquareTerminal,
-  Plug,
 } from "lucide-react";
 import * as React from "react";
 
@@ -24,7 +23,8 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { PATH_DASHBOARD, PATH_HOME } from "@/lib/paths";
+import { PATH_EDITOR, PATH_INTEGRATIONS } from "@/lib/paths";
+import { MetadataTree } from "@/components/navbar/metadata-tree";
 
 // This is sample data.
 const data = {
@@ -139,18 +139,13 @@ const data = {
   ],
   sections: [
     {
-      name: "Chat",
-      url: PATH_HOME,
-      icon: MessageSquare,
-    },
-    {
-      name: "Dashboards",
-      url: PATH_DASHBOARD,
-      icon: BarChart,
+      name: "Editor",
+      url: PATH_EDITOR,
+      icon: Code,
     },
     {
       name: "Integrations",
-      url: "/integrations",
+      url: PATH_INTEGRATIONS,
       icon: Plug,
     },
   ],
@@ -165,8 +160,8 @@ export function LeftSidebar({
         <WorkspaceSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {/* <NavMain items={data.navMain} /> */}
         <NavPages pages={data.sections} />
+        <MetadataTree />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
