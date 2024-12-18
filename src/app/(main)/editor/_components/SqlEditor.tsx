@@ -94,30 +94,15 @@ export const SqlEditor = () => {
     }
   };
 
-  const setupEditorKeybindings = (
-    editor: editor.IStandaloneCodeEditor,
-    monaco: Monaco,
-  ) => {
-    // Override the default Cmd+L binding
-    const keybinding = monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL;
-    editor.addCommand(keybinding, () => {
-      // Simulate the original Cmd+L keybinding by dispatching a new keyboard event
-      const event = new KeyboardEvent("keydown", {
-        key: "l",
-        code: "KeyL",
-        metaKey: true,
-        bubbles: true,
-      });
-      document.dispatchEvent(event);
-    });
-
-    // Add Cmd+K binding for view zone
-    const viewZoneKeybinding = monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK;
-    editor.addCommand(viewZoneKeybinding, () => {
-      const position = editor.getPosition();
+  // Add Cmd+K binding for view zone
+  useEditorKeybind({
+    id: "add-view-zone",
+    callback: () => {
+      if (!codeEditor) return;
+      const position = codeEditor.getPosition();
       if (!position) return;
 
-      editor.changeViewZones(function (changeAccessor) {
+      codeEditor.changeViewZones(function (changeAccessor) {
         const domNode = document.createElement("div");
         domNode.style.background = "lightgreen";
         changeAccessor.addZone({
@@ -126,14 +111,37 @@ export const SqlEditor = () => {
           domNode: domNode,
         });
       });
-    });
-  };
+    },
+    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK : null,
+    codeEditor,
+    diffEditor,
+  });
 
   // Add Cmd+Enter binding to execute query
   useEditorKeybind({
+    id: "execute-query",
     callback: executeQuery,
-    editor: codeEditor,
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
+    codeEditor,
+    diffEditor,
+  });
+
+  // Add Cmd+L binding to simulate original keybinding
+  useEditorKeybind({
+    id: "open-chat",
+    callback: () => {
+      // Stop existing keybinding from being triggered and propagate up
+      const event = new KeyboardEvent("keydown", {
+        key: "l",
+        code: "KeyL",
+        metaKey: true,
+        bubbles: true,
+      });
+      document.dispatchEvent(event);
+    },
+    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL : null,
+    codeEditor,
+    diffEditor,
   });
 
   const handleEditorDidMount = (
@@ -141,7 +149,6 @@ export const SqlEditor = () => {
     monaco: Monaco,
   ) => {
     setCodeEditor(editor);
-    setupEditorKeybindings(editor, monaco);
 
     // Add selection change listener
     editor.onDidChangeCursorSelection((e) => {
@@ -158,7 +165,6 @@ export const SqlEditor = () => {
 
     // Override the default Cmd+L binding in the modified editor
     const modifiedEditor = editor.getModifiedEditor();
-    setupEditorKeybindings(modifiedEditor, monaco);
 
     // Listen for diff updates instead of content changes
     editor.onDidUpdateDiff(() => {
@@ -391,20 +397,24 @@ export const SqlEditor = () => {
 };
 
 const useEditorKeybind = ({
+  id,
   callback,
-  editor,
   keybinding,
+  codeEditor,
+  diffEditor,
 }: {
+  id: string;
   callback: () => void;
-  editor: editor.IStandaloneCodeEditor | null;
   keybinding: number | null;
+  codeEditor: editor.IStandaloneCodeEditor | null;
+  diffEditor: editor.IStandaloneDiffEditor | null;
 }) => {
   useEffect(() => {
-    if (!editor || !keybinding) return;
+    if (!keybinding || !codeEditor) return;
 
-    const disposable = editor.addAction({
-      id: "execute-query",
-      label: "Execute Query",
+    const disposable = codeEditor.addAction({
+      id,
+      label: id,
       keybindings: [keybinding],
       run: () => {
         void callback();
@@ -412,7 +422,25 @@ const useEditorKeybind = ({
     });
 
     return () => {
-      disposable?.dispose();
+      disposable.dispose();
     };
-  }, [callback, editor, keybinding]);
+  }, [callback, codeEditor, keybinding, id]);
+
+  useEffect(() => {
+    if (!keybinding || !diffEditor) return;
+
+    const modifiedEditor = diffEditor.getModifiedEditor();
+    const disposable = modifiedEditor.addAction({
+      id,
+      label: id,
+      keybindings: [keybinding],
+      run: () => {
+        void callback();
+      },
+    });
+
+    return () => {
+      disposable.dispose();
+    };
+  }, [callback, diffEditor, keybinding, id]);
 };
