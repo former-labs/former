@@ -16,31 +16,30 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
-import type { DatabaseMetadata } from "@/types/connections";
+import type { Dataset, Field, Project, Table } from "@/types/connections";
 import {
   ArrowRight,
   ChevronDown,
   ChevronRight,
   Database,
   Search,
-  Table,
+  Table as TableIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 
-type TableWithCounts =
-  DatabaseMetadata["projects"][0]["datasets"][0]["tables"][0] & {
-    _originalFieldCount?: number;
-  };
+type TableWithCounts = Table & {
+  _originalFieldCount?: number;
+};
 
-type DatasetWithCounts = DatabaseMetadata["projects"][0]["datasets"][0] & {
+type DatasetWithCounts = Dataset & {
   _originalTableCount?: number;
   tables: TableWithCounts[];
 };
 
-type ProjectWithCounts = DatabaseMetadata["projects"][0] & {
+type ProjectWithCounts = Project & {
   _originalDatasetCount?: number;
   datasets: DatasetWithCounts[];
 };
@@ -66,7 +65,7 @@ function FieldItem({
   field,
   searchQuery,
 }: {
-  field: any;
+  field: Field;
   searchQuery: string;
 }) {
   return (
@@ -131,7 +130,7 @@ function TableItem({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex w-full items-center gap-2">
-              <Table className="h-4 w-4" />
+              <TableIcon className="h-4 w-4" />
               <span className="truncate">
                 <HighlightedText text={table.name} query={searchQuery} />
               </span>
