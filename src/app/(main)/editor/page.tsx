@@ -53,8 +53,16 @@ export default function Page() {
     <div className="h-full max-h-[100vh]">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={70} minSize={15}>
-          <div className="h-full px-4 pt-8">
-            <SqlEditor />
+          <div className="h-full pt-8">
+            <ResizablePanelGroup direction="vertical">
+              <ResizablePanel defaultSize={70} minSize={30}>
+                <SqlEditor />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={30} minSize={15}>
+                <div className="h-full bg-red-50 p-4">Run table</div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
