@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/Chat";
 import { useChat } from "./_components/chatStore";
+import { QueryResultPane } from "./_components/QueryResultPane";
 
 /*
   If this is not dynamic, hot reload seems to cause the entire page to reload.
@@ -60,7 +61,7 @@ export default function Page() {
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={15}>
-                <div className="h-full bg-red-50 p-4">Run table</div>
+                <QueryResultPane />
               </ResizablePanel>
             </ResizablePanelGroup>
           </div>

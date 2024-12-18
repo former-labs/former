@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useData } from "@/contexts/DataContext";
 import {
   DiffEditor,
   Editor,
@@ -12,6 +11,7 @@ import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
+import { useQueryResult } from "./queryResultStore";
 
 export const SqlEditor = () => {
   const monaco = useMonaco();
@@ -24,7 +24,7 @@ export const SqlEditor = () => {
     setEditorSelection,
   } = useEditor();
 
-  const { executeQuery } = useData();
+  const { executeQuery } = useQueryResult();
 
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
@@ -241,17 +241,6 @@ export const SqlEditor = () => {
     setEditorContentPending(null);
   };
 
-  const handleExecute = async () => {
-    try {
-      // Use the current content from the active editor
-      const content = editorContentPending ?? editorContent;
-      const result = await executeQuery(content);
-      console.log("Query result:", result);
-    } catch (error) {
-      console.error("Failed to execute query:", error);
-    }
-  };
-
   const printSelection = () => {
     if (editorRef.current) {
       const selection = editorRef.current.getSelection();
@@ -276,7 +265,7 @@ export const SqlEditor = () => {
   return (
     <div className="flex h-full w-full flex-col pt-4">
       <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto">
-        <Button onClick={handleExecute}>Execute</Button>
+        <Button onClick={executeQuery}>Execute</Button>
         <Button onClick={setInitialContent}>Set Initial Content</Button>
         <Button onClick={startDiff}>Start diff</Button>
         <Button onClick={endDiff}>End diff</Button>
