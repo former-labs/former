@@ -52,10 +52,16 @@ export const database = {
     return connection.executeQuery(query);
   },
 
-  async getMetadata(connectionId: string) {
+  async getProjectsAndDatasets(connectionId: string) {
     const connection = connections.get(connectionId);
     if (!connection) throw new Error(`Connection not found: ${connectionId}`);
-    return await connection.fetchMetadata();
+    return await connection.fetchProjectsAndDatasets();
+  },
+
+  async getTablesForDataset(connectionId: string, datasetId: string, pageToken?: string) {
+    const connection = connections.get(connectionId);
+    if (!connection) throw new Error(`Connection not found: ${connectionId}`);
+    return await connection.fetchTablesForDataset(datasetId, pageToken);
   },
 
   async disconnectAll() {

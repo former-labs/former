@@ -1,11 +1,7 @@
 "use client";
 
 import { type Driver } from "@/electron/drivers/clients";
-import {
-  databaseMetadataSchema,
-  type DatabaseMetadata,
-  type Integration,
-} from "@/types/connections";
+import { type DatabaseMetadata, type Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface DataContextType {
@@ -16,6 +12,10 @@ interface DataContextType {
   driver: Driver | null;
   initializeDriver: (integration: Integration) => Promise<string | undefined>;
   fetchMetadataIncremental: (connectionId: string) => Promise<void>;
+  fetchTablesForDataset: (
+    connectionId: string,
+    datasetId: string,
+  ) => Promise<void>;
   isLoadingDatasets: boolean;
   isLoadingTables: boolean;
   integrations: Integration[];
@@ -26,6 +26,7 @@ interface DataContextType {
   ) => void;
   removeIntegration: (id: string) => void;
   executeQuery: (query: string) => Promise<unknown[]>;
+  loadedDatasets: Set<string>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -41,6 +42,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isStoreReady, setIsStoreReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [loadedDatasets, setLoadedDatasets] = useState<Set<string>>(new Set());
 
   // Check if store is ready
   useEffect(() => {
@@ -136,25 +138,87 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const fetchMetadataIncremental = async (connectionId: string) => {
-    console.log("fetchMetadataIncremental", connectionId);
     if (!connectionId || isFetchingMetadata) return;
 
     try {
       setIsFetchingMetadata(true);
+      setIsLoadingDatasets(true);
       setDatabaseMetadata(null);
-      console.log("Fetching metadata for", connectionId);
-      // I'm validating here because unsafe casting occurs deep in this funciton
-      // Imo we should push this validation deeper into electron itself
-      const metadata = await window.electron.database.getMetadata(connectionId);
-      const validatedMetadata = databaseMetadataSchema.parse(metadata);
-      setDatabaseMetadata(validatedMetadata);
-      console.log("metadata", metadata);
+
+      // First fetch projects and datasets
+      const metadata =
+        await window.electron.database.getProjectsAndDatasets(connectionId);
+      setDatabaseMetadata(metadata);
+      console.log("METADATA", metadata);
     } catch (error) {
       console.error("Error fetching metadata:", error);
       throw error;
     } finally {
       setIsFetchingMetadata(false);
       setIsLoadingDatasets(false);
+    }
+  };
+
+  const fetchTablesForDataset = async (
+    connectionId: string,
+    datasetId: string,
+  ) => {
+    // Skip if already loaded or currently loading
+    if (
+      !connectionId ||
+      !datasetId ||
+      loadedDatasets.has(datasetId) ||
+      isLoadingTables
+    )
+      return;
+
+    try {
+      setIsLoadingTables(true);
+
+      // Check if we already have tables for this dataset
+      const existingTables = databaseMetadata?.projects
+        .flatMap((p) => p.datasets)
+        .find((d) => d.id === datasetId)?.tables;
+
+      if (existingTables && existingTables.length > 0) {
+        setLoadedDatasets((prev) => new Set([...prev, datasetId]));
+        return;
+      }
+
+      const { tables, nextPageToken } =
+        await window.electron.database.getTablesForDataset(
+          connectionId,
+          datasetId,
+        );
+
+      console.log("TABLES", tables);
+
+      setDatabaseMetadata((prev) => {
+        if (!prev) return prev;
+        return {
+          projects: prev.projects.map((project) => ({
+            ...project,
+            datasets: project.datasets.map((dataset) => {
+              if (dataset.id === datasetId) {
+                return {
+                  ...dataset,
+                  tables: tables,
+                };
+              }
+              return dataset;
+            }),
+          })),
+        };
+      });
+
+      // Mark dataset as loaded only if we've loaded all pages
+      if (!nextPageToken) {
+        setLoadedDatasets((prev) => new Set([...prev, datasetId]));
+      }
+    } catch (error) {
+      console.error("Error fetching tables:", error);
+      throw error;
+    } finally {
       setIsLoadingTables(false);
     }
   };
@@ -251,8 +315,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         driver: null,
         initializeDriver,
         fetchMetadataIncremental,
+        fetchTablesForDataset,
         isLoadingDatasets,
         isLoadingTables,
+        loadedDatasets,
         addIntegration,
         editIntegration,
         removeIntegration,

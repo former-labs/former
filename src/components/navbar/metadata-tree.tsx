@@ -30,16 +30,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 
+// Type augmentations for search functionality
 type TableWithCounts = Table & {
   _originalFieldCount?: number;
 };
 
-type DatasetWithCounts = Dataset & {
+type DatasetWithCounts = Omit<Dataset, "tables"> & {
   _originalTableCount?: number;
   tables: TableWithCounts[];
 };
 
-type ProjectWithCounts = Project & {
+type ProjectWithCounts = Omit<Project, "datasets"> & {
   _originalDatasetCount?: number;
   datasets: DatasetWithCounts[];
 };
@@ -202,13 +203,22 @@ function DatasetItem({
   expandedTables: Set<string>;
   toggleTable: (id: string) => void;
 }) {
+  const { activeIntegration, fetchTablesForDataset } = useData();
+
+  const handleToggle = async () => {
+    onToggle();
+    if (!isExpanded && activeIntegration?.id) {
+      await fetchTablesForDataset(activeIntegration.id, dataset.id);
+    }
+  };
+
   return (
     <div className="space-y-1">
       <Button
         variant="ghost"
         size="sm"
         className="h-8 w-full justify-start gap-2"
-        onClick={onToggle}
+        onClick={handleToggle}
       >
         <Tooltip>
           <TooltipTrigger asChild>
@@ -219,7 +229,9 @@ function DatasetItem({
               </span>
               <span className="ml-auto flex items-center gap-2">
                 <Badge variant="secondary">
-                  {dataset._originalTableCount ?? dataset.tables.length}
+                  {dataset.tableCount ??
+                    dataset._originalTableCount ??
+                    dataset.tables.length}
                 </Badge>
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4" />
@@ -236,7 +248,10 @@ function DatasetItem({
                   <HighlightedText text={dataset.name} query={searchQuery} />
                 </span>
                 <Badge variant="secondary">
-                  {dataset._originalTableCount ?? dataset.tables.length} tables
+                  {dataset.tableCount ??
+                    dataset._originalTableCount ??
+                    dataset.tables.length}{" "}
+                  tables
                 </Badge>
               </div>
               <div>

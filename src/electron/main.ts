@@ -54,10 +54,6 @@ ipcMain.handle('database:execute', async (_, connectionId, query): Promise<unkno
   return await database.execute(connectionId, query);
 });
 
-ipcMain.handle('database:getMetadata', async (_, connectionId) => {
-  return await database.getMetadata(connectionId);
-});
-
 // Add these IPC handlers before app.whenReady()
 ipcMain.handle('store:getIntegrations', async (): Promise<Integration[]> => {
   return storeUtils.getIntegrations();
@@ -73,6 +69,14 @@ ipcMain.handle('store:getActiveIntegrationId', async (): Promise<string | null> 
 
 ipcMain.handle('store:setActiveIntegrationId', async (_, id): Promise<void> => {
   storeUtils.setActiveIntegrationId(id);
+});
+
+ipcMain.handle('database:getProjectsAndDatasets', async (_, connectionId) => {
+  return await database.getProjectsAndDatasets(connectionId);
+});
+
+ipcMain.handle('database:getTablesForDataset', async (_, connectionId, datasetId, pageToken) => {
+  return await database.getTablesForDataset(connectionId, datasetId, pageToken);
 });
 
 // Clean up database connections when app is closing

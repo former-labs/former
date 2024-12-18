@@ -58,6 +58,7 @@ const datasetSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
+  tableCount: z.number(),
   tables: z.array(tableSchema)
 });
 

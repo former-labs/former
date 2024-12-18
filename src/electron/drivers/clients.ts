@@ -1,6 +1,6 @@
 import { BigQuery, type TableField } from "@google-cloud/bigquery";
 import pkg from 'pg';
-import type { BigQueryCredentials, DatabaseCredentials, DatabaseMetadata, PostgresCredentials, Table } from "../../types/connections.js";
+import type { BigQueryCredentials, DatabaseCredentials, PostgresCredentials, Project, Table } from "../../types/connections.js";
 const { Client } = pkg;
 
 
@@ -42,13 +42,15 @@ export abstract class Driver {
   abstract executeQuery(query: string): Promise<any[]>;
   abstract getProjectId(): string;
   abstract getProjectName(): string;
-  abstract fetchMetadata(): Promise<DatabaseMetadata>;
-  abstract fetchDatasets(pageToken?: string): Promise<{
-    datasets: Array<{ id: string; name: string }>;
-    nextPageToken?: string;
+  abstract fetchProjectsAndDatasets(): Promise<{
+    projects: Project[];
   }>;
   abstract fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
     tables: Table[];
+    nextPageToken?: string;
+  }>;
+  abstract fetchDatasets(pageToken?: string): Promise<{
+    datasets: Array<{ id: string; name: string }>;
     nextPageToken?: string;
   }>;
 
@@ -118,7 +120,7 @@ export class BigQueryDriver extends Driver {
         }
         return {
           id: table.id,
-          name: metadata.friendlyName,
+          name: metadata.friendlyName ?? table.id,
           description: metadata.description ?? null,
           fields: metadata.schema.fields.map((field: TableField) => ({
             name: field.name,
@@ -171,45 +173,40 @@ export class BigQueryDriver extends Driver {
     return this.projectId;
   }
 
-  async fetchMetadata(): Promise<DatabaseMetadata> {
-    const metadata: DatabaseMetadata = {
-      projects: [{
-        id: this.getProjectId(),
-        name: this.getProjectName(),
-        description: null,
-        datasets: [],
-      }]
-    };
+  async fetchProjectsAndDatasets(): Promise<{
+    projects: Project[];
+  }> {
+    const projects: Project[] = [];
 
-    let datasetsPageToken: string | undefined;
-    do {
-      const { datasets, nextPageToken } = await this.fetchDatasets(datasetsPageToken);
-      const project = metadata.projects[0];
-      if (project) {
-        // Fetch tables for each dataset
-        for (const dataset of datasets) {
-          const datasetInfo = {
-            id: dataset.id,
-            name: dataset.name,
-            description: null,
-            tables: [] as Table[],
-          };
-          
-          let tablesPageToken: string | undefined;
-          do {
-            const { tables, nextPageToken: tableNextPageToken } = 
-              await this.fetchTablesForDataset(dataset.id, tablesPageToken);
-            datasetInfo.tables.push(...tables);
-            tablesPageToken = tableNextPageToken;
-          } while (tablesPageToken);
-          
-          project.datasets.push(datasetInfo);
-        }
+    const [datasets] = await this.client.getDatasets({
+      maxResults: 10,
+    });
+
+    for (const dataset of datasets) {
+      let projectIndex = projects.findIndex(p => p.id === dataset.projectId);
+      if (projectIndex === -1) {
+        projects.push({
+          id: dataset.projectId,
+          name: dataset.projectId,
+          description: null,
+          datasets: [],
+        });
+        projectIndex = projects.length - 1;
       }
-      datasetsPageToken = nextPageToken;
-    } while (datasetsPageToken);
+      
+      // Get table count for this dataset
+      const [tables] = await this.client.dataset(dataset.id!).getTables();
+      
+      projects[projectIndex].datasets.push({
+        id: dataset.id ?? 'unknown',
+        name: dataset.id ?? 'unknown',
+        description: null,
+        tableCount: tables.length,
+        tables: []
+      });
+    }
 
-    return metadata;
+    return { projects };
   }
 }
 
@@ -235,109 +232,35 @@ export class PostgresDriver extends Driver {
     await this.client.end();
   }
 
-  async fetchMetadata(): Promise<DatabaseMetadata> {
-    const metadata: DatabaseMetadata = { projects: [] };
-
-    try {
-      // Get all schemas (equivalent to datasets in BigQuery)
-      const schemasQuery = `
-        SELECT schema_name 
-        FROM information_schema.schemata 
-        WHERE schema_name NOT IN ('information_schema', 'pg_catalog')
-      `;
-      const schemasResult = await this.client.query(schemasQuery);
-
-      type Project = Required<DatabaseMetadata>['projects'][number];
-      type Dataset = Project['datasets'][number];
-
-      const project: Project = {
-        id: this.credentials.database,
-        name: this.credentials.database,
-        description: null,
-        datasets: [],
-      };
-
-      for (const schema of schemasResult.rows) {
-        const datasetInfo: Dataset = {
-          id: schema.schema_name,
-          name: schema.schema_name,
-          description: null,
-          tables: [],
-        };
-
-        // Get all tables and their columns in the schema
-        const tablesQuery = `
-          SELECT 
-            t.table_name,
-            c.column_name,
-            c.data_type,
-            col_description(format('%I.%I', t.table_schema, t.table_name)::regclass::oid, c.ordinal_position) as description
-          FROM information_schema.tables t
-          JOIN information_schema.columns c 
-            ON t.table_schema = c.table_schema 
-            AND t.table_name = c.table_name
-          WHERE t.table_schema = $1
-          ORDER BY t.table_name, c.ordinal_position
-        `;
-        const tablesResult = await this.client.query(tablesQuery, [schema.schema_name]);
-
-        // Group columns by table
-        const tableMap = new Map();
-        for (const row of tablesResult.rows) {
-          if (!tableMap.has(row.table_name)) {
-            tableMap.set(row.table_name, {
-              id: `${schema.schema_name}.${row.table_name}`,
-              name: row.table_name,
-              description: null,
-              fields: [],
-            });
-          }
-          const table = tableMap.get(row.table_name);
-          table.fields.push({
-            name: row.column_name,
-            type: row.data_type,
-            description: row.description || null,
-          });
-        }
-
-        datasetInfo.tables = Array.from(tableMap.values());
-        project.datasets.push(datasetInfo);
-      }
-
-      metadata.projects = [project];
-    } catch (error) {
-      console.error('Error fetching Postgres metadata:', error);
-      throw error;
-    }
-
-    return metadata;
-  }
-
-  async executeQuery(query: string): Promise<any[]> {
-    try {
-      const result = await this.client.query(query);
-      return result.rows;
-    } catch (error) {
-      console.error('Error executing Postgres query:', error);
-      throw error;
-    }
-  }
-
-  async fetchDatasets(): Promise<{
-    datasets: Array<{ id: string; name: string }>;
-    nextPageToken?: string;
+  async fetchProjectsAndDatasets(): Promise<{
+    projects: Project[];
   }> {
     const result = await this.client.query(
-      `SELECT schema_name as id FROM information_schema.schemata 
-       WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`
+      `SELECT 
+        s.schema_name as id,
+        COUNT(t.table_name) as table_count
+       FROM information_schema.schemata s
+       LEFT JOIN information_schema.tables t 
+         ON t.table_schema = s.schema_name
+       WHERE s.schema_name NOT IN ('information_schema', 'pg_catalog')
+       GROUP BY s.schema_name`
     );
-    return {
-      datasets: result.rows.map((row: { id: any; }) => ({ 
-        id: row.id, 
-        name: row.id 
-      })),
-      nextPageToken: undefined
+
+    // Create a single project (the database) with schemas as datasets
+    const project: Project = {
+      id: this.getProjectId(),
+      name: this.getProjectName(),
+      description: null,
+      datasets: result.rows.map((schema: { id: string; table_count: string }) => ({
+        id: schema.id,
+        name: schema.id,
+        description: null,
+        tableCount: parseInt(schema.table_count, 10),
+        tables: []
+      }))
     };
+
+    return { projects: [project] };
   }
 
   async fetchTablesForDataset(datasetId: string): Promise<{
@@ -387,6 +310,25 @@ export class PostgresDriver extends Driver {
 
   getProjectName(): string {
     return this.credentials.database;
+  }
+
+  async fetchDatasets(): Promise<{
+    datasets: Array<{ id: string; name: string }>;
+    nextPageToken?: string;
+  }> {
+    const result = await this.client.query(
+      `SELECT schema_name as id FROM information_schema.schemata 
+       WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`
+    );
+    return {
+      datasets: result.rows.map((row: { id: string }) => ({ id: row.id, name: row.id })),
+      nextPageToken: undefined
+    };
+  }
+
+  async executeQuery(query: string): Promise<any[]> {
+    const result = await this.client.query(query);
+    return result.rows;
   }
 }
 

@@ -15,8 +15,10 @@ contextBridge.exposeInMainWorld(
         ipcRenderer.invoke('database:disconnect', connectionId),
       execute: (connectionId: string, query: string) => 
         ipcRenderer.invoke('database:execute', connectionId, query),
-      getMetadata: (connectionId: string) => 
-        ipcRenderer.invoke('database:getMetadata', connectionId),
+      getProjectsAndDatasets: (connectionId: string) => 
+        ipcRenderer.invoke('database:getProjectsAndDatasets', connectionId),
+      getTablesForDataset: (connectionId: string, datasetId: string, pageToken?: string) => 
+        ipcRenderer.invoke('database:getTablesForDataset', connectionId, datasetId, pageToken),
     },
     send: (channel: string, data: unknown) => {
       const validChannels = ['toMain'];

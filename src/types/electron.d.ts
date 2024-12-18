@@ -1,11 +1,17 @@
-import type { DatabaseMetadata, Integration } from "./connections";
+import type { Integration, Project, Table } from "./connections";
 
 export interface IElectronAPI {
   database: {
     connect: (integration: Integration) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
     execute: (connectionId: string, query: string) => Promise<unknown[]>;
-    getMetadata: (connectionId: string) => Promise<DatabaseMetadata>;
+    getProjectsAndDatasets: (connectionId: string) => Promise<{
+      projects: Project[];
+    }>;
+    getTablesForDataset: (connectionId: string, datasetId: string, pageToken?: string) => Promise<{
+      tables: Table[];
+      nextPageToken?: string;
+    }>;
   };
   send: (channel: string, data: unknown) => void;
   receive: (channel: string, func: (...args: unknown[]) => void) => void;
