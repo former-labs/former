@@ -27,6 +27,12 @@ interface DataContextType {
   removeIntegration: (id: string) => void;
   executeQuery: (query: string) => Promise<unknown[]>;
   loadedDatasets: Set<string>;
+  setTableIncludedInAIContext: (params: {
+    projectId: string;
+    datasetId: string;
+    tableId: string;
+    value: boolean;
+  }) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -307,6 +313,43 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const setTableIncludedInAIContext = ({
+    projectId,
+    datasetId,
+    tableId,
+    value,
+  }: {
+    projectId: string;
+    datasetId: string;
+    tableId: string;
+    value: boolean;
+  }) => {
+    setDatabaseMetadata((prev) => {
+      if (!prev) return prev;
+      return {
+        projects: prev.projects.map((project) => {
+          if (project.id !== projectId) return project;
+          return {
+            ...project,
+            datasets: project.datasets.map((dataset) => {
+              if (dataset.id !== datasetId) return dataset;
+              return {
+                ...dataset,
+                tables: dataset.tables.map((table) => {
+                  if (table.id !== tableId) return table;
+                  return {
+                    ...table,
+                    includedInAIContext: value,
+                  };
+                }),
+              };
+            }),
+          };
+        }),
+      };
+    });
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -326,6 +369,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         editIntegration,
         removeIntegration,
         executeQuery,
+        setTableIncludedInAIContext,
       }}
     >
       {children}

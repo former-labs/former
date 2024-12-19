@@ -1,12 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  DiffEditor,
-  Editor,
-  type Monaco,
-  useMonaco,
-} from "@monaco-editor/react";
+import { useData } from "@/contexts/DataContext";
+import { env } from "@/env";
+import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
@@ -14,8 +11,6 @@ import { useEditor } from "./editorStore";
 import { useQueryResult } from "./queryResultStore";
 
 export const SqlEditor = () => {
-  const monaco = useMonaco();
-
   const {
     editorContent,
     editorContentPending,
@@ -25,13 +20,20 @@ export const SqlEditor = () => {
   } = useEditor();
 
   const { executeQuery } = useQueryResult();
+  const { databaseMetadata } = useData();
 
+  // We use the same monaco for both editors, seems to work?
+  const [monaco, setMonaco] = useState<Monaco | null>(null);
   const [codeEditor, setCodeEditor] =
     useState<editor.IStandaloneCodeEditor | null>(null);
   const [diffEditor, setDiffEditor] =
     useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
+
+  useEffect(() => {
+    console.log("Database metadata changed:", databaseMetadata);
+  }, [databaseMetadata]);
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
@@ -149,9 +151,10 @@ export const SqlEditor = () => {
     monaco: Monaco,
   ) => {
     setCodeEditor(editor);
+    setMonaco(monaco);
 
     // Add selection change listener
-    editor.onDidChangeCursorSelection((e) => {
+    editor.onDidChangeCursorSelection(() => {
       const selection = editor.getSelection();
       setEditorSelection(selection);
     });
@@ -162,6 +165,7 @@ export const SqlEditor = () => {
     monaco: Monaco,
   ) => {
     setDiffEditor(editor);
+    setMonaco(monaco);
 
     // Override the default Cmd+L binding in the modified editor
     const modifiedEditor = editor.getModifiedEditor();
@@ -176,7 +180,7 @@ export const SqlEditor = () => {
     });
 
     // Add selection change listener for diff editor
-    modifiedEditor.onDidChangeCursorSelection((e) => {
+    modifiedEditor.onDidChangeCursorSelection(() => {
       const selection = modifiedEditor.getSelection();
       setEditorSelection(selection);
     });
@@ -292,34 +296,38 @@ export const SqlEditor = () => {
     <div className="flex h-full w-full flex-col pt-4">
       <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto">
         <Button onClick={executeQuery}>Execute</Button>
-        <Button onClick={setInitialContent}>Set Initial Content</Button>
-        <Button onClick={startDiff}>Start diff</Button>
-        <Button onClick={endDiff}>End diff</Button>
-        <Button onClick={printContent}>Print editor content</Button>
-        <Button onClick={setDecorations}>Set decorations</Button>
-        <Button onClick={printDecorations}>Print decorations</Button>
-        <Button onClick={removeWidgets}>Remove widgets</Button>
-        <Button onClick={() => diffEditor && updateDiffWidgets(diffEditor)}>
-          Update diff widgets
-        </Button>
-        <Button onClick={enableIntellisense}>Intellisense</Button>
-        <Button onClick={printSelection}>Print Selection</Button>
-        {editorContentPending !== null && (
-          <Button
-            onClick={() => {
-              const newRenderSideBySide = !renderSideBySide;
-              setRenderSideBySide(newRenderSideBySide);
+        {env.NEXT_PUBLIC_NODE_ENV === "development" && (
+          <>
+            <Button onClick={setInitialContent}>Set Initial Content</Button>
+            <Button onClick={startDiff}>Start diff</Button>
+            <Button onClick={endDiff}>End diff</Button>
+            <Button onClick={printContent}>Print editor content</Button>
+            <Button onClick={setDecorations}>Set decorations</Button>
+            <Button onClick={printDecorations}>Print decorations</Button>
+            <Button onClick={removeWidgets}>Remove widgets</Button>
+            <Button onClick={() => diffEditor && updateDiffWidgets(diffEditor)}>
+              Update diff widgets
+            </Button>
+            <Button onClick={enableIntellisense}>Intellisense</Button>
+            <Button onClick={printSelection}>Print Selection</Button>
+            {editorContentPending !== null && (
+              <Button
+                onClick={() => {
+                  const newRenderSideBySide = !renderSideBySide;
+                  setRenderSideBySide(newRenderSideBySide);
 
-              // Update line numbers when toggling view
-              if (diffEditor) {
-                diffEditor.getModifiedEditor().updateOptions({
-                  lineNumbers: newRenderSideBySide ? "on" : "off",
-                });
-              }
-            }}
-          >
-            {renderSideBySide ? "Inline View" : "Side by Side View"}
-          </Button>
+                  // Update line numbers when toggling view
+                  if (diffEditor) {
+                    diffEditor.getModifiedEditor().updateOptions({
+                      lineNumbers: newRenderSideBySide ? "on" : "off",
+                    });
+                  }
+                }}
+              >
+                {renderSideBySide ? "Inline View" : "Side by Side View"}
+              </Button>
+            )}
+          </>
         )}
       </div>
       <div className="min-h-0 flex-1">

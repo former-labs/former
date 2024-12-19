@@ -105,6 +105,17 @@ const ActiveChat = () => {
                     components={{
                       pre: CodeBlock,
                       code: CodeInline,
+                      ul: ({ children }) => (
+                        <ul className="list-disc space-y-1 pl-6">{children}</ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="list-decimal space-y-1 pl-6">
+                          {children}
+                        </ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="text-gray-800">{children}</li>
+                      ),
                     }}
                     className="space-y-2"
                   >
@@ -163,7 +174,7 @@ const ChatInputBox = ({
   return (
     <div className="space-y-2 rounded-lg border bg-white p-2">
       {selectionContent && (
-        <div className="rounded border pr-3">
+        <div className="border pr-3">
           <StaticEditor value={selectionContent} />
         </div>
       )}

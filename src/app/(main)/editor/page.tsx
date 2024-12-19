@@ -31,7 +31,6 @@ export default function EditorPage() {
   useEventListener("keydown", (e) => {
     // Check for Cmd+L (Mac) or Ctrl+L (Windows/Linux)
     if ((e.metaKey || e.ctrlKey) && e.key === "l") {
-      console.log("create chat cmd+l");
       e.preventDefault();
       createChat();
     }

@@ -1,3 +1,4 @@
+import { getEditorSelectionContent } from "@/app/(main)/editor/_components/editorStore";
 import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import type { DatabaseMetadata } from "@/types/connections";
@@ -22,13 +23,23 @@ export const editorRouter = createTRPCRouter({
         endLineNumber: z.number(),
         endColumn: z.number(),
       }).nullable(),
-      databaseMetadata: databaseMetadataSchema
+      databaseMetadata: databaseMetadataSchema,
+      knowledge: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string(),
+        query: z.string(),
+        workspaceId: z.string(),
+        createdAt: z.date(),
+        updatedAt: z.date(),
+      }))
     }))
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
       console.log("Editor content received:", input.editorContent);
       console.log("Editor selection received:", input.editorSelection);
       console.log("Database metadata received:", input.databaseMetadata);
+      console.log("Knowledge base items received:", input.knowledge);
 
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",
@@ -41,16 +52,39 @@ Please respond appropriately based on the user's request.
 
 To help you write queries, you must adhere to the below database schema.
 Do not generate SQL code that is not for the provided database schema.
-<DATABASE_SCHEMA>
+
+If the user refers to an object that does not in the provided database schema (called the AI schema context),
+suggest that they should check it is included in the AI schema context using the checkboxes in the schema explorer.
+
+If they persist and ask you to write it regardless, you can generate it, however you should include
+comments in places where you are unsure of the schema.
+
+When generating SQL code, you should copy their code style.
+
 ${formatDatabaseMetadata(input.databaseMetadata)}
-</DATABASE_SCHEMA>
 
-Respond in Markdown format.
+As a reference, the user has provided some example queries that have been used in the past on the same schema.
+You should refer to these when writing your own SQL code.
 
-The user's SQL code is below:
+${formatKnowledge(input.knowledge)}
+
+The user's current SQL code in their editor is below:
 \`\`\`sql
 ${input.editorContent}
 \`\`\`
+
+${input.editorSelection && `
+The user has also highlighted a section of the code in their editor.
+The request they are making is likely related to this highlighted code, so you should take this into account.
+\`\`\`sql
+${getEditorSelectionContent({
+  editorSelection: input.editorSelection,
+  editorContent: input.editorContent
+})}
+\`\`\`
+`}
+
+Respond in Markdown format.
         `
       }
 
@@ -95,6 +129,9 @@ Please output only the final SQL code with the changes applied to the original S
 If the changes only apply to a subsection of the SQL code, please ensure you contain the full code in your response
 and modify only the relevant part of the code.
 
+Feel free to use SQL comments to act as shorthand for sections of the code you are not modifying.
+e.g. -- Existing query that does X goes here
+
 Original SQL code:
 \`\`\`sql
 ${input.editorContent}
@@ -121,5 +158,35 @@ ${input.applyContent}
 const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
   // TODO: Probs just get the CREATE statements for everything? Bc we need foreign keys and stuff like that.
   // SQL just works as a schema definition language.
-  return JSON.stringify(metadata, null, 2);
+  return `\
+<DATABASE_SCHEMA>
+${JSON.stringify(metadata, null, 2)}
+</DATABASE_SCHEMA>\
+`;
+};
+
+const formatKnowledge = (knowledge: Array<{
+  id: string;
+  name: string;
+  description: string;
+  query: string;
+  workspaceId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}>): string => {
+  return `\
+<EXAMPLE_QUERIES>
+${knowledge.map((knowledge, index) => `
+<EXAMPLE_QUERY_${index + 1}>
+Title: ${knowledge.name}
+
+Description: ${knowledge.description}
+
+\`\`\`sql
+${knowledge.query}
+\`\`\`
+</EXAMPLE_QUERY_${index + 1}>
+`).join("\n")}
+</EXAMPLE_QUERIES>\
+`;
 };

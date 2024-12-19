@@ -37,7 +37,6 @@ const useEditorStore = create<EditorStore>((set, get) => ({
     }
   },
   setEditorSelection: (selection) => {
-    console.log("setEditorSelection", selection);
     set({ editorSelection: selection });
   },
 }));
@@ -65,7 +64,12 @@ export const getEditorSelectionContent = ({
   editorSelection,
   editorContent
 }: {
-  editorSelection: Selection | null;
+  editorSelection: {
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+  } | null;
   editorContent: string;
 }) => {
   if (!editorSelection || !editorContent) return null;

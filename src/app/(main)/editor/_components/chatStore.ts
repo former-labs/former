@@ -1,5 +1,6 @@
 import { useData } from "@/contexts/DataContext";
 import { api } from "@/trpc/react";
+import type { DatabaseMetadata } from "@/types/connections";
 import type { Selection } from "monaco-editor";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
@@ -61,6 +62,8 @@ export const useChat = () => {
 
   const submitMessageMutation = api.editor.submitMessage.useMutation();
 
+  const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
+
   const createChat = () => {
     // If there's an active chat with no messages, remove it first
     let updatedChats = [...chatStore.chats];
@@ -95,13 +98,16 @@ export const useChat = () => {
       content: message,
     };
 
-    console.log("metadata", databaseMetadata);
+    console.log("original metadata", databaseMetadata);
+    const filteredDatabaseMetadata = filterDatabaseMetadataContext(databaseMetadata);
+    console.log("filtered metadata", filteredDatabaseMetadata);
 
     const responsePromise = submitMessageMutation.mutateAsync({
       messages: [...activeChat.messages, newMessage],
       editorContent,
       editorSelection: activeChat.pendingEditorSelection,
-      databaseMetadata,
+      databaseMetadata: filteredDatabaseMetadata,
+      knowledge: knowledgeList,
     });
 
     chatStore.addMessage(chatStore.activeChatId, newMessage);
@@ -118,5 +124,23 @@ export const useChat = () => {
     submitMessage,
     shouldFocusActiveChatTextarea: chatStore.shouldFocusActiveChatTextarea,
     setShouldFocusActiveChatTextarea: chatStore.setShouldFocusActiveChatTextarea,
+  };
+};
+
+const filterDatabaseMetadataContext = (metadata: DatabaseMetadata): DatabaseMetadata => {
+  return {
+    projects: metadata.projects
+      .map(project => ({
+        ...project,
+        datasets: project.datasets
+          .map(dataset => ({
+            ...dataset,
+            tables: dataset.tables
+              .filter(table => table.includedInAIContext)
+              .map(({ includedInAIContext: _, ...table }) => table)
+          }))
+          .filter(dataset => dataset.tables.length > 0)
+      }))
+      .filter(project => project.datasets.length > 0)
   };
 };

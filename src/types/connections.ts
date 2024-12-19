@@ -56,7 +56,8 @@ const tableSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  fields: z.array(fieldSchema)
+  fields: z.array(fieldSchema),
+  includedInAIContext: z.boolean().optional()
 });
 
 const datasetSchema = z.object({
