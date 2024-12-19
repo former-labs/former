@@ -262,8 +262,8 @@ const CodeBlock = ({ children }: { children?: ReactNode }) => {
     throw new Error("Code content is not a string.");
   }
 
-  const codeContentString = codeContent;
-  // codeContentString = codeContentString.replace(/\n+$/, "");
+  let codeContentString = codeContent;
+  codeContentString = codeContentString.replace(/\n+$/, "");
 
   return <ApplyCodeBlock codeContent={codeContentString} />;
 };
