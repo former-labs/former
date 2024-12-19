@@ -6,6 +6,7 @@ import {
   Bot,
   Code,
   Command,
+  Database,
   GalleryVerticalEnd,
   Plug,
   Settings2,
@@ -24,7 +25,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { PATH_EDITOR, PATH_INTEGRATIONS } from "@/lib/paths";
+import { PATH_EDITOR, PATH_INTEGRATIONS, PATH_KNOWLEDGE } from "@/lib/paths";
 
 // This is sample data.
 const data = {
@@ -147,6 +148,11 @@ const data = {
       name: "Integrations",
       url: PATH_INTEGRATIONS,
       icon: Plug,
+    },
+    {
+      name: "AI Knowledge",
+      url: PATH_KNOWLEDGE,
+      icon: Database,
     },
   ],
 };
