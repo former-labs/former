@@ -95,6 +95,9 @@ Please output only the final SQL code with the changes applied to the original S
 If the changes only apply to a subsection of the SQL code, please ensure you contain the full code in your response
 and modify only the relevant part of the code.
 
+Feel free to use SQL comments to act as shorthand for sections of the code you are not modifying.
+e.g. -- Existing query that does X goes here
+
 Original SQL code:
 \`\`\`sql
 ${input.editorContent}
