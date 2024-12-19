@@ -79,6 +79,43 @@ ${input.editorContent}
         }
       };
     }),
+
+  applyChange: workspaceProtectedProcedure
+    .input(z.object({
+      editorContent: z.string(),
+      applyContent: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const systemMessage: ChatCompletionMessageParam = {
+        role: "system",
+        content: `
+You are a SQL assistant. You will apply the provided changes to the SQL code.
+Please output only the final SQL code with the changes applied to the original SQL code.
+
+If the changes only apply to a subsection of the SQL code, please ensure you contain the full code in your response
+and modify only the relevant part of the code.
+
+Original SQL code:
+\`\`\`sql
+${input.editorContent}
+\`\`\`
+
+Changes to apply:
+\`\`\`sql
+${input.applyContent}
+\`\`\`
+        `
+      }
+
+      const aiResponse = await getAIChatResponse({
+        messages: [systemMessage],
+        schemaOutput: z.object({
+          sql: z.string().describe("The final SQL code with changes applied. Output as pure SQL without any Markdown \`\`\` formatting.")
+        }),
+      });
+
+      return aiResponse.sql;
+    }),
 });
 
 const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
