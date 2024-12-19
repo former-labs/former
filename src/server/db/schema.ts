@@ -122,6 +122,16 @@ export const messageItemsTable = pgTable("message_item", {
     .references(() => messageTable.id),
 });
 
+export const knowledgeTable = pgTable("knowledge", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  workspaceId: workspaceIdField,
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  query: text("query").notNull(),
+});
+
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type MessageItemSelect = typeof messageItemsTable.$inferSelect;
@@ -132,3 +142,4 @@ export type RoleSelectWithRelations = RoleSelect & {
   user: UserSelect;
   workspace: WorkspaceSelect;
 };
+export type KnowledgeSelect = typeof knowledgeTable.$inferSelect;
