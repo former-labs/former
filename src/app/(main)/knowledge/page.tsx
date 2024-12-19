@@ -78,7 +78,7 @@ export default function Page() {
                   <TableCell className="text-sm text-zinc-500">
                     {item.description}
                   </TableCell>
-                  <TableCell className="max-w-md truncate text-sm text-zinc-500">
+                  <TableCell className="mono max-w-md truncate text-sm text-zinc-500">
                     {item.query}
                   </TableCell>
                   <TableCell className="pr-6 text-right">

@@ -22,13 +22,23 @@ export const editorRouter = createTRPCRouter({
         endLineNumber: z.number(),
         endColumn: z.number(),
       }).nullable(),
-      databaseMetadata: databaseMetadataSchema
+      databaseMetadata: databaseMetadataSchema,
+      knowledge: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string(),
+        query: z.string(),
+        workspaceId: z.string(),
+        createdAt: z.date(),
+        updatedAt: z.date(),
+      }))
     }))
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
       console.log("Editor content received:", input.editorContent);
       console.log("Editor selection received:", input.editorSelection);
       console.log("Database metadata received:", input.databaseMetadata);
+      console.log("Knowledge base items received:", input.knowledge);
 
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",
@@ -48,13 +58,15 @@ suggest that they should check it is included in the AI schema context using the
 If they persist and ask you to write it regardless, you can generate it, however you should include
 comments in places where you are unsure of the schema.
 
+When generating SQL code, you should copy their code style.
+
 <DATABASE_SCHEMA>
 ${formatDatabaseMetadata(input.databaseMetadata)}
 </DATABASE_SCHEMA>
 
 Respond in Markdown format.
 
-The user's SQL code is below:
+The user's current SQL code is below:
 \`\`\`sql
 ${input.editorContent}
 \`\`\`
