@@ -21,14 +21,16 @@ const envSchema = z.object({
   DASHBOARD_URI: z.string(),
 });
 
-const envDevelopment = {
-  NODE_ENV: "development",
-  DASHBOARD_URI: "http://localhost:3000",
-};
-
-// const envProduction = {
-//   NODE_ENV: "production",
-//   DASHBOARD_URI: "https://yerve.vercel.app/",
+// const envDevelopment = {
+//   NODE_ENV: "development",
+//   DASHBOARD_URI: "http://localhost:3000",
 // };
 
-export const env = envSchema.parse(envDevelopment);
+// export const env = envSchema.parse(envDevelopment);
+
+const envProduction = {
+  NODE_ENV: "production",
+  DASHBOARD_URI: "https://yerve.vercel.app/",
+};
+
+export const env = envSchema.parse(envProduction);
