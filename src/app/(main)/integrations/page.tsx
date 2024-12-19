@@ -84,7 +84,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1300px] px-6 py-10">
+    <div className="mx-auto max-w-screen-xl px-6 py-24">
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="mb-1 text-[22px] font-semibold leading-7">
