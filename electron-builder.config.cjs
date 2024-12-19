@@ -3,8 +3,8 @@
  * @see https://www.electron.build/configuration/configuration
  */
 module.exports = {
-  appId: "com.yerve.yerve",
-  productName: "Yerve",
+  appId: "com.yerve.app",
+  productName: "Verve",
   directories: {
     output: "release/${version}",
     buildResources: "resources",
@@ -14,18 +14,35 @@ module.exports = {
   },
   files: ["dist/electron/**/*", "node_modules/**/*"],
   win: {
+    icon: "resources/icon.ico",
     target: [
       {
         target: "nsis",
         arch: ["x64"],
       },
+      {
+        target: "zip",
+        arch: ["x64"],
+      },
     ],
   },
   mac: {
+    icon: "resources/icon.icns",
     target: ["dmg"],
+    category: "public.app-category.developer-tools",
+    hardenedRuntime: true,
+    gatekeeperAssess: false,
+    entitlements: "build/entitlements.mac.plist",
+    entitlementsInherit: "build/entitlements.mac.plist",
+    identity: "Verve Health, Inc. (RD8795GGW8)",
+    timestamp: "http://timestamp.apple.com/ts01",
+    notarize: {
+      teamId: "RD8795GGW8",
+    },
   },
   linux: {
-    target: ["AppImage"],
+    icon: "resources/icon.png",
+    target: ["AppImage", "deb", "rpm"],
     category: "Development",
   },
 };

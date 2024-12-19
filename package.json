@@ -1,6 +1,11 @@
 {
-  "name": "werve",
-  "version": "0.1.0",
+  "name": "verve",
+  "version": "0.1.1",
+  "description": "The AI SQL Editor. Built to make data analysts extraordinarily productive, Verve is the best way to write SQL with AI.",
+  "author": {
+    "name": "Verve",
+    "email": "elliott.lovell88@gmail.com"
+  },
   "private": true,
   "type": "module",
   "scripts": {
@@ -113,5 +118,22 @@
   "ct3aMetadata": {
     "initVersion": "7.38.1"
   },
-  "packageManager": "npm@10.9.0"
+  "packageManager": "npm@10.9.0",
+  "build": {
+    "appId": "com.yerve.app",
+    "productName": "Verve",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "identity": "Developer ID Application: Verve Health, Inc. (RD8795GGW8)",
+      "notarize": {
+        "teamId": "RD8795GGW8",
+        "keychain": "Verve-Notarization"
+      },
+      "bundleId": "com.yerve.app",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    }
+  }
 }
