@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useData } from "@/contexts/DataContext";
 import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
@@ -18,6 +19,7 @@ export const SqlEditor = () => {
   } = useEditor();
 
   const { executeQuery } = useQueryResult();
+  const { databaseMetadata } = useData();
 
   // We use the same monaco for both editors, seems to work?
   const [monaco, setMonaco] = useState<Monaco | null>(null);
@@ -27,6 +29,10 @@ export const SqlEditor = () => {
     useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
+
+  useEffect(() => {
+    console.log("Database metadata changed:", databaseMetadata);
+  }, [databaseMetadata]);
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema

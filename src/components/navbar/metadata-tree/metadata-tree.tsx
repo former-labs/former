@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -31,19 +32,21 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 // Type augmentations for search functionality
-type TableWithCounts = Table & {
+type TableExtended = Table & {
   _originalFieldCount?: number;
 };
 
-type DatasetWithCounts = Omit<Dataset, "tables"> & {
+type DatasetExtended = Omit<Dataset, "tables"> & {
   _originalTableCount?: number;
-  tables: TableWithCounts[];
+  tables: TableExtended[];
 };
 
-type ProjectWithCounts = Omit<Project, "datasets"> & {
+type ProjectExtended = Omit<Project, "datasets"> & {
   _originalDatasetCount?: number;
-  datasets: DatasetWithCounts[];
+  datasets: DatasetExtended[];
 };
+
+type FieldExtended = Field;
 
 // Main component
 export function MetadataTree() {
@@ -112,7 +115,7 @@ export function MetadataTree() {
   };
 
   const { filteredProjects, expandedFromSearch } = useMemo<{
-    filteredProjects: ProjectWithCounts[];
+    filteredProjects: ProjectExtended[];
     expandedFromSearch: {
       projects: Set<string>;
       datasets: Set<string>;
@@ -122,7 +125,7 @@ export function MetadataTree() {
     if (!databaseMetadata?.projects || !searchQuery)
       return {
         filteredProjects: (databaseMetadata?.projects ??
-          []) as ProjectWithCounts[],
+          []) as ProjectExtended[],
         expandedFromSearch: {
           projects: new Set<string>(),
           datasets: new Set<string>(),
@@ -138,7 +141,7 @@ export function MetadataTree() {
     };
 
     const filtered = databaseMetadata.projects
-      .map((project): ProjectWithCounts | null => {
+      .map((project): ProjectExtended | null => {
         if (!project) return null;
 
         const projectMatches =
@@ -197,9 +200,9 @@ export function MetadataTree() {
                 ...dataset,
                 tables: (datasetMatches
                   ? dataset.tables
-                  : filteredTables) as TableWithCounts[],
+                  : filteredTables) as TableExtended[],
                 _originalTableCount: originalTableCount,
-              } as DatasetWithCounts;
+              } as DatasetExtended;
             }
             return null;
           })
@@ -218,8 +221,7 @@ export function MetadataTree() {
         return null;
       })
       .filter(
-        (project): project is NonNullable<ProjectWithCounts> =>
-          project !== null,
+        (project): project is NonNullable<ProjectExtended> => project !== null,
       );
 
     return { filteredProjects: filtered, expandedFromSearch: toExpand };
@@ -352,7 +354,7 @@ function ProjectItem({
   expandedTables,
   toggleTable,
 }: {
-  project: ProjectWithCounts;
+  project: ProjectExtended;
   searchQuery: string;
   isExpanded: boolean;
   onToggle: () => void;
@@ -418,6 +420,7 @@ function ProjectItem({
           {project.datasets.map((dataset) => (
             <DatasetItem
               key={dataset.id}
+              projectId={project.id}
               dataset={dataset}
               searchQuery={searchQuery}
               isExpanded={expandedDatasets.has(dataset.id)}
@@ -434,6 +437,7 @@ function ProjectItem({
 
 // Component for dataset items
 function DatasetItem({
+  projectId,
   dataset,
   searchQuery,
   isExpanded,
@@ -441,7 +445,8 @@ function DatasetItem({
   expandedTables,
   toggleTable,
 }: {
-  dataset: DatasetWithCounts;
+  projectId: string;
+  dataset: DatasetExtended;
   searchQuery: string;
   isExpanded: boolean;
   onToggle: () => void;
@@ -529,6 +534,8 @@ function DatasetItem({
             dataset.tables.map((table) => (
               <TableItem
                 key={table.id}
+                projectId={projectId}
+                datasetId={dataset.id}
                 table={table}
                 searchQuery={searchQuery}
                 isExpanded={expandedTables.has(table.id)}
@@ -544,73 +551,97 @@ function DatasetItem({
 
 // Component for table items
 function TableItem({
+  projectId,
+  datasetId,
   table,
   searchQuery,
   isExpanded,
   onToggle,
 }: {
-  table: TableWithCounts;
+  projectId: string;
+  datasetId: string;
+  table: TableExtended;
   searchQuery: string;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const { setTableIncludedInAIContext } = useData();
+
   return (
     <div className="space-y-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-full justify-start gap-2"
-        onClick={onToggle}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex w-full items-center gap-2">
-              <TableIcon className="h-4 w-4" />
-              <span className="truncate">
-                <HighlightedText text={table.name} query={searchQuery} />
-              </span>
-              <span className="ml-auto flex items-center gap-2">
-                <Badge variant="secondary">
-                  {table._originalFieldCount ?? table.fields?.length ?? 0}
-                </Badge>
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">
+      <div className="flex w-full items-center">
+        <Checkbox
+          checked={table.includedInAIContext}
+          onClick={(e) => {
+            e.stopPropagation();
+            setTableIncludedInAIContext({
+              projectId,
+              datasetId,
+              tableId: table.id,
+              value: !table.includedInAIContext,
+            });
+          }}
+          className="ml-2"
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-full justify-start gap-2"
+          onClick={onToggle}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex w-full items-center gap-2">
+                <TableIcon className="h-4 w-4" />
+                <span className="truncate">
                   <HighlightedText text={table.name} query={searchQuery} />
                 </span>
-                <Badge variant="secondary">
-                  {table._originalFieldCount ?? table.fields?.length ?? 0}{" "}
-                  fields
-                </Badge>
+                <span className="ml-auto flex items-center gap-2">
+                  <Badge variant="secondary">
+                    {table._originalFieldCount ?? table.fields?.length ?? 0}
+                  </Badge>
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </span>
               </div>
-              <div>
-                {table?.description ? (
-                  <HighlightedText
-                    text={table.description}
-                    query={searchQuery}
-                  />
-                ) : (
-                  "No description available"
-                )}
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">
+                    <HighlightedText text={table.name} query={searchQuery} />
+                  </span>
+                  <Badge variant="secondary">
+                    {table._originalFieldCount ?? table.fields?.length ?? 0}{" "}
+                    fields
+                  </Badge>
+                </div>
+                <div>
+                  {table?.description ? (
+                    <HighlightedText
+                      text={table.description}
+                      query={searchQuery}
+                    />
+                  ) : (
+                    "No description available"
+                  )}
+                </div>
               </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </Button>
+            </TooltipContent>
+          </Tooltip>
+        </Button>
+      </div>
       {isExpanded && (
         <div className="space-y-1 pl-4">
           {table.fields?.map((field) => (
             <FieldItem
               key={field.name}
+              projectId={projectId}
+              datasetId={datasetId}
+              tableId={table.id}
               field={field}
               searchQuery={searchQuery}
             />
@@ -623,11 +654,17 @@ function TableItem({
 
 // Component for field items
 function FieldItem({
+  projectId,
+  datasetId,
+  tableId,
   field,
   searchQuery,
   level = 0,
 }: {
-  field: Field;
+  projectId: string;
+  datasetId: string;
+  tableId: string;
+  field: FieldExtended;
   searchQuery: string;
   level?: number;
 }) {
@@ -695,6 +732,9 @@ function FieldItem({
           {field.fields?.map((nestedField) => (
             <FieldItem
               key={nestedField.name}
+              projectId={projectId}
+              datasetId={datasetId}
+              tableId={tableId}
               field={nestedField}
               searchQuery={searchQuery}
               level={level + 1}
