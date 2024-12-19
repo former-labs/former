@@ -37,6 +37,7 @@ export const StaticEditor = ({ value }: { value: string }) => {
           ignoreHorizontalScrollbarInContentHeight: true,
           alwaysConsumeMouseWheel: false,
         },
+        renderLineHighlight: "none",
       }}
     />
   );

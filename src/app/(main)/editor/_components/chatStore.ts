@@ -62,6 +62,8 @@ export const useChat = () => {
 
   const submitMessageMutation = api.editor.submitMessage.useMutation();
 
+  const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
+
   const createChat = () => {
     // If there's an active chat with no messages, remove it first
     let updatedChats = [...chatStore.chats];
@@ -105,6 +107,7 @@ export const useChat = () => {
       editorContent,
       editorSelection: activeChat.pendingEditorSelection,
       databaseMetadata: filteredDatabaseMetadata,
+      knowledge: knowledgeList,
     });
 
     chatStore.addMessage(chatStore.activeChatId, newMessage);
