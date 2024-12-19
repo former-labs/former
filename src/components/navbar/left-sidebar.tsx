@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
+import { MetadataTree } from "@/components/navbar/metadata-tree/metadata-tree";
 import { NavPages } from "@/components/navbar/nav-pages";
 import { NavUser } from "@/components/navbar/nav-user";
 import { WorkspaceSwitcher } from "@/components/navbar/workspace-switcher";
@@ -24,7 +25,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { PATH_EDITOR, PATH_INTEGRATIONS } from "@/lib/paths";
-import { MetadataTree } from "@/components/navbar/metadata-tree";
 
 // This is sample data.
 const data = {
