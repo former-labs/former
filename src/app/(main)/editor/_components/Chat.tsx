@@ -8,21 +8,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { Editor } from "@monaco-editor/react";
-import {
-  Check,
-  Copy,
-  CornerDownLeft,
-  History,
-  ListCheck,
-  Loader2,
-  Plus,
-} from "lucide-react";
-import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
+import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import React, { type ReactNode, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { ApplyCodeBlock } from "./ApplyCodeBlock";
 import { useChat } from "./chatStore";
 import { getEditorSelectionContent, useEditor } from "./editorStore";
+import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {
   const { createChat, chats, setActiveChatId, activeChat } = useChat();
@@ -250,16 +242,7 @@ const CodeInline = ({ children }: { children?: ReactNode }) => {
   );
 };
 
-const CodeBlock = ({
-  children,
-  className,
-}: {
-  children?: ReactNode;
-  className?: string;
-}) => {
-  const { setEditorContentPending } = useEditor();
-  const [isCopied, setIsCopied] = useState(false);
-
+const CodeBlock = ({ children }: { children?: ReactNode }) => {
   if (!React.isValidElement(children)) {
     throw new Error("Node passed to code block that isn't a valid element.");
   }
@@ -274,87 +257,13 @@ const CodeBlock = ({
     wrapper here first and rewrap with our code block wrapper.
     This should just be a string now.
   */
-  let codeContent = children.props.children;
+  const codeContent = children.props.children;
   if (typeof codeContent !== "string") {
     throw new Error("Code content is not a string.");
   }
 
-  codeContent = codeContent.replace(/\n+$/, "");
+  let codeContentString = codeContent;
+  codeContentString = codeContentString.replace(/\n+$/, "");
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(codeContent);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 3000);
-  };
-
-  return (
-    <div>
-      <div className="relative overflow-x-auto rounded-sm border">
-        <StaticEditor value={codeContent} />
-      </div>
-      <div className="mt-1 flex justify-end gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCopy}
-          className="gap-1"
-        >
-          Copy
-          {isCopied ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setEditorContentPending(codeContent)}
-          className="gap-1"
-        >
-          Apply
-          <ListCheck className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-const StaticEditor = ({ value }: { value: string }) => {
-  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
-    const updateEditorHeight = () => {
-      const contentHeight = editor.getContentHeight();
-      const editorElement = editor.getDomNode();
-
-      if (editorElement) {
-        editorElement.style.height = `${contentHeight}px`;
-        editor.layout();
-      }
-    };
-
-    editor.onDidContentSizeChange(updateEditorHeight);
-    updateEditorHeight();
-  };
-
-  return (
-    <Editor
-      onMount={handleEditorDidMount}
-      language="sql"
-      value={value}
-      options={{
-        minimap: { enabled: false },
-        fontSize: 14,
-        readOnly: true,
-        automaticLayout: true,
-        scrollBeyondLastLine: false,
-        lineNumbers: "off",
-        lineDecorationsWidth: 0,
-        padding: { top: 8, bottom: 8 },
-        scrollbar: {
-          ignoreHorizontalScrollbarInContentHeight: true,
-          alwaysConsumeMouseWheel: false,
-        },
-      }}
-    />
-  );
+  return <ApplyCodeBlock codeContent={codeContentString} />;
 };
