@@ -64,7 +64,12 @@ export const getEditorSelectionContent = ({
   editorSelection,
   editorContent
 }: {
-  editorSelection: Selection | null;
+  editorSelection: {
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+  } | null;
   editorContent: string;
 }) => {
   if (!editorSelection || !editorContent) return null;

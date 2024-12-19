@@ -1,3 +1,4 @@
+import { getEditorSelectionContent } from "@/app/(main)/editor/_components/editorStore";
 import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import type { DatabaseMetadata } from "@/types/connections";
@@ -69,10 +70,21 @@ You should refer to these when writing your own SQL code.
 
 ${formatKnowledge(input.knowledge)}
 
-The user's current SQL code is below:
+The user's current SQL code in their editor is below:
 \`\`\`sql
 ${input.editorContent}
 \`\`\`
+
+${input.editorSelection && `
+The user has also highlighted a section of the code in their editor.
+The request they are making is likely related to this highlighted code, so you should take this into account.
+\`\`\`sql
+${getEditorSelectionContent({
+  editorSelection: input.editorSelection,
+  editorContent: input.editorContent
+})}
+\`\`\`
+`}
 
 Respond in Markdown format.
         `
