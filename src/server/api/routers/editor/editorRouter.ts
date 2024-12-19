@@ -64,12 +64,17 @@ When generating SQL code, you should copy their code style.
 ${formatDatabaseMetadata(input.databaseMetadata)}
 </DATABASE_SCHEMA>
 
-Respond in Markdown format.
+As a reference, the user has provided some example queries that have been used in the past on the same schema.
+You should refer to these when writing your own SQL code.
+
+${formatKnowledge(input.knowledge)}
 
 The user's current SQL code is below:
 \`\`\`sql
 ${input.editorContent}
 \`\`\`
+
+Respond in Markdown format.
         `
       }
 
@@ -144,4 +149,30 @@ const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
   // TODO: Probs just get the CREATE statements for everything? Bc we need foreign keys and stuff like that.
   // SQL just works as a schema definition language.
   return JSON.stringify(metadata, null, 2);
+};
+
+const formatKnowledge = (knowledge: Array<{
+  id: string;
+  name: string;
+  description: string;
+  query: string;
+  workspaceId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}>): string => {
+  return `\
+<EXAMPLE_QUERIES>
+${knowledge.map((knowledge, index) => `
+<EXAMPLE_QUERY_${index + 1}>
+Title: ${knowledge.name}
+
+Description: ${knowledge.description}
+
+\`\`\`sql
+${knowledge.query}
+\`\`\`
+</EXAMPLE_QUERY_${index + 1}>
+`).join("\n")}
+</EXAMPLE_QUERIES>\
+`;
 };
