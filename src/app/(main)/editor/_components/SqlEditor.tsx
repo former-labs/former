@@ -1,12 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  DiffEditor,
-  Editor,
-  type Monaco,
-  useMonaco,
-} from "@monaco-editor/react";
+import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
 import { DiffWidget } from "./DiffWidget";
@@ -14,8 +9,6 @@ import { useEditor } from "./editorStore";
 import { useQueryResult } from "./queryResultStore";
 
 export const SqlEditor = () => {
-  const monaco = useMonaco();
-
   const {
     editorContent,
     editorContentPending,
@@ -26,6 +19,8 @@ export const SqlEditor = () => {
 
   const { executeQuery } = useQueryResult();
 
+  // We use the same monaco for both editors, seems to work?
+  const [monaco, setMonaco] = useState<Monaco | null>(null);
   const [codeEditor, setCodeEditor] =
     useState<editor.IStandaloneCodeEditor | null>(null);
   const [diffEditor, setDiffEditor] =
@@ -149,6 +144,7 @@ export const SqlEditor = () => {
     monaco: Monaco,
   ) => {
     setCodeEditor(editor);
+    setMonaco(monaco);
 
     // Add selection change listener
     editor.onDidChangeCursorSelection((e) => {
@@ -162,6 +158,7 @@ export const SqlEditor = () => {
     monaco: Monaco,
   ) => {
     setDiffEditor(editor);
+    setMonaco(monaco);
 
     // Override the default Cmd+L binding in the modified editor
     const modifiedEditor = editor.getModifiedEditor();
