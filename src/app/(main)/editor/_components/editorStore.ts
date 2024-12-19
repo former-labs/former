@@ -37,7 +37,6 @@ const useEditorStore = create<EditorStore>((set, get) => ({
     }
   },
   setEditorSelection: (selection) => {
-    console.log("setEditorSelection", selection);
     set({ editorSelection: selection });
   },
 }));

@@ -105,6 +105,17 @@ const ActiveChat = () => {
                     components={{
                       pre: CodeBlock,
                       code: CodeInline,
+                      ul: ({ children }) => (
+                        <ul className="list-disc space-y-1 pl-6">{children}</ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="list-decimal space-y-1 pl-6">
+                          {children}
+                        </ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="text-gray-800">{children}</li>
+                      ),
                     }}
                     className="space-y-2"
                   >

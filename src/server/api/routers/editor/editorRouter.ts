@@ -41,6 +41,13 @@ Please respond appropriately based on the user's request.
 
 To help you write queries, you must adhere to the below database schema.
 Do not generate SQL code that is not for the provided database schema.
+
+If the user refers to an object that does not in the provided database schema (called the AI schema context),
+suggest that they should check it is included in the AI schema context using the checkboxes in the schema explorer.
+
+If they persist and ask you to write it regardless, you can generate it, however you should include
+comments in places where you are unsure of the schema.
+
 <DATABASE_SCHEMA>
 ${formatDatabaseMetadata(input.databaseMetadata)}
 </DATABASE_SCHEMA>
@@ -94,6 +101,9 @@ Please output only the final SQL code with the changes applied to the original S
 
 If the changes only apply to a subsection of the SQL code, please ensure you contain the full code in your response
 and modify only the relevant part of the code.
+
+Feel free to use SQL comments to act as shorthand for sections of the code you are not modifying.
+e.g. -- Existing query that does X goes here
 
 Original SQL code:
 \`\`\`sql
