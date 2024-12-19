@@ -29,8 +29,6 @@ export const useQueryResult = () => {
   const { executeQuery } = useData();
   const { editorSelectionContent, editorContent } = useEditor();
 
-  console.log("queryresulteditocontent", editorContent);
-
   const handleExecuteQuery = async () => {
     store.setResultLoading(true);
     store.setResultError(null);
@@ -38,7 +36,7 @@ export const useQueryResult = () => {
     try {
       // Use pending content if available, otherwise use current content
       const query = editorSelectionContent ?? editorContent;
-      console.log([editorSelectionContent, editorContent]);
+      // console.log([editorSelectionContent, editorContent]);
       console.log("Executing query", [query]);
       const rawResult = await executeQuery(query);
       const validatedResult = resultRowSchema.parse(rawResult);
