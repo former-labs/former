@@ -61,9 +61,7 @@ comments in places where you are unsure of the schema.
 
 When generating SQL code, you should copy their code style.
 
-<DATABASE_SCHEMA>
 ${formatDatabaseMetadata(input.databaseMetadata)}
-</DATABASE_SCHEMA>
 
 As a reference, the user has provided some example queries that have been used in the past on the same schema.
 You should refer to these when writing your own SQL code.
@@ -160,7 +158,11 @@ ${input.applyContent}
 const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
   // TODO: Probs just get the CREATE statements for everything? Bc we need foreign keys and stuff like that.
   // SQL just works as a schema definition language.
-  return JSON.stringify(metadata, null, 2);
+  return `\
+<DATABASE_SCHEMA>
+${JSON.stringify(metadata, null, 2)}
+</DATABASE_SCHEMA>\
+`;
 };
 
 const formatKnowledge = (knowledge: Array<{
