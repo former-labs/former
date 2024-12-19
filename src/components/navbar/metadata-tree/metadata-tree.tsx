@@ -247,45 +247,50 @@ export function MetadataTree() {
 
   return (
     <TooltipProvider>
-      <SidebarGroup>
+      <SidebarGroup className="flex h-full flex-col">
         <SidebarGroupLabel>Active Integration</SidebarGroupLabel>
 
-        {integrations.length > 0 ? (
-          <div className="mb-2 px-2">
-            <Select
-              value={activeIntegration?.id ?? ""}
-              onValueChange={(value) => {
-                const integration = integrations.find((i) => i.id === value);
-                if (integration) setActiveIntegration(integration);
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select integration">
-                  {activeIntegration?.name ?? "Select integration"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {integrations.map((integration) => (
-                  <SelectItem key={integration.id} value={integration.id ?? ""}>
-                    {integration.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        ) : (
-          <div className="mb-2 px-2">
-            <Button
-              variant="outline"
-              className="w-full justify-start text-muted-foreground"
-              size="sm"
-              onClick={() => router.push("/integrations")}
-            >
-              <span className="truncate">Configure integrations</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <div className="mb-2 px-2">
+          {integrations.length > 0 ? (
+            <div>
+              <Select
+                value={activeIntegration?.id ?? ""}
+                onValueChange={(value) => {
+                  const integration = integrations.find((i) => i.id === value);
+                  if (integration) setActiveIntegration(integration);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select integration">
+                    {activeIntegration?.name ?? "Select integration"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {integrations.map((integration) => (
+                    <SelectItem
+                      key={integration.id}
+                      value={integration.id ?? ""}
+                    >
+                      {integration.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-muted-foreground"
+                size="sm"
+                onClick={() => router.push("/integrations")}
+              >
+                <span className="truncate">Configure integrations</span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
 
         {activeIntegration && (
           <>
@@ -301,7 +306,7 @@ export function MetadataTree() {
               </div>
             </div>
 
-            <div className="max-h-[calc(100vh-200px)] space-y-1 overflow-y-auto">
+            <div className="flex-1 space-y-1 overflow-y-auto">
               {isFetchingMetadata ? (
                 <div className="flex h-32 items-center justify-center">
                   <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />

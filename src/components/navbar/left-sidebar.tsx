@@ -159,9 +159,11 @@ export function LeftSidebar({
       <SidebarHeader>
         <WorkspaceSwitcher />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="flex flex-col">
         <NavPages pages={data.sections} />
-        <MetadataTree />
+        <div className="flex-1 overflow-y-auto">
+          <MetadataTree />
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
