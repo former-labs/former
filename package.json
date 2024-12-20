@@ -1,9 +1,9 @@
 {
-  "name": "verve",
+  "name": "yerve",
   "version": "0.1.1",
-  "description": "The AI SQL Editor. Built to make data analysts extraordinarily productive, Verve is the best way to write SQL with AI.",
+  "description": "The AI SQL Editor. Built to make data analysts extraordinarily productive, Yerve is the best way to write SQL with AI.",
   "author": {
-    "name": "Verve",
+    "name": "Yerve",
     "email": "elliott.lovell88@gmail.com"
   },
   "private": true,
