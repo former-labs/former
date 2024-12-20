@@ -4,8 +4,10 @@ import { BigQueryConnectModal } from "@/app/(main)/integrations/_components/big-
 import { ExistingIntegrations } from "@/app/(main)/integrations/_components/existing-integrations";
 import { IntegrationCard } from "@/app/(main)/integrations/_components/integration-card";
 import { PostgresConnectModal } from "@/app/(main)/integrations/_components/postgres-connect-modal";
+import { SnowflakeConnectModal } from "@/app/(main)/integrations/_components/snowflake-connect-modal";
 import BigQueryLogo from "@/components/assets/bigquery.svg";
 import PostgresLogo from "@/components/assets/postgres.svg";
+import SnowflakeLogo from "@/components/assets/snowflake.svg";
 import { useData } from "@/contexts/DataContext";
 import { type Integration } from "@/types/connections";
 import { useState } from "react";
@@ -23,11 +25,19 @@ const integrationTypes = [
     description: "Connect to your Postgres database to analyze your data.",
     type: "postgres" as const,
   },
+  {
+    name: "Snowflake",
+    icon: SnowflakeLogo,
+    description:
+      "Connect to your Snowflake data warehouse to analyze your data.",
+    type: "snowflake" as const,
+  },
 ];
 
 export default function IntegrationsPage() {
   const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
   const [openPostgresModal, setOpenPostgresModal] = useState(false);
+  const [openSnowflakeModal, setOpenSnowflakeModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<
     Integration | undefined
   >(undefined);
@@ -52,14 +62,16 @@ export default function IntegrationsPage() {
     type,
     integration,
   }: {
-    type: "bigquery" | "postgres";
+    type: "bigquery" | "postgres" | "snowflake";
     integration?: Integration;
   }) => {
     setSelectedIntegration(integration);
     if (type === "bigquery") {
       setOpenBigQueryModal(true);
-    } else {
+    } else if (type === "postgres") {
       setOpenPostgresModal(true);
+    } else {
+      setOpenSnowflakeModal(true);
     }
   };
 
@@ -67,6 +79,7 @@ export default function IntegrationsPage() {
     setSelectedIntegration(undefined);
     setOpenBigQueryModal(false);
     setOpenPostgresModal(false);
+    setOpenSnowflakeModal(false);
   };
 
   const handleModalSubmit = ({
@@ -127,6 +140,14 @@ export default function IntegrationsPage() {
       />
       <PostgresConnectModal
         open={openPostgresModal}
+        onOpenChange={(open) => {
+          if (!open) handleCloseModal();
+        }}
+        integration={selectedIntegration}
+        onSubmit={(integration) => handleModalSubmit(integration)}
+      />
+      <SnowflakeConnectModal
+        open={openSnowflakeModal}
         onOpenChange={(open) => {
           if (!open) handleCloseModal();
         }}

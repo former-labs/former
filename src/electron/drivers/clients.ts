@@ -1,6 +1,7 @@
 import { BigQuery, type TableField } from "@google-cloud/bigquery";
 import pkg from 'pg';
-import type { BigQueryCredentials, DatabaseCredentials, Field, PostgresCredentials, Project, Table } from "../../types/connections.js";
+import snowflake from 'snowflake-sdk';
+import type { BigQueryCredentials, DatabaseCredentials, DatabaseType, Field, PostgresCredentials, Project, SnowflakeCredentials, Table } from "../../types/connections.js";
 const { Client } = pkg;
 
 
@@ -30,10 +31,10 @@ export const keysToSnakeCase = (
 };
 
 // Abstract base class for database connections
-export abstract class Driver {
-  protected credentials: any;
+export abstract class Driver<T extends DatabaseCredentials = DatabaseCredentials> {
+  protected credentials: T;
 
-  constructor(credentials: any) {
+  constructor(credentials: T) {
     this.credentials = credentials;
   }
 
@@ -53,10 +54,9 @@ export abstract class Driver {
     datasets: Array<{ id: string; name: string }>;
     nextPageToken?: string;
   }>;
-
 }
 
-export class BigQueryDriver extends Driver {
+export class BigQueryDriver extends Driver<BigQueryCredentials> {
   private client: BigQuery;
   private projectId: string;
 
@@ -227,7 +227,7 @@ export class BigQueryDriver extends Driver {
   }
 }
 
-export class PostgresDriver extends Driver {
+export class PostgresDriver extends Driver<PostgresCredentials> {
   private client: any;
 
   constructor(credentials: PostgresCredentials) {
@@ -349,6 +349,222 @@ export class PostgresDriver extends Driver {
   }
 }
 
+export class SnowflakeDriver extends Driver<SnowflakeCredentials> {
+  private client: snowflake.Connection | null = null;
+  private connection: snowflake.Connection | null = null;
+
+  constructor(credentials: SnowflakeCredentials) {
+    super(credentials);
+    try {
+      this.client = snowflake.createConnection({
+        account: credentials.account,
+        username: credentials.username,
+        password: credentials.password,
+        warehouse: credentials.warehouse,
+        database: credentials.database,
+        schema: credentials.schema,
+      });
+    } catch (error) {
+      console.error('Failed to create Snowflake connection:', error);
+      throw error;
+    }
+  }
+
+  async connect(): Promise<void> {
+    if (!this.client) {
+      throw new Error('Snowflake client not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.client!.connect((err: Error | undefined, conn: snowflake.Connection) => {
+        if (err) {
+          console.error('Failed to connect to Snowflake:', err);
+          reject(err);
+        } else {
+          this.connection = conn;
+          resolve();
+        }
+      });
+    });
+  }
+
+  async disconnect(): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      this.client!.destroy((err: Error | undefined) => {
+        if (err) {
+          console.error('Failed to disconnect from Snowflake:', err);
+          reject(err);
+        } else {
+          this.client = null;
+          this.connection = null;
+          resolve();
+        }
+      });
+    });
+  }
+
+  async executeQuery<T = any>(query: string): Promise<T[]> {
+    if (!this.connection) {
+      throw new Error('No active Snowflake connection');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.connection!.execute({
+        sqlText: query,
+        complete: (err: Error | undefined, stmt: snowflake.RowStatement, rows: T[] | undefined) => {
+          if (err) {
+            console.error('Failed to execute Snowflake query:', err);
+            reject(err);
+          } else {
+            resolve(rows || []);
+          }
+        }
+      });
+    });
+  }
+
+  private async listDatabases(): Promise<string[]> {
+    interface DatabaseRow {
+      "name": string;
+    }
+    const rows = await this.executeQuery<DatabaseRow>("SHOW DATABASES");
+    return rows.map(row => row.name);
+  }
+
+  private async listSchemas(database: string): Promise<string[]> {
+    interface SchemaRow {
+      "name": string;
+    }
+    const rows = await this.executeQuery<SchemaRow>(`SHOW SCHEMAS IN DATABASE "${database}"`);
+    return rows.map(row => row.name);
+  }
+
+  private async listTables(database: string, schema: string): Promise<string[]> {
+    interface TableRow {
+      "name": string;
+    }
+    const rows = await this.executeQuery<TableRow>(`SHOW TABLES IN SCHEMA "${database}"."${schema}"`);
+    return rows.map(row => row.name);
+  }
+
+  private async getTableColumns(database: string, schema: string, table: string): Promise<Array<{ name: string; type: string; }>> {
+    interface ColumnRow {
+      "name": string;
+      "type": string;
+    }
+    const rows = await this.executeQuery<ColumnRow>(`DESCRIBE TABLE "${database}"."${schema}"."${table}"`);
+    return rows.map(row => ({
+      name: row.name,
+      type: row.type
+    }));
+  }
+
+  async fetchProjectsAndDatasets(): Promise<{
+    projects: Project[];
+  }> {
+    try {
+      if (!this.connection) {
+        throw new Error('No active Snowflake connection');
+      }
+
+      const databases = await this.listDatabases();
+      const projects: Project[] = [];
+
+      for (const db of databases) {
+        const schemas = await this.listSchemas(db);
+        projects.push({
+          id: db,
+          name: db,
+          description: null,
+          datasets: schemas.map((schema) => ({
+            id: schema,
+            name: schema,
+            description: null,
+            tableCount: 0,
+            tables: []
+          }))
+        });
+      }
+
+      return { projects };
+    } catch (error) {
+      console.error('Failed to fetch Snowflake projects and datasets:', error);
+      throw error;
+    }
+  }
+
+  async fetchTablesForDataset(datasetId: string): Promise<{
+    tables: Table[];
+    nextPageToken?: string;
+  }> {
+    try {
+      if (!this.connection) {
+        throw new Error('No active Snowflake connection');
+      }
+
+      const tables = await this.listTables(this.credentials.database, datasetId);
+      const tablesWithMetadata = await Promise.all(
+        tables.map(async (tableName) => {
+          const columns = await this.getTableColumns(this.credentials.database, datasetId, tableName);
+          return {
+            id: tableName,
+            name: tableName,
+            description: null,
+            fields: columns.map((col) => ({
+              name: col.name,
+              type: col.type,
+              description: null,
+            })),
+          };
+        })
+      );
+
+      return {
+        tables: tablesWithMetadata,
+        nextPageToken: undefined
+      };
+    } catch (error) {
+      console.error('Failed to fetch Snowflake tables:', error);
+      throw error;
+    }
+  }
+
+  async fetchDatasets(): Promise<{
+    datasets: Array<{ id: string; name: string }>;
+    nextPageToken?: string;
+  }> {
+    try {
+      if (!this.connection) {
+        throw new Error('No active Snowflake connection');
+      }
+
+      const schemas = await this.listSchemas(this.credentials.database);
+      return {
+        datasets: schemas.map((schema) => ({
+          id: schema,
+          name: schema,
+        })),
+        nextPageToken: undefined
+      };
+    } catch (error) {
+      console.error('Failed to fetch Snowflake datasets:', error);
+      throw error;
+    }
+  }
+
+  getProjectId(): string {
+    return this.credentials.database;
+  }
+
+  getProjectName(): string {
+    return this.credentials.database;
+  }
+}
+
 export const createDriver = ({
   credentials, 
   projectId, 
@@ -356,14 +572,43 @@ export const createDriver = ({
 }: {
   credentials: DatabaseCredentials, 
   projectId: string | null,
-  type: string
-}): Driver => {
+  type: DatabaseType
+}): Driver<DatabaseCredentials> => {
   switch (type) {
-    case "bigquery":
-      return new BigQueryDriver(credentials as BigQueryCredentials, projectId!);
-    case "postgres":
-      return new PostgresDriver(credentials as PostgresCredentials);
+    case "bigquery": {
+      if (!isBigQueryCredentials(credentials)) {
+        throw new Error('Invalid BigQuery credentials');
+      }
+      if (!projectId) {
+        throw new Error('Project ID is required for BigQuery');
+      }
+      return new BigQueryDriver(credentials, projectId);
+    }
+    case "postgres": {
+      if (!isPostgresCredentials(credentials)) {
+        throw new Error('Invalid Postgres credentials');
+      }
+      return new PostgresDriver(credentials);
+    }
+    case "snowflake": {
+      if (!isSnowflakeCredentials(credentials)) {
+        throw new Error('Invalid Snowflake credentials');
+      }
+      return new SnowflakeDriver(credentials);
+    }
     default:
       throw new Error(`Unsupported database type: ${type}`);
   }
 };
+
+function isBigQueryCredentials(creds: DatabaseCredentials): creds is BigQueryCredentials {
+  return 'project_id' in creds && 'private_key' in creds;
+}
+
+function isPostgresCredentials(creds: DatabaseCredentials): creds is PostgresCredentials {
+  return 'host' in creds && 'port' in creds && 'database' in creds;
+}
+
+function isSnowflakeCredentials(creds: DatabaseCredentials): creds is SnowflakeCredentials {
+  return 'account' in creds && 'warehouse' in creds && 'schema' in creds;
+}

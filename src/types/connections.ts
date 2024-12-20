@@ -1,44 +1,87 @@
 import { z } from "zod";
 
-export interface BigQueryCredentials {
-  type: string;
-  project_id: string;
-  private_key_id: string;
-  private_key: string;
-  client_email: string;
-  client_id: string;
-  auth_uri: string;
-  token_uri: string;
-  auth_provider_x509_cert_url: string;
-  client_x509_cert_url: string;
-}
+export const bigQueryCredentialsSchema = z.object({
+  type: z.string(),
+  project_id: z.string(),
+  private_key_id: z.string(),
+  private_key: z.string(),
+  client_email: z.string(),
+  client_id: z.string(),
+  auth_uri: z.string(),
+  token_uri: z.string(),
+  auth_provider_x509_cert_url: z.string(),
+  client_x509_cert_url: z.string(),
+});
 
-export interface PostgresCredentials {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-}
+export const postgresCredentialsSchema = z.object({
+  host: z.string(),
+  port: z.number(),
+  database: z.string(),
+  user: z.string(),
+  password: z.string(),
+});
 
-export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
+export const snowflakeCredentialsSchema = z.object({
+  account: z.string(),
+  username: z.string(),
+  password: z.string(),
+  warehouse: z.string(),
+  database: z.string(),
+  schema: z.string(),
+  role: z.string(),
+});
 
-export type DatabaseType = 'bigquery' | 'postgres';
+export type BigQueryCredentials = z.infer<typeof bigQueryCredentialsSchema>;
+export type PostgresCredentials = z.infer<typeof postgresCredentialsSchema>;
+export type SnowflakeCredentials = z.infer<typeof snowflakeCredentialsSchema>;
 
-export type Integration = {
-  id: string;
-  type: DatabaseType;
-  name: string;
-  credentials: DatabaseCredentials;
-  config: IntegrationConfig | null;
-  createdAt: string;
-};
+export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials | SnowflakeCredentials;
 
-export type IntegrationConfig = BigQueryConfig;
+export type DatabaseType = 'bigquery' | 'postgres' | 'snowflake';
 
-export type BigQueryConfig = {
-  projectId: string;
-};
+export const bigQueryConfigSchema = z.object({
+  projectId: z.string(),
+});
+
+export type BigQueryConfig = z.infer<typeof bigQueryConfigSchema>;
+
+export const bigQueryIntegrationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.literal('bigquery'),
+  credentials: bigQueryCredentialsSchema,
+  config: bigQueryConfigSchema,
+  createdAt: z.string(),
+});
+
+export const postgresIntegrationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.literal('postgres'),
+  credentials: postgresCredentialsSchema,
+  config: z.undefined().optional(),
+  createdAt: z.string(),
+});
+
+export const snowflakeIntegrationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.literal('snowflake'),
+  credentials: snowflakeCredentialsSchema,
+  config: z.undefined().optional(),
+  createdAt: z.string(),
+});
+
+export const integrationSchema = z.discriminatedUnion('type', [
+  bigQueryIntegrationSchema,
+  postgresIntegrationSchema,
+  snowflakeIntegrationSchema,
+]);
+
+export type BigQueryIntegration = z.infer<typeof bigQueryIntegrationSchema>;
+export type PostgresIntegration = z.infer<typeof postgresIntegrationSchema>;
+export type SnowflakeIntegration = z.infer<typeof snowflakeIntegrationSchema>;
+export type Integration = z.infer<typeof integrationSchema>;
 
 export const fieldSchema: z.ZodType<{
   name: string;
