@@ -26,11 +26,11 @@ const envDevelopment = {
   DASHBOARD_URI: "http://localhost:3000",
 };
 
-// export const env = envSchema.parse(envDevelopment);
+export const env = envSchema.parse(envDevelopment);
 
 // const envProduction = {
 //   NODE_ENV: "production",
 //   DASHBOARD_URI: "https://yerve.vercel.app",
 // };
 
-export const env = envSchema.parse(envDevelopment);
+// export const env = envSchema.parse(envProduction);
