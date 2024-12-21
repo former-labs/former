@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
+import electronSquirrelStartup from 'electron-squirrel-startup';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import type { Integration } from '../types/connections.js';
@@ -6,9 +7,12 @@ import { database } from './database.js';
 import { env } from './env.electron.js';
 import storeUtils from './store.js';
 
-// Get the current file's directory path in ES module context
 const __filename = fileURLToPath(import.meta.url);
 const currentDir = dirname(__filename);
+
+if (electronSquirrelStartup) {
+  app.quit();
+}
 
 // Set up remote debugging before app is ready
 const isDev = env.NODE_ENV === 'development';

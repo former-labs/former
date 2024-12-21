@@ -6,13 +6,6 @@ const connections = new Map<string, Driver>();
 export const database = {
   async connect(integration: Integration) {
     try {
-      console.log('Integration received:', {
-        type: integration.type,
-        typeOf: typeof integration.type,
-        name: integration.name,
-        config: integration.config
-      });
-
       let driver: Driver;
       const connectionId = integration.id ?? crypto.randomUUID();
 
@@ -27,7 +20,6 @@ export const database = {
           throw new Error(`Invalid database type: ${integration.type} \n\n Integration: \n${JSON.stringify(integration)}`);
       }
 
-      console.log('driver', driver);
       await driver.connect();
       connections.set(connectionId, driver);
 
