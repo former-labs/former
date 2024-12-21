@@ -35,7 +35,7 @@ export const InlinePromptWidget = ({
   const { editorContent } = useEditor();
 
   useEffect(() => {
-    console.log("focusing", id);
+    // Focus when first mounted
     requestAnimationFrame(() => {
       textareaRef.current?.focus();
     });

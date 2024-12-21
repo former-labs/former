@@ -6,20 +6,13 @@ import { env } from "@/env";
 import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useQueryResult } from "./queryResultStore";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
-
-type ViewZone = {
-  id: string;
-  lineNumber: number;
-  domNode: HTMLDivElement;
-  heightInPx?: number;
-};
+import { useViewZones, ViewZone, ViewZonePortal } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -46,6 +39,9 @@ export const SqlEditor = () => {
   useEffect(() => {
     console.log("Database metadata changed:", databaseMetadata);
   }, [databaseMetadata]);
+
+  useViewZones({ viewZones, codeEditor, monaco });
+  useAutocomplete(monaco);
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
@@ -108,8 +104,6 @@ export const SqlEditor = () => {
       });
     }
   };
-
-  useAutocomplete(monaco);
 
   // Add Cmd+K binding for view zone
   useEditorKeybind({
@@ -312,11 +306,6 @@ export const SqlEditor = () => {
     }
   };
 
-  // Use the new hook
-  useViewZones({ viewZones, codeEditor, monaco });
-
-  console.log(viewZones);
-
   return (
     <div className="flex h-full w-full flex-col pt-4">
       <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto px-2">
@@ -429,7 +418,6 @@ export const SqlEditor = () => {
         };
 
         const handleHeightChange = (height: number) => {
-          console.log("height change", height);
           setViewZones((prev) =>
             prev.map((vz) =>
               vz.id === zone.id ? { ...vz, heightInPx: height } : vz,
@@ -437,100 +425,16 @@ export const SqlEditor = () => {
           );
         };
 
-        return createPortal(
-          <InlinePromptWidget
-            id={zone.id}
-            onRemove={removeZone}
-            onHeightChange={handleHeightChange}
-          />,
-          zone.domNode,
-          zone.id, // Added key to portal
+        return (
+          <ViewZonePortal key={zone.id} zone={zone}>
+            <InlinePromptWidget
+              id={zone.id}
+              onRemove={removeZone}
+              onHeightChange={handleHeightChange}
+            />
+          </ViewZonePortal>
         );
       })}
     </div>
   );
-};
-
-const useViewZones = ({
-  viewZones,
-  codeEditor,
-  monaco,
-}: {
-  viewZones: ViewZone[];
-  codeEditor: editor.IStandaloneCodeEditor | null;
-  monaco: Monaco | null;
-}) => {
-  const [zoneIdMapping, setZoneIdMapping] = useState<
-    {
-      uuid: string;
-      zoneId: string;
-    }[]
-  >([]);
-
-  useEffect(() => {
-    if (!codeEditor || !monaco) return;
-
-    // Store the active element before changing zones
-    const activeElement = document.activeElement;
-
-    // Remove existing view zones
-    codeEditor.changeViewZones((changeAccessor) => {
-      zoneIdMapping.forEach(({ zoneId }) => {
-        changeAccessor.removeZone(zoneId);
-      });
-    });
-
-    const newZoneIdMapping: {
-      uuid: string;
-      zoneId: string;
-    }[] = [];
-
-    // Create new view zones
-    codeEditor.changeViewZones((changeAccessor) => {
-      viewZones.forEach((zone) => {
-        let heightInLines = 1;
-        if (zone.heightInPx) {
-          const lineHeight = codeEditor.getOption(
-            monaco.editor.EditorOption.lineHeight,
-          );
-          heightInLines = Math.max(
-            heightInLines,
-            Math.ceil(zone.heightInPx / lineHeight),
-          );
-        }
-
-        const zoneId = changeAccessor.addZone({
-          afterLineNumber: zone.lineNumber,
-          heightInLines,
-          domNode: zone.domNode,
-        });
-
-        newZoneIdMapping.push({
-          uuid: zone.id,
-          zoneId,
-        });
-      });
-
-      // Restore focus after zones are updated
-      // This feels dodgy
-      if (activeElement instanceof HTMLElement) {
-        requestAnimationFrame(() => {
-          activeElement.focus();
-        });
-      }
-    });
-
-    setZoneIdMapping(newZoneIdMapping);
-
-    // Cleanup
-    return () => {
-      if (codeEditor) {
-        codeEditor.changeViewZones((changeAccessor) => {
-          zoneIdMapping.forEach(({ zoneId }) => {
-            changeAccessor.removeZone(zoneId);
-          });
-        });
-      }
-    };
-  }, [codeEditor, viewZones, monaco]);
 };
