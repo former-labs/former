@@ -11,9 +11,9 @@ import {
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import React, { type ReactNode, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { getEditorSelectionContent, useEditor } from "../editor/editorStore";
 import { ApplyCodeBlock } from "./ApplyCodeBlock";
 import { useChat } from "./chatStore";
-import { getEditorSelectionContent, useEditor } from "./editor/editorStore";
 import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {

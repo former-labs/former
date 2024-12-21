@@ -4,7 +4,7 @@ import { useData } from "@/contexts/DataContext";
 import { api } from "@/trpc/react";
 import { type Monaco } from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
-import { filterDatabaseMetadataContext } from "../chatStore";
+import { filterDatabaseMetadataContext } from "../chat/chatStore";
 import { getEditorSelectionContent, useEditor } from "./editorStore";
 
 export const useAutocomplete = (monaco: Monaco | null) => {

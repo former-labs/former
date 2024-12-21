@@ -9,8 +9,8 @@ import {
 import { useData } from "@/contexts/DataContext";
 import dynamic from "next/dynamic";
 import { useEventListener } from "usehooks-ts";
-import { ChatSidebar } from "./_components/Chat";
-import { useChat } from "./_components/chatStore";
+import { ChatSidebar } from "./_components/chat/Chat";
+import { useChat } from "./_components/chat/chatStore";
 import { QueryResultPane } from "./_components/QueryResultPane";
 
 /*
