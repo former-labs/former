@@ -145,6 +145,7 @@ ${input.applyContent}
       }
 
       const aiResponse = await getAIChatResponse({
+        model: "gpt-4o-mini",
         messages: [systemMessage],
         schemaOutput: z.object({
           sql: z.string().describe("The final SQL code with changes applied. Output as pure SQL without any Markdown \`\`\` formatting.")
