@@ -1,13 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Textarea } from "@/components/ui/textarea";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import React, { type ReactNode, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -148,8 +148,13 @@ const ChatInputBox = ({
   onSubmit: (message: string) => Promise<void>;
 }) => {
   const [value, setValue] = useState("");
-  const { activeChat } = useChat();
+  const {
+    activeChat,
+    shouldFocusActiveChatTextarea,
+    setShouldFocusActiveChatTextarea,
+  } = useChat();
   const { editorContent } = useEditor();
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const selectionContent = activeChat?.pendingEditorSelection
     ? getEditorSelectionContent({
@@ -171,6 +176,13 @@ const ChatInputBox = ({
     }
   };
 
+  useEffect(() => {
+    if (shouldFocusActiveChatTextarea && textAreaRef.current) {
+      textAreaRef.current.focus();
+      setShouldFocusActiveChatTextarea(false);
+    }
+  }, [shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea]);
+
   return (
     <div className="space-y-2 rounded-lg border bg-white p-2">
       {selectionContent && (
@@ -179,10 +191,13 @@ const ChatInputBox = ({
         </div>
       )}
       <TextareaAutoResize
+        ref={textAreaRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Ask anything..."
+        className="border p-2 shadow-none focus-visible:ring-0"
+        rows={2}
       />
       <div className="flex justify-end">
         <Button
@@ -196,52 +211,6 @@ const ChatInputBox = ({
         </Button>
       </div>
     </div>
-  );
-};
-
-const TextareaAutoResize = ({
-  value,
-  onChange,
-  onKeyDown,
-  placeholder,
-}: {
-  value: string;
-  onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  placeholder?: string;
-}) => {
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const { shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea } =
-    useChat();
-
-  useEffect(() => {
-    if (textAreaRef.current) {
-      textAreaRef.current.style.height = "auto";
-      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
-    }
-  }, [value]);
-
-  useEffect(() => {
-    /*
-      Possibly dodgy.
-      We listen for this value to become true. When it does we consume it and focus the textarea.
-    */
-    if (shouldFocusActiveChatTextarea && textAreaRef.current) {
-      textAreaRef.current.focus();
-      setShouldFocusActiveChatTextarea(false);
-    }
-  }, [shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea]);
-
-  return (
-    <Textarea
-      ref={textAreaRef}
-      value={value}
-      onChange={onChange}
-      onKeyDown={onKeyDown}
-      placeholder={placeholder}
-      className="h-full resize-none overflow-hidden border p-2 shadow-none focus-visible:ring-0"
-      rows={1}
-    />
   );
 };
 

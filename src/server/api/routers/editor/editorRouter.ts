@@ -145,6 +145,7 @@ ${input.applyContent}
       }
 
       const aiResponse = await getAIChatResponse({
+        model: "gpt-4o-mini",
         messages: [systemMessage],
         schemaOutput: z.object({
           sql: z.string().describe("The final SQL code with changes applied. Output as pure SQL without any Markdown \`\`\` formatting.")
@@ -152,6 +153,62 @@ ${input.applyContent}
       });
 
       return aiResponse.sql;
+    }),
+
+  getAutocomplete: workspaceProtectedProcedure
+    .input(z.object({
+      editorContent: z.string(),
+      editorContentBeforeCursor: z.string(),
+      databaseMetadata: databaseMetadataSchema,
+    }))
+    .mutation(async ({ input }) => {
+      const systemMessage: ChatCompletionMessageParam = {
+        role: "system",
+        content: `
+You are autocompleting SQL code.
+
+To help you write queries, you must adhere to the below database schema.
+Do not generate SQL code that is not for the provided database schema.
+
+${formatDatabaseMetadata(input.databaseMetadata)}
+
+The current editor content is:
+\`\`\`sql
+${input.editorContent}
+\`\`\`
+
+The editor content before the cursor is:
+\`\`\`sql
+${input.editorContentBeforeCursor}
+\`\`\`
+
+You need to generate an autocomplete by predicting what characters are likely to proceed the cursor.
+Output only the predicted characters, with no additional formatting or explanation.
+
+Do not autocomplete code that exists after the cursor in the current editor content.
+Your job it to think of new SQL code that will likely follow the cursor and will fit before code that exists after the cursor.
+        `
+      }
+
+      const aiResponse = await getAIChatResponse({
+        model: "gpt-4o-mini",
+        messages: [systemMessage],
+        schemaOutput: z.object({
+          completion: z.string().describe(`\
+The predicted characters that should follow the cursor.
+In most cases, this is a fraction of a single line.
+If you are highly certain you can output more than 1 line.
+
+If the user is likely in the middle of a typing code, you should return a completion.
+However, if the user is at the end of a valid statement and doesn't need completion, you should return an empty string.
+
+Do not autocomplete new comments unless the user is in the middle of typing a comment.
+\
+`)
+        }),
+      });
+
+      return aiResponse.completion;
     }),
 });
 

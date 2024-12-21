@@ -6,9 +6,13 @@ import { env } from "@/env";
 import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
+import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useQueryResult } from "./queryResultStore";
+import { useAutocomplete } from "./useAutocomplete";
+import { useEditorKeybind } from "./useEditorKeybind";
 
 export const SqlEditor = () => {
   const {
@@ -30,6 +34,7 @@ export const SqlEditor = () => {
     useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
+  const [viewZoneIds, setViewZoneIds] = useState<string[]>([]);
 
   useEffect(() => {
     console.log("Database metadata changed:", databaseMetadata);
@@ -92,9 +97,12 @@ export const SqlEditor = () => {
             suggestions: [...suggestions, ...keywordSuggestions],
           };
         },
+        triggerCharacters: [" ", "."],
       });
     }
   };
+
+  useAutocomplete(monaco);
 
   // Add Cmd+K binding for view zone
   useEditorKeybind({
@@ -105,13 +113,33 @@ export const SqlEditor = () => {
       if (!position) return;
 
       codeEditor.changeViewZones(function (changeAccessor) {
+        // I think I am abusing the view zones API here by using a z-index of 10
+        // Pretty sure they expect you to use a view zone to make a gap and then
+        // add a widget to that gap.
         const domNode = document.createElement("div");
-        domNode.style.background = "lightgreen";
-        changeAccessor.addZone({
+        domNode.style.position = "absolute";
+        domNode.style.zIndex = "10";
+        const root = createRoot(domNode);
+
+        const zoneId = changeAccessor.addZone({
           afterLineNumber: position.lineNumber - 1,
-          heightInLines: 3,
+          heightInLines: 5,
           domNode: domNode,
         });
+
+        const removeZone = () => {
+          console.log("Removing zone", zoneId);
+          codeEditor.changeViewZones((accessor) => {
+            accessor.removeZone(zoneId);
+            setViewZoneIds((prev) => prev.filter((id) => id !== zoneId));
+          });
+        };
+
+        root.render(
+          <InlinePromptWidget zoneId={zoneId} onRemove={removeZone} />,
+        );
+
+        setViewZoneIds((prev) => [...prev, zoneId]);
       });
     },
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK : null,
@@ -400,53 +428,4 @@ export const SqlEditor = () => {
       </div>
     </div>
   );
-};
-
-const useEditorKeybind = ({
-  id,
-  callback,
-  keybinding,
-  codeEditor,
-  diffEditor,
-}: {
-  id: string;
-  callback: () => Promise<void>;
-  keybinding: number | null;
-  codeEditor: editor.IStandaloneCodeEditor | null;
-  diffEditor: editor.IStandaloneDiffEditor | null;
-}) => {
-  useEffect(() => {
-    if (!keybinding || !codeEditor) return;
-
-    const disposable = codeEditor.addAction({
-      id,
-      label: id,
-      keybindings: [keybinding],
-      run: () => {
-        void callback();
-      },
-    });
-
-    return () => {
-      disposable.dispose();
-    };
-  }, [callback, codeEditor, keybinding, id]);
-
-  useEffect(() => {
-    if (!keybinding || !diffEditor) return;
-
-    const modifiedEditor = diffEditor.getModifiedEditor();
-    const disposable = modifiedEditor.addAction({
-      id,
-      label: id,
-      keybindings: [keybinding],
-      run: () => {
-        void callback();
-      },
-    });
-
-    return () => {
-      disposable.dispose();
-    };
-  }, [callback, diffEditor, keybinding, id]);
 };

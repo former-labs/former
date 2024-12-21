@@ -127,7 +127,7 @@ export const useChat = () => {
   };
 };
 
-const filterDatabaseMetadataContext = (metadata: DatabaseMetadata): DatabaseMetadata => {
+export const filterDatabaseMetadataContext = (metadata: DatabaseMetadata): DatabaseMetadata => {
   return {
     projects: metadata.projects
       .map(project => ({
