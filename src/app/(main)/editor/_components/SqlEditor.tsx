@@ -322,7 +322,7 @@ export const SqlEditor = () => {
 
   return (
     <div className="flex h-full w-full flex-col pt-4">
-      <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto">
+      <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto px-2">
         <Button onClick={executeQuery}>Execute</Button>
         {env.NEXT_PUBLIC_NODE_ENV === "development" && (
           <>
