@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 import { Check, Copy, ListCheck, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useEditor } from "./editorStore";
+import { useEditor } from "./editor/editorStore";
 import { StaticEditor } from "./StaticEditor";
 
 export const ApplyCodeBlock = ({ codeContent }: { codeContent: string }) => {

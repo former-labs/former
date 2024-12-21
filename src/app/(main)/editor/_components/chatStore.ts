@@ -4,7 +4,7 @@ import type { DatabaseMetadata } from "@/types/connections";
 import type { Selection } from "monaco-editor";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
-import { useEditor } from "./editorStore";
+import { useEditor } from "./editor/editorStore";
 
 interface ChatMessage {
   type: "assistant" | "user";

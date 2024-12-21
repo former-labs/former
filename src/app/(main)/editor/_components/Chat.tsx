@@ -13,7 +13,7 @@ import React, { type ReactNode, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { ApplyCodeBlock } from "./ApplyCodeBlock";
 import { useChat } from "./chatStore";
-import { getEditorSelectionContent, useEditor } from "./editorStore";
+import { getEditorSelectionContent, useEditor } from "./editor/editorStore";
 import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {

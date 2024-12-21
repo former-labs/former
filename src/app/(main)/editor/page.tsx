@@ -17,7 +17,7 @@ import { QueryResultPane } from "./_components/QueryResultPane";
   If this is not dynamic, hot reload seems to cause the entire page to reload.
 */
 const SqlEditor = dynamic(
-  () => import("./_components/SqlEditor").then((mod) => mod.SqlEditor),
+  () => import("./_components/editor/SqlEditor").then((mod) => mod.SqlEditor),
   {
     ssr: false,
     loading: () => <div>Loading editor...</div>,

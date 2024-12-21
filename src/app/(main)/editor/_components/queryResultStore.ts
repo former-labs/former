@@ -1,7 +1,7 @@
 import { useData } from "@/contexts/DataContext";
 import { z } from "zod";
 import { create } from "zustand";
-import { useEditor } from "./editorStore";
+import { useEditor } from "./editor/editorStore";
 
 const resultRowSchema = z.array(z.record(z.union([z.string(), z.number(), z.boolean(), z.date()])));
 export type ResultRow = z.infer<typeof resultRowSchema>[number];
