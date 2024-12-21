@@ -162,6 +162,11 @@ ${input.applyContent}
       databaseMetadata: databaseMetadataSchema,
     }))
     .mutation(async ({ input }) => {
+      /*
+        TODO: Add more assistance values to help the AI do less processing.
+      */
+      const editorContentAfterCursor = input.editorContent.slice(input.editorContentBeforeCursor.length);
+
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",
         content: `
@@ -182,11 +187,23 @@ The editor content before the cursor is:
 ${input.editorContentBeforeCursor}
 \`\`\`
 
+The editor content after the cursor is:
+\`\`\`sql
+${editorContentAfterCursor}
+\`\`\`
+
 You need to generate an autocomplete by predicting what characters are likely to proceed the cursor.
 Output only the predicted characters, with no additional formatting or explanation.
 
 Do not autocomplete code that exists after the cursor in the current editor content.
 Your job it to think of new SQL code that will likely follow the cursor and will fit before code that exists after the cursor.
+
+Make sure you handle newlines and whitespace carefully.
+Look for trailing newlines and whitespace in the content before the cursor.
+
+Cursor is at the start of a newline: ${input.editorContentBeforeCursor.endsWith("\n") || input.editorContentBeforeCursor === ""}
+Cursor is at the start of a word: ${/\s$/.test(input.editorContentBeforeCursor) || input.editorContentBeforeCursor === ""}
+Cursor is at the end of a line: ${editorContentAfterCursor.startsWith("\n") || editorContentAfterCursor === ""}
         `
       }
 
@@ -202,7 +219,9 @@ If you are highly certain you can output more than 1 line.
 If the user is likely in the middle of a typing code, you should return a completion.
 However, if the user is at the end of a valid statement and doesn't need completion, you should return an empty string.
 
-Do not autocomplete new comments unless the user is in the middle of typing a comment.
+Do not autocomplete new comments unless the user is already typing a comment.
+
+Do not autocomplete purely whitespace.
 \
 `)
         }),
