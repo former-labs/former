@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
+import { useData } from "@/contexts/DataContext";
+import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useEventListener, useResizeObserver } from "usehooks-ts";
@@ -32,7 +34,12 @@ export const InlinePromptWidget = ({
     }
   }, [height]);
 
-  const { editorContent } = useEditor();
+  const { editorContent, editorSelection, setEditorContentPending } =
+    useEditor();
+  const { databaseMetadata } = useData();
+  const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
+
+  const inlineEditMutation = api.editor.inlineEdit.useMutation();
 
   useEffect(() => {
     // Focus when first mounted
@@ -52,9 +59,28 @@ export const InlinePromptWidget = ({
 
   useEventListener("keydown", handleKeyDown);
 
-  const handleSubmit = () => {
-    console.log(editorContent);
-    console.log(text);
+  const handleSubmit = async () => {
+    if (!text.trim() || !databaseMetadata) return;
+
+    const response = await inlineEditMutation.mutateAsync({
+      userMessage: text,
+      editorContent,
+      editorSelection: null,
+      databaseMetadata,
+      knowledge: knowledgeList,
+    });
+
+    setEditorContentPending(response);
+    onRemove();
+  };
+
+  const handleTextareaKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void handleSubmit();
+    }
   };
 
   return (
@@ -75,12 +101,18 @@ export const InlinePromptWidget = ({
         ref={textareaRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleTextareaKeyDown}
         className="bg-white p-1 text-sm"
         placeholder="Enter your prompt..."
-        rows={3}
+        rows={2}
       />
 
-      <Button onClick={handleSubmit} size="sm" className="h-6 self-end">
+      <Button
+        onClick={handleSubmit}
+        size="sm"
+        className="h-6 self-end"
+        loading={inlineEditMutation.isPending}
+      >
         Submit
       </Button>
     </div>
