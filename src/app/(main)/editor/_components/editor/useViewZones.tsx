@@ -19,7 +19,11 @@ export const ViewZonePortal = ({
   zone: ViewZone;
   children: ReactNode;
 }) => {
-  return createPortal(children, zone.domNode, zone.id);
+  return createPortal(
+    <div className="flex h-full flex-col justify-end pb-[1px]">{children}</div>,
+    zone.domNode,
+    zone.id,
+  );
 };
 
 export const useViewZones = ({
