@@ -8,11 +8,11 @@ import { useEventListener, useResizeObserver } from "usehooks-ts";
 import { useEditor } from "./editorStore";
 
 export const InlinePromptWidget = ({
-  zoneId,
+  id,
   onRemove,
   onHeightChange,
 }: {
-  zoneId: string;
+  id: string;
   onRemove: () => void;
   onHeightChange: (height: number) => void;
 }) => {
@@ -35,6 +35,7 @@ export const InlinePromptWidget = ({
   const { editorContent } = useEditor();
 
   useEffect(() => {
+    console.log("focusing", id);
     requestAnimationFrame(() => {
       textareaRef.current?.focus();
     });

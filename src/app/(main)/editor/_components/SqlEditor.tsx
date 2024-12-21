@@ -439,12 +439,12 @@ export const SqlEditor = () => {
 
         return createPortal(
           <InlinePromptWidget
-            key={zone.id}
-            zoneId={zone.id}
+            id={zone.id}
             onRemove={removeZone}
             onHeightChange={handleHeightChange}
           />,
           zone.domNode,
+          zone.id, // Added key to portal
         );
       })}
     </div>
@@ -460,31 +460,39 @@ const useViewZones = ({
   codeEditor: editor.IStandaloneCodeEditor | null;
   monaco: Monaco | null;
 }) => {
-  const [renderedViewZoneIds, setRenderedViewZoneIds] = useState<string[]>([]);
+  const [zoneIdMapping, setZoneIdMapping] = useState<
+    {
+      uuid: string;
+      zoneId: string;
+    }[]
+  >([]);
 
   useEffect(() => {
     if (!codeEditor || !monaco) return;
 
+    // Store the active element before changing zones
+    const activeElement = document.activeElement;
+
     // Remove existing view zones
     codeEditor.changeViewZones((changeAccessor) => {
-      renderedViewZoneIds.forEach((id) => {
-        changeAccessor.removeZone(id);
+      zoneIdMapping.forEach(({ zoneId }) => {
+        changeAccessor.removeZone(zoneId);
       });
     });
 
-    const newRenderedIds: string[] = [];
+    const newZoneIdMapping: {
+      uuid: string;
+      zoneId: string;
+    }[] = [];
 
     // Create new view zones
     codeEditor.changeViewZones((changeAccessor) => {
       viewZones.forEach((zone) => {
-        // Calculate lines based on pixel height if available
-        let heightInLines = 1; // Default minimum height
+        let heightInLines = 1;
         if (zone.heightInPx) {
-          // Get line height from editor
           const lineHeight = codeEditor.getOption(
             monaco.editor.EditorOption.lineHeight,
           );
-          // Calculate lines needed (minimum 5)
           heightInLines = Math.max(
             heightInLines,
             Math.ceil(zone.heightInPx / lineHeight),
@@ -497,18 +505,29 @@ const useViewZones = ({
           domNode: zone.domNode,
         });
 
-        newRenderedIds.push(zoneId);
+        newZoneIdMapping.push({
+          uuid: zone.id,
+          zoneId,
+        });
       });
+
+      // Restore focus after zones are updated
+      // This feels dodgy
+      if (activeElement instanceof HTMLElement) {
+        requestAnimationFrame(() => {
+          activeElement.focus();
+        });
+      }
     });
 
-    setRenderedViewZoneIds(newRenderedIds);
+    setZoneIdMapping(newZoneIdMapping);
 
     // Cleanup
     return () => {
       if (codeEditor) {
         codeEditor.changeViewZones((changeAccessor) => {
-          renderedViewZoneIds.forEach((id) => {
-            changeAccessor.removeZone(id);
+          zoneIdMapping.forEach(({ zoneId }) => {
+            changeAccessor.removeZone(zoneId);
           });
         });
       }
