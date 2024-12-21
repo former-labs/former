@@ -190,6 +190,7 @@ Your job it to think of new SQL code that will likely follow the cursor and will
       }
 
       const aiResponse = await getAIChatResponse({
+        model: "gpt-4o-mini",
         messages: [systemMessage],
         schemaOutput: z.object({
           completion: z.string().describe(`\

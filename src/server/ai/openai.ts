@@ -14,14 +14,16 @@ export const client = new OpenAI({
 });
 
 export const getAIChatResponse = async <T extends z.ZodType>({
+  model = "gpt-4o",
   messages,
   schemaOutput,
 }: {
+  model?: "gpt-4o" | "gpt-4o-mini";
   messages: ChatCompletionMessageParam[];
   schemaOutput: T;
 }): Promise<z.infer<T>> => {
   const response = await client.beta.chat.completions.parse({
-    model: "gpt-4o",
+    model,
     messages: messages,
     response_format: zodResponseFormat(schemaOutput, "response"),
   });
