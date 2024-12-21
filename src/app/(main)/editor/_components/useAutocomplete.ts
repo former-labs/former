@@ -12,6 +12,10 @@ export const useAutocomplete = (monaco: Monaco | null) => {
 
   const { editorContent } = useEditor();
   const getAutocomplete = api.editor.getAutocomplete.useMutation();
+
+  /*
+    A lot of the code here is purely to allow a specific debouncing setup.
+  */
   const pendingRequestRef = useRef<Promise<string | undefined> | null>(null);
   const latestArgsRef = useRef<{
     editorContent: string;

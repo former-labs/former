@@ -6,13 +6,20 @@ import { env } from "@/env";
 import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useQueryResult } from "./queryResultStore";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
+
+type ViewZone = {
+  id: string;
+  lineNumber: number;
+  domNode: HTMLDivElement;
+  heightInPx?: number;
+};
 
 export const SqlEditor = () => {
   const {
@@ -34,7 +41,7 @@ export const SqlEditor = () => {
     useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
-  const [viewZoneIds, setViewZoneIds] = useState<string[]>([]);
+  const [viewZones, setViewZones] = useState<ViewZone[]>([]);
 
   useEffect(() => {
     console.log("Database metadata changed:", databaseMetadata);
@@ -112,35 +119,20 @@ export const SqlEditor = () => {
       const position = codeEditor.getPosition();
       if (!position) return;
 
-      codeEditor.changeViewZones(function (changeAccessor) {
-        // I think I am abusing the view zones API here by using a z-index of 10
-        // Pretty sure they expect you to use a view zone to make a gap and then
-        // add a widget to that gap.
-        const domNode = document.createElement("div");
-        domNode.style.position = "absolute";
-        domNode.style.zIndex = "10";
-        const root = createRoot(domNode);
+      const newId = crypto.randomUUID();
 
-        const zoneId = changeAccessor.addZone({
-          afterLineNumber: position.lineNumber - 1,
-          heightInLines: 5,
-          domNode: domNode,
-        });
+      const domNode = document.createElement("div");
+      domNode.style.position = "absolute";
+      domNode.style.zIndex = "10";
 
-        const removeZone = () => {
-          console.log("Removing zone", zoneId);
-          codeEditor.changeViewZones((accessor) => {
-            accessor.removeZone(zoneId);
-            setViewZoneIds((prev) => prev.filter((id) => id !== zoneId));
-          });
-        };
-
-        root.render(
-          <InlinePromptWidget zoneId={zoneId} onRemove={removeZone} />,
-        );
-
-        setViewZoneIds((prev) => [...prev, zoneId]);
-      });
+      setViewZones((prev) => [
+        ...prev,
+        {
+          id: newId,
+          lineNumber: position.lineNumber - 1,
+          domNode,
+        },
+      ]);
     },
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK : null,
     codeEditor,
@@ -320,6 +312,11 @@ export const SqlEditor = () => {
     }
   };
 
+  // Use the new hook
+  useViewZones({ viewZones, codeEditor, monaco });
+
+  console.log(viewZones);
+
   return (
     <div className="flex h-full w-full flex-col pt-4">
       <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto px-2">
@@ -426,6 +423,95 @@ export const SqlEditor = () => {
           </div>
         )}
       </div>
+      {viewZones.map((zone) => {
+        const removeZone = () => {
+          setViewZones((prev) => prev.filter((vz) => vz.id !== zone.id));
+        };
+
+        const handleHeightChange = (height: number) => {
+          console.log("height change", height);
+          setViewZones((prev) =>
+            prev.map((vz) =>
+              vz.id === zone.id ? { ...vz, heightInPx: height } : vz,
+            ),
+          );
+        };
+
+        return createPortal(
+          <InlinePromptWidget
+            key={zone.id}
+            zoneId={zone.id}
+            onRemove={removeZone}
+            onHeightChange={handleHeightChange}
+          />,
+          zone.domNode,
+        );
+      })}
     </div>
   );
+};
+
+const useViewZones = ({
+  viewZones,
+  codeEditor,
+  monaco,
+}: {
+  viewZones: ViewZone[];
+  codeEditor: editor.IStandaloneCodeEditor | null;
+  monaco: Monaco | null;
+}) => {
+  const [renderedViewZoneIds, setRenderedViewZoneIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!codeEditor || !monaco) return;
+
+    // Remove existing view zones
+    codeEditor.changeViewZones((changeAccessor) => {
+      renderedViewZoneIds.forEach((id) => {
+        changeAccessor.removeZone(id);
+      });
+    });
+
+    const newRenderedIds: string[] = [];
+
+    // Create new view zones
+    codeEditor.changeViewZones((changeAccessor) => {
+      viewZones.forEach((zone) => {
+        // Calculate lines based on pixel height if available
+        let heightInLines = 1; // Default minimum height
+        if (zone.heightInPx) {
+          // Get line height from editor
+          const lineHeight = codeEditor.getOption(
+            monaco.editor.EditorOption.lineHeight,
+          );
+          // Calculate lines needed (minimum 5)
+          heightInLines = Math.max(
+            heightInLines,
+            Math.ceil(zone.heightInPx / lineHeight),
+          );
+        }
+
+        const zoneId = changeAccessor.addZone({
+          afterLineNumber: zone.lineNumber,
+          heightInLines,
+          domNode: zone.domNode,
+        });
+
+        newRenderedIds.push(zoneId);
+      });
+    });
+
+    setRenderedViewZoneIds(newRenderedIds);
+
+    // Cleanup
+    return () => {
+      if (codeEditor) {
+        codeEditor.changeViewZones((changeAccessor) => {
+          renderedViewZoneIds.forEach((id) => {
+            changeAccessor.removeZone(id);
+          });
+        });
+      }
+    };
+  }, [codeEditor, viewZones, monaco]);
 };

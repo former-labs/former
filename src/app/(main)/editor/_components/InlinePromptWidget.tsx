@@ -4,17 +4,35 @@ import { Button } from "@/components/ui/button";
 import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useEventListener } from "usehooks-ts";
+import { useEventListener, useResizeObserver } from "usehooks-ts";
+import { useEditor } from "./editorStore";
 
 export const InlinePromptWidget = ({
   zoneId,
   onRemove,
+  onHeightChange,
 }: {
   zoneId: string;
   onRemove: () => void;
+  onHeightChange: (height: number) => void;
 }) => {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Watch container height changes
+  const { height = 0 } = useResizeObserver({
+    ref: containerRef,
+  });
+
+  // Report height changes to parent
+  useEffect(() => {
+    if (height > 0) {
+      onHeightChange(height);
+    }
+  }, [height]);
+
+  const { editorContent } = useEditor();
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -34,11 +52,15 @@ export const InlinePromptWidget = ({
   useEventListener("keydown", handleKeyDown);
 
   const handleSubmit = () => {
+    console.log(editorContent);
     console.log(text);
   };
 
   return (
-    <div className="relative flex h-full w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
+    <div
+      ref={containerRef}
+      className="relative flex h-fit w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1"
+    >
       <Button
         onClick={onRemove}
         variant="ghost"
