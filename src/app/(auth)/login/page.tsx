@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
-import { loginWithProvider } from "@/server/auth/actions";
+import { PATH_AUTH_OAUTH_FORWARDING } from "@/lib/paths";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -26,7 +26,13 @@ export default function LoginPage() {
             size="lg"
             className="w-full"
             onClick={async () => {
-              await loginWithProvider({ provider: "google" });
+              if (typeof window !== "undefined" && window.electron) {
+                window.electron.send(
+                  "open-external",
+                  "http://localhost:3000" + PATH_AUTH_OAUTH_FORWARDING,
+                );
+                return;
+              }
             }}
           >
             <Image

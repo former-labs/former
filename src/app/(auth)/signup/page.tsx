@@ -33,6 +33,7 @@ export default function SignupPage() {
             size="lg"
             className="w-full"
             onClick={async () => {
+              
               await loginWithProvider({ provider: "google" });
             }}
           >

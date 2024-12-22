@@ -21,7 +21,7 @@ contextBridge.exposeInMainWorld(
         ipcRenderer.invoke('database:getTablesForDataset', connectionId, datasetId, pageToken),
     },
     send: (channel: string, data: unknown) => {
-      const validChannels = ['toMain'];
+      const validChannels = ['toMain', 'open-external'];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
       }
@@ -29,6 +29,14 @@ contextBridge.exposeInMainWorld(
     receive: (channel: string, func: IpcCallback) => {
       const validChannels = ['fromMain'];
       if (validChannels.includes(channel)) {
+        ipcRenderer.on(channel, (_event: IpcRendererEvent, ...args) => func(...args));
+      }
+    },
+    on: (channel: string, func: IpcCallback) => {
+      const validChannels = ['send-token'];
+      console.log('on', channel, func);
+      if (validChannels.includes(channel)) {
+        console.log('on', channel, func);
         ipcRenderer.on(channel, (_event: IpcRendererEvent, ...args) => func(...args));
       }
     },

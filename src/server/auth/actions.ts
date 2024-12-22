@@ -10,11 +10,12 @@ import { redirect } from "next/navigation";
 
 export async function loginWithProvider({
   provider,
+  redirectTo = `${env.DASHBOARD_URI}${PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK}`,
 }: {
   provider: Provider;
+  redirectTo?: string;
 }) {
   const supabase = await createClient();
-  const redirectTo = `${env.DASHBOARD_URI}${PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK}`;
 
   const { error, data } = await supabase.auth.signInWithOAuth({
     provider,

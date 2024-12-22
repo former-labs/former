@@ -15,12 +15,14 @@ export interface IElectronAPI {
   };
   send: (channel: string, data: unknown) => void;
   receive: (channel: string, func: (...args: unknown[]) => void) => void;
+  on: (channel: string, func: (...args: unknown[]) => void) => void;
   store: {
     getIntegrations: () => Promise<Integration[]>;
     setIntegrations: (integrations: Integration[]) => Promise<void>;
     getActiveIntegrationId: () => Promise<string | null>;
     setActiveIntegrationId: (id: string | null) => Promise<void>;
   };
+  openExternal: (url: string) => void;
 }
 
 declare global {

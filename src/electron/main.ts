@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -9,6 +9,7 @@ import storeUtils from './store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const currentDir = dirname(__filename);
+let mainWindow: BrowserWindow | null = null;
 
 if (electronSquirrelStartup) {
   app.quit();
@@ -20,8 +21,16 @@ if (isDev) {
   app.commandLine.appendSwitch('remote-debugging-port', '9222');
 }
 
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('yerve', process.execPath, [join(currentDir, '..', process.argv[1])]);
+  } else {
+    app.setAsDefaultProtocolClient('yerve');
+  }
+}
+
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
@@ -33,10 +42,10 @@ function createWindow() {
   });
 
   if (isDev) {
-    win.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
   }
 
-  void win.loadURL(env.DASHBOARD_URI).catch(err => {
+  void mainWindow.loadURL(env.DASHBOARD_URI).catch(err => {
     console.error('Failed to load URL:', err);
   });
 }
@@ -82,6 +91,52 @@ ipcMain.handle('database:getProjectsAndDatasets', async (_, connectionId) => {
 ipcMain.handle('database:getTablesForDataset', async (_, connectionId, datasetId, pageToken) => {
   return await database.getTablesForDataset(connectionId, datasetId, pageToken);
 });
+
+// Add handler for opening external URLs
+ipcMain.on('open-external', (_event, url) => {
+  console.log('open-external', url);
+  void shell.openExternal(url);
+});
+
+// Add helper function to extract code from URL
+function extractCodeFromUrl(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.searchParams.get('code');
+  } catch (error) {
+    console.error('Error parsing URL:', error);
+    return null;
+  }
+}
+
+// Unix machines - Linux, MacOS
+app.on('open-url', (event, url) => {
+  console.log('open-url', url);
+  const code = extractCodeFromUrl(url);
+  if (code) {
+    mainWindow?.webContents.send('send-token', code);
+  }
+});
+
+// Windows
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+
+      // On Windows, the URL will be in commandLine array
+      const url = commandLine[commandLine.length - 1];
+      const code = extractCodeFromUrl(url);
+      if (code) {
+        mainWindow.webContents.send('send-token', code);
+      }
+    }
+  });
+}
 
 // Clean up database connections when app is closing
 app.on('before-quit', () => {

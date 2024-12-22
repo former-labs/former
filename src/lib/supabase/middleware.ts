@@ -1,13 +1,16 @@
 import { env } from '@/env';
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
-import { PATH_CHAT, PATH_HOME, PATH_LOGIN, PATH_ONBOARDING, PATH_SIGNUP } from '../paths';
+import { PATH_CHAT, PATH_EDITOR, PATH_HOME, PATH_INTEGRATIONS, PATH_KNOWLEDGE, PATH_LOGIN, PATH_ONBOARDING, PATH_SIGNUP } from '../paths';
 
 
 // Defining routes to allow logic within updateSession middleware, below
 const isProtectedRoute = createRouteMatcher([
   PATH_HOME,
   `${PATH_CHAT}(.*)`,
+  `${PATH_EDITOR}(.*)`,
+  `${PATH_INTEGRATIONS}(.*)`,
+  `${PATH_KNOWLEDGE}(.*)`,
 ]);
 
 const isOnboardingRoute = createRouteMatcher([PATH_ONBOARDING])
