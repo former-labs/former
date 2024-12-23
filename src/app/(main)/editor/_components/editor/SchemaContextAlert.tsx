@@ -17,9 +17,9 @@ export const SchemaContextAlert = () => {
       <div className="flex h-full w-full items-center gap-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-amber-800">
         <AlertCircle className="h-6 w-6" />
         <div className="text-sm">
-          You do not have any tables included in the AI schema context. To
-          generate SQL that matches the schema you must include some tables
-          using the schema view on the left.
+          You do not have any tables included in the AI schema context. To have
+          our AI generate SQL that matches the database schema you must include
+          some tables using the schema view on the left.
         </div>
       </div>
     </div>
