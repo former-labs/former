@@ -9,11 +9,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
-import React, { type ReactNode, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import { getEditorSelectionContent, useEditor } from "../editor/editorStore";
 import { ApplyCodeBlock } from "./ApplyCodeBlock";
-import { useChat } from "./chatStore";
+import { useChat, type ChatMessageType } from "./chatStore";
+import { KnowledgeSourceComponent } from "./KnowledgeSourceComponent";
 import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {
@@ -96,38 +97,9 @@ const ActiveChat = () => {
       <div
         className={`space-y-2 overflow-y-auto pb-4 ${hasMessages ? "flex-1" : ""}`}
       >
-        <div className="space-y-2">
+        <div className="space-y-4">
           {activeChat.messages.map((message, i) => (
-            <div key={i}>
-              {message.type === "assistant" ? (
-                <div className="p-2">
-                  <ReactMarkdown
-                    components={{
-                      pre: CodeBlock,
-                      code: CodeInline,
-                      ul: ({ children }) => (
-                        <ul className="list-disc space-y-1 pl-6">{children}</ul>
-                      ),
-                      ol: ({ children }) => (
-                        <ol className="list-decimal space-y-1 pl-6">
-                          {children}
-                        </ol>
-                      ),
-                      li: ({ children }) => (
-                        <li className="text-gray-800">{children}</li>
-                      ),
-                    }}
-                    className="space-y-2"
-                  >
-                    {message.content}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
-                  {message.content}
-                </div>
-              )}
-            </div>
+            <ChatMessage key={i} message={message} />
           ))}
           {showLoadingMessage && (
             <div className="flex items-center gap-2 p-2">
@@ -138,6 +110,50 @@ const ActiveChat = () => {
         </div>
       </div>
       <ChatInputBox onSubmit={handleSubmit} />
+    </div>
+  );
+};
+
+const ChatMessage = ({ message }: { message: ChatMessageType }) => {
+  if (message.type === "assistant") {
+    return (
+      <div className="p-2">
+        <ReactMarkdown
+          components={{
+            pre: CodeBlock,
+            code: CodeInline,
+            ul: ({ children }) => (
+              <ul className="list-disc space-y-1 pl-6">{children}</ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="list-decimal space-y-1 pl-6">{children}</ol>
+            ),
+            li: ({ children }) => <li className="text-gray-800">{children}</li>,
+          }}
+          className="space-y-2"
+        >
+          {message.content}
+        </ReactMarkdown>
+        {message.knowledgeSources.length > 0 && (
+          <div className="mt-4">
+            <div className="text-xs font-medium text-gray-600">Sources</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {message.knowledgeSources.map((knowledgeId) => (
+                <KnowledgeSourceComponent
+                  key={knowledgeId}
+                  knowledgeId={knowledgeId}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
+      {message.content}
     </div>
   );
 };

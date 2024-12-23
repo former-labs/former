@@ -14,6 +14,7 @@ export const editorRouter = createTRPCRouter({
         z.object({
           type: z.enum(["assistant", "user"]),
           content: z.string(),
+          knowledgeSources: z.array(z.string().uuid()).optional(),
         })
       ).min(1),
       editorContent: z.string(),
@@ -102,14 +103,25 @@ Respond in Markdown format.
           ...openAiMessages
         ],
         schemaOutput: z.object({
-          response: z.string().describe("The response to the user's request, in Markdown format.")
+          response: z.string().describe("The response to the user's request, in Markdown format."),
+          knowledgeSources: z.array(z.string()).describe(`
+The IDs of the knowledge sources that were used to generate the response.
+
+If you wrote some SQL and used some knowledge queries to help you, include them here.
+
+For example, if you were asked for "the total revenue for each product" for an ecommerce database, you might want 
+to include references to knowledge queries that contained revenue calculations if you used them in your own queries.
+
+If you did not use any knowledge sources, return an empty array.
+          `)
         }),
       });
 
       return {
         message: {
           type: "assistant" as const,
-          content: aiResponse.response
+          content: aiResponse.response,
+          knowledgeSources: aiResponse.knowledgeSources,
         }
       };
     }),
@@ -350,8 +362,8 @@ const formatKnowledge = (knowledge: Array<{
 <EXAMPLE_QUERIES>
 ${knowledge.map((knowledge, index) => `
 <EXAMPLE_QUERY_${index + 1}>
+ID: ${knowledge.id}
 Title: ${knowledge.name}
-
 Description: ${knowledge.description}
 
 \`\`\`sql

@@ -6,25 +6,33 @@ import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { useEditor } from "../editor/editorStore";
 
-interface ChatMessage {
-  type: "assistant" | "user";
+type UserChatMessageType = {
+  type: "user";
   content: string;
 }
 
-interface Chat {
+type AssistantChatMessageType = {
+  type: "assistant";
+  content: string;
+  knowledgeSources: string[];
+}
+
+export type ChatMessageType = UserChatMessageType | AssistantChatMessageType;
+
+type ChatType = {
   chatId: string;
-  messages: ChatMessage[];
+  messages: ChatMessageType[];
   createdAt: Date;
   pendingEditorSelection: Selection | null;
 }
 
-interface ChatStore {
-  chats: Chat[];
+type ChatStore = {
+  chats: ChatType[];
   activeChatId: string | null;
   shouldFocusActiveChatTextarea: boolean;
   setActiveChatId: (chatId: string) => void;
-  setChats: (chats: Chat[]) => void;
-  addMessage: (chatId: string, message: ChatMessage) => void;
+  setChats: (chats: ChatType[]) => void;
+  addMessage: (chatId: string, message: ChatMessageType) => void;
   setShouldFocusActiveChatTextarea: (value: boolean) => void;
 }
 
@@ -93,8 +101,8 @@ export const useChat = () => {
   }) => {
     if (!chatStore.activeChatId || !activeChat || !databaseMetadata) return;
 
-    const newMessage = {
-      type: "user" as const,
+    const newMessage: UserChatMessageType = {
+      type: "user",
       content: message,
     };
 
@@ -112,7 +120,9 @@ export const useChat = () => {
 
     chatStore.addMessage(chatStore.activeChatId, newMessage);
     const response = await responsePromise;
-    chatStore.addMessage(chatStore.activeChatId, response.message);
+    chatStore.addMessage(chatStore.activeChatId, {
+      ...response.message,
+    });
   };
 
   return {
