@@ -117,7 +117,7 @@ const ActiveChat = () => {
 const ChatMessage = ({ message }: { message: ChatMessageType }) => {
   if (message.type === "assistant") {
     return (
-      <div className="p-2">
+      <div className="p-2 text-sm">
         <ReactMarkdown
           components={{
             pre: CodeBlock,
@@ -152,7 +152,7 @@ const ChatMessage = ({ message }: { message: ChatMessageType }) => {
   }
 
   return (
-    <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
+    <div className="rounded-lg bg-white px-3 py-2 text-sm text-gray-800 shadow">
       {message.content}
     </div>
   );

@@ -105,7 +105,7 @@ Respond in Markdown format.
         schemaOutput: z.object({
           response: z.string().describe("The response to the user's request, in Markdown format."),
           knowledgeSources: z.array(z.string()).describe(`
-The IDs of the knowledge sources that were used to generate the response.
+A list of UUIDs which represent the IDs of the knowledge sources that were used to generate the response.
 
 If you wrote some SQL and used some knowledge queries to help you, include them here.
 
