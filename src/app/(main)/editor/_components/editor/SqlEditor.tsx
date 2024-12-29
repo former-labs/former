@@ -12,7 +12,7 @@ import { useEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
-import { useViewZones, ViewZone, ViewZonePortal } from "./useViewZones";
+import { useViewZones, type ViewZone, ViewZonePortal } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
