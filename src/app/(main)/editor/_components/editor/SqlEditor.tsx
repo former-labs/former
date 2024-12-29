@@ -10,7 +10,6 @@ import { useQueryResult } from "../queryResultStore";
 import { DiffWidget } from "./DiffWidget";
 import { useEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
-import { SchemaContextAlert } from "./SchemaContextAlert";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useViewZones, ViewZone, ViewZonePortal } from "./useViewZones";
@@ -345,7 +344,6 @@ export const SqlEditor = () => {
           </>
         )}
       </div>
-      <SchemaContextAlert />
       <div className="min-h-0 flex-1">
         {editorContentPending === null ? (
           <Editor
