@@ -2,14 +2,19 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { SchemaContextAlert } from "./SchemaContextAlert";
 import { SqlEditorDynamic } from "./SqlEditorDynamic";
 import { useEditor } from "./editorStore";
 
 export const EditorSection = () => {
-  const { editorList, activeEditorId, setActiveEditorId, createEditor } =
-    useEditor();
+  const {
+    editorList,
+    activeEditorId,
+    setActiveEditorId,
+    createEditor,
+    deleteEditor,
+  } = useEditor();
 
   return (
     <div className="flex h-full flex-col">
@@ -19,13 +24,30 @@ export const EditorSection = () => {
           {editorList.map((editor) => (
             <div
               key={editor.id}
-              onClick={() => setActiveEditorId(editor.id)}
               className={cn(
-                "min-w-24 cursor-pointer rounded-t-md border border-b-0 px-3 py-1 text-center text-sm",
+                "flex min-w-24 items-center justify-between gap-2 rounded-t-md border border-b-0 px-3 py-1 text-sm",
                 editor.id === activeEditorId ? "bg-gray-50" : "bg-gray-100",
               )}
             >
-              Query {editor.id.slice(0, 3)}
+              <div
+                className="cursor-pointer"
+                onClick={() => setActiveEditorId(editor.id)}
+              >
+                Query {editor.id.slice(0, 3)}
+              </div>
+              {editorList.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 p-0 hover:bg-gray-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteEditor(editor.id);
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
             </div>
           ))}
           <Button variant="ghost" size="icon" onClick={createEditor}>

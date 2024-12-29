@@ -18,6 +18,7 @@ interface EditorStore {
   setEditorSelection: (selection: Selection | null) => void;
   setActiveEditorId: (id: string) => void;
   createEditor: () => void;
+  deleteEditor: (id: string) => void;
 }
 
 const initialEditorId = uuidv4();
@@ -95,6 +96,35 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       }],
       activeEditorId: newId
     }));
+  },
+  deleteEditor: (id) => {
+    set((state) => {
+      // Don't allow deleting the last editor
+      if (state.editorList.length <= 1) {
+        return state;
+      }
+
+      const currentIndex = state.editorList.findIndex(editor => editor.id === id);
+      if (currentIndex === -1) return state;
+
+      const newEditorList = state.editorList.filter(editor => editor.id !== id);
+
+      // Only need to handle active editor change if we're deleting the active one
+      if (id === state.activeEditorId) {
+        // Try to select the editor to the right
+        const nextEditor = state.editorList[currentIndex + 1];
+        // If there isn't one, select the editor to the left
+        const prevEditor = state.editorList[currentIndex - 1];
+        const newActiveId = nextEditor?.id || prevEditor?.id;
+
+        return {
+          editorList: newEditorList,
+          activeEditorId: newActiveId
+        };
+      }
+
+      return { editorList: newEditorList };
+    });
   }
 }));
 
@@ -123,5 +153,6 @@ export const useEditor = () => {
     setEditorSelection: store.setEditorSelection,
     setActiveEditorId: store.setActiveEditorId,
     createEditor: store.createEditor,
+    deleteEditor: store.deleteEditor,
   };
 };
