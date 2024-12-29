@@ -1,4 +1,4 @@
-import { getEditorSelectionContent } from "@/app/(main)/editor/_components/editor/editorStore";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { getAIChatResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import type { DatabaseMetadata } from "@/types/connections";

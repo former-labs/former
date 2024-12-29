@@ -1,11 +1,12 @@
 "use client";
 
 import { useData } from "@/contexts/DataContext";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { type Monaco } from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
 import { filterDatabaseMetadataContext } from "../chat/chatStore";
-import { getEditorSelectionContent, useEditor } from "./editorStore";
+import { useEditor } from "./editorStore";
 
 export const useAutocomplete = (monaco: Monaco | null) => {
   const { databaseMetadata } = useData();

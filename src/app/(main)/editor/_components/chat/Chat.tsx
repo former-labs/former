@@ -8,10 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
-import { getEditorSelectionContent, useEditor } from "../editor/editorStore";
+import { useEditor } from "../editor/editorStore";
 import { ApplyCodeBlock } from "./ApplyCodeBlock";
 import { useChat, type ChatMessageType } from "./chatStore";
 import { KnowledgeSourceComponent } from "./KnowledgeSourceComponent";

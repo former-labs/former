@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
 import { useData } from "@/contexts/DataContext";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import type { Selection } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import { useEventListener, useResizeObserver } from "usehooks-ts";
 import { StaticEditor } from "../chat/StaticEditor";
-import { getEditorSelectionContent, useEditor } from "./editorStore";
+import { useEditor } from "./editorStore";
 
 export const InlinePromptWidget = ({
   id,
