@@ -19,37 +19,38 @@ export const EditorSection = () => {
   return (
     <div className="flex h-full flex-col">
       <SchemaContextAlert />
-      <div className="flex items-center border-b px-2">
-        <div className="flex items-end gap-2">
+      <div className="flex items-center border-b">
+        <div className="flex items-end">
           {editorList.map((editor) => (
             <div
               key={editor.id}
               className={cn(
-                "flex min-w-24 items-center justify-between gap-2 rounded-t-md border border-b-0 px-3 py-1 text-sm",
+                "flex min-w-28 cursor-pointer items-center justify-between gap-2 rounded-t-md border border-b-0 px-3 py-1 text-sm",
                 "duration-200 animate-in fade-in slide-in-from-left-2",
                 editor.id === activeEditorId ? "bg-gray-50" : "bg-gray-200",
               )}
+              onClick={() => setActiveEditorId(editor.id)}
             >
-              <div
-                className="cursor-pointer"
-                onClick={() => setActiveEditorId(editor.id)}
-              >
-                {editor.title}
-              </div>
+              <div className="">{editor.title}</div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-4 w-4 p-0 hover:bg-gray-200"
+                className="h-3 w-3 p-1 hover:bg-gray-200"
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteEditor(editor.id);
                 }}
               >
-                <X className="h-3 w-3" />
+                <X />
               </Button>
             </div>
           ))}
-          <Button variant="ghost" size="icon" onClick={createEditor}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={createEditor}
+            className="ml-1 h-7 w-7"
+          >
             <Plus className="h-3 w-3" />
           </Button>
         </div>

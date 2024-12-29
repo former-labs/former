@@ -308,7 +308,7 @@ export const SqlEditor = () => {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex flex-shrink-0 gap-2 overflow-x-auto px-2 py-1">
+      <div className="flex flex-shrink-0 gap-2 overflow-x-auto bg-gray-50 px-2 py-1">
         <Button
           variant="ghost"
           onClick={() =>
