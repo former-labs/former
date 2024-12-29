@@ -344,11 +344,11 @@ export const SqlEditor = () => {
           </>
         )}
       </div>
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 border-t">
         {editorContentPending === null ? (
           <Editor
             height="100%"
-            className="overflow-hidden border"
+            className="overflow-hidden"
             language="sql"
             value={editorContent}
             onChange={(value) => setEditorContent(value ?? "")}
@@ -383,7 +383,7 @@ export const SqlEditor = () => {
             </div>
             <DiffEditor
               height="100%"
-              className="overflow-hidden border"
+              className="overflow-hidden"
               language="sql"
               original={editorContent}
               modified={editorContentPending}
