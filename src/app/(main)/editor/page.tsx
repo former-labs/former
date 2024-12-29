@@ -11,17 +11,19 @@ import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/chat/Chat";
 import { useChat } from "./_components/chat/chatStore";
 import { EditorSection } from "./_components/editor/EditorSection";
+import { useActiveEditor } from "./_components/editor/editorStore";
 import { QueryResultPane } from "./_components/QueryResultPane";
 
 export default function EditorPage() {
   const { databaseMetadata } = useData();
   const { createChat } = useChat();
+  const { editorSelection } = useActiveEditor();
 
   useEventListener("keydown", (e) => {
     // Check for Cmd+L (Mac) or Ctrl+L (Windows/Linux)
     if ((e.metaKey || e.ctrlKey) && e.key === "l") {
       e.preventDefault();
-      createChat();
+      createChat({ editorSelection });
     }
   });
 

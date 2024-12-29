@@ -10,7 +10,7 @@ import type { Selection } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import { useEventListener, useResizeObserver } from "usehooks-ts";
 import { StaticEditor } from "../chat/StaticEditor";
-import { useEditor } from "./editorStore";
+import { useActiveEditor } from "./editorStore";
 
 export const InlinePromptWidget = ({
   id,
@@ -41,7 +41,7 @@ export const InlinePromptWidget = ({
   }, [height]);
 
   const { editorContent, editorSelection, setEditorContentPending } =
-    useEditor();
+    useActiveEditor();
   const { databaseMetadata } = useData();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 

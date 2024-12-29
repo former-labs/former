@@ -6,12 +6,12 @@ import { api } from "@/trpc/react";
 import { type Monaco } from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
 import { filterDatabaseMetadataContext } from "../chat/chatStore";
-import { useEditor } from "./editorStore";
+import { useActiveEditor } from "./editorStore";
 
 export const useAutocomplete = (monaco: Monaco | null) => {
   const { databaseMetadata } = useData();
 
-  const { editorContent } = useEditor();
+  const { editorContent } = useActiveEditor();
   const getAutocomplete = api.editor.getAutocomplete.useMutation();
 
   /*

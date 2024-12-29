@@ -3,7 +3,7 @@
 
 import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect } from "react";
-import { useEditor } from "./editorStore";
+import { useActiveEditor } from "./editorStore";
 
 export const useEditorSelection = ({
   codeEditor,
@@ -12,7 +12,7 @@ export const useEditorSelection = ({
   codeEditor: editor.IStandaloneCodeEditor | null;
   diffEditor: editor.IStandaloneDiffEditor | null;
 }) => {
-  const { editorSelection, setEditorSelection } = useEditor();
+  const { editorSelection, setEditorSelection } = useActiveEditor();
 
   // Sync code editor selection
   useEffect(() => {

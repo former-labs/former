@@ -8,7 +8,7 @@ import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
 import { useQueryResult } from "../queryResultStore";
 import { DiffWidget } from "./DiffWidget";
-import { useEditor } from "./editorStore";
+import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
@@ -21,7 +21,8 @@ export const SqlEditor = () => {
     editorContentPending,
     setEditorContent,
     setEditorContentPending,
-  } = useEditor();
+    editorSelectionContent,
+  } = useActiveEditor();
 
   const { executeQuery } = useQueryResult();
   const { databaseMetadata } = useData();
@@ -140,7 +141,7 @@ export const SqlEditor = () => {
   // Add Cmd+Enter binding to execute query
   useEditorKeybind({
     id: "execute-query",
-    callback: executeQuery,
+    callback: () => executeQuery({ editorSelectionContent, editorContent }),
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
     codeEditor,
     diffEditor,
@@ -301,7 +302,13 @@ export const SqlEditor = () => {
   return (
     <div className="flex h-full w-full flex-col pt-4">
       <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto px-2">
-        <Button onClick={executeQuery}>Execute</Button>
+        <Button
+          onClick={() =>
+            executeQuery({ editorSelectionContent, editorContent })
+          }
+        >
+          Execute
+        </Button>
         {env.NEXT_PUBLIC_NODE_ENV === "development" && (
           <>
             <Button onClick={setInitialContent}>Set Initial Content</Button>

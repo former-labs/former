@@ -33,6 +33,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
   activeEditorId: initialEditorId,
   setEditorContent: (content) => {
     set((state) => {
+      if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
         if (editor.id === state.activeEditorId) {
           // If the editor content is set to the same as the pending content,
@@ -52,6 +53,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
   },
   setEditorContentPending: (content) => {
     set((state) => {
+      if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
         if (editor.id === state.activeEditorId) {
           // If the pending content is set to the same as the editor content,
@@ -70,6 +72,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
   },
   setEditorSelection: (selection) => {
     set((state) => {
+      if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
         if (editor.id === state.activeEditorId) {
           return {
@@ -99,9 +102,17 @@ const useEditorStore = create<EditorStore>((set, get) => ({
   },
   deleteEditor: (id) => {
     set((state) => {
-      // Don't allow deleting the last editor
       if (state.editorList.length <= 1) {
-        return state;
+        const newId = uuidv4();
+        return {
+          editorList: [{
+            id: newId,
+            editorContent: "",
+            editorContentPending: null,
+            editorSelection: null
+          }],
+          activeEditorId: newId
+        };
       }
 
       const currentIndex = state.editorList.findIndex(editor => editor.id === id);
@@ -130,6 +141,21 @@ const useEditorStore = create<EditorStore>((set, get) => ({
 
 export const useEditor = () => {
   const store = useEditorStore();
+  return {
+    editorList: store.editorList,
+    activeEditorId: store.activeEditorId,
+    setActiveEditorId: store.setActiveEditorId,
+    createEditor: store.createEditor,
+    deleteEditor: store.deleteEditor,
+  };
+};
+
+export const useActiveEditor = () => {
+  const store = useEditorStore();
+
+  if (!store.activeEditorId) {
+    throw new Error("No active editor selected");
+  }
 
   const activeEditor = store.editorList.find(editor => editor.id === store.activeEditorId);
   if (!activeEditor) {
@@ -146,13 +172,8 @@ export const useEditor = () => {
     editorContentPending: activeEditor.editorContentPending,
     editorSelection: activeEditor.editorSelection,
     editorSelectionContent,
-    editorList: store.editorList,
-    activeEditorId: store.activeEditorId,
     setEditorContent: store.setEditorContent,
     setEditorContentPending: store.setEditorContentPending,
     setEditorSelection: store.setEditorSelection,
-    setActiveEditorId: store.setActiveEditorId,
-    createEditor: store.createEditor,
-    deleteEditor: store.deleteEditor,
   };
 };
