@@ -12,6 +12,7 @@ import { useEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
+import { useEditorSelection } from "./useEditorSelection";
 import { useViewZones, type ViewZone, ViewZonePortal } from "./useViewZones";
 
 export const SqlEditor = () => {
@@ -20,7 +21,6 @@ export const SqlEditor = () => {
     editorContentPending,
     setEditorContent,
     setEditorContentPending,
-    setEditorSelection,
   } = useEditor();
 
   const { executeQuery } = useQueryResult();
@@ -42,6 +42,10 @@ export const SqlEditor = () => {
 
   useViewZones({ viewZones, codeEditor, monaco });
   useAutocomplete(monaco);
+  useEditorSelection({
+    codeEditor,
+    diffEditor,
+  });
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
@@ -166,12 +170,6 @@ export const SqlEditor = () => {
   ) => {
     setCodeEditor(editor);
     setMonaco(monaco);
-
-    // Add selection change listener
-    editor.onDidChangeCursorSelection(() => {
-      const selection = editor.getSelection();
-      setEditorSelection(selection);
-    });
   };
 
   const handleDiffEditorDidMount = (
@@ -191,12 +189,6 @@ export const SqlEditor = () => {
 
     modifiedEditor.onDidChangeModelContent(() => {
       setEditorContentPending(modifiedEditor.getValue());
-    });
-
-    // Add selection change listener for diff editor
-    modifiedEditor.onDidChangeCursorSelection(() => {
-      const selection = modifiedEditor.getSelection();
-      setEditorSelection(selection);
     });
 
     modifiedEditor.updateOptions({
