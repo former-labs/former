@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
+import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
 import { loginWithProvider } from "@/server/auth/actions";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,8 +34,20 @@ export default function SignupPage() {
             size="lg"
             className="w-full"
             onClick={async () => {
-              
-              await loginWithProvider({ provider: "google" });
+              if (typeof window !== "undefined" && window.electron) {
+                console.log("ELECTRON LOGIN");
+                const result = await loginWithProvider({
+                  provider: "google",
+                  redirectTo: `http://localhost:3000${PATH_ELECTRON_CALLBACK}`,
+                  isElectron: true,
+                });
+                const url = typeof result === "string" ? result : result.url;
+                window.electron.send("open-external", url);
+                console.log("ELECTRON LOGIN DONE");
+                return;
+              } else {
+                await loginWithProvider({ provider: "google" });
+              }
             }}
           >
             <Image

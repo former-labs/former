@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
-import { PATH_AUTH_OAUTH_FORWARDING } from "@/lib/paths";
+import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
+import { loginWithProvider } from "@/server/auth/actions";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -27,11 +28,18 @@ export default function LoginPage() {
             className="w-full"
             onClick={async () => {
               if (typeof window !== "undefined" && window.electron) {
-                window.electron.send(
-                  "open-external",
-                  "http://localhost:3000" + PATH_AUTH_OAUTH_FORWARDING,
-                );
+                console.log("ELECTRON LOGIN");
+                const result = await loginWithProvider({
+                  provider: "google",
+                  redirectTo: `http://localhost:3000${PATH_ELECTRON_CALLBACK}`,
+                  isElectron: true,
+                });
+                const url = typeof result === "string" ? result : result.url;
+                window.electron.send("open-external", url);
+                console.log("ELECTRON LOGIN DONE");
                 return;
+              } else {
+                await loginWithProvider({ provider: "google" });
               }
             }}
           >
