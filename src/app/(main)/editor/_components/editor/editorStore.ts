@@ -5,6 +5,7 @@ import { create } from "zustand";
 
 interface Editor {
   id: string;
+  title: string;
   editorContent: string;
   editorContentPending: string | null;
   editorSelection: Selection | null;
@@ -13,6 +14,7 @@ interface Editor {
 interface EditorStore {
   editorList: Editor[];
   activeEditorId: string;
+  nextEditorNumber: number;
   setEditorContent: (content: string) => void;
   setEditorContentPending: (content: string | null) => void;
   setEditorSelection: (selection: Selection | null) => void;
@@ -26,11 +28,13 @@ const initialEditorId = uuidv4();
 const useEditorStore = create<EditorStore>((set, get) => ({
   editorList: [{
     id: initialEditorId,
+    title: "Query 1",
     editorContent: "",
     editorContentPending: null,
     editorSelection: null
   }],
   activeEditorId: initialEditorId,
+  nextEditorNumber: 2,
   setEditorContent: (content) => {
     set((state) => {
       if (!state.activeEditorId) return state;
@@ -93,11 +97,13 @@ const useEditorStore = create<EditorStore>((set, get) => ({
     set((state) => ({
       editorList: [...state.editorList, {
         id: newId,
+        title: `Query ${state.nextEditorNumber}`,
         editorContent: "",
         editorContentPending: null,
         editorSelection: null
       }],
-      activeEditorId: newId
+      activeEditorId: newId,
+      nextEditorNumber: state.nextEditorNumber + 1
     }));
   },
   deleteEditor: (id) => {
@@ -107,11 +113,13 @@ const useEditorStore = create<EditorStore>((set, get) => ({
         return {
           editorList: [{
             id: newId,
+            title: `Query ${state.nextEditorNumber}`,
             editorContent: "",
             editorContentPending: null,
             editorSelection: null
           }],
-          activeEditorId: newId
+          activeEditorId: newId,
+          nextEditorNumber: state.nextEditorNumber + 1
         };
       }
 

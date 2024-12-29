@@ -34,7 +34,7 @@ export const EditorSection = () => {
                 className="cursor-pointer"
                 onClick={() => setActiveEditorId(editor.id)}
               >
-                Query {editor.id.slice(0, 3)}
+                {editor.title}
               </div>
               <Button
                 variant="ghost"
