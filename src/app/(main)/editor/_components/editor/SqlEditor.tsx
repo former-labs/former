@@ -20,7 +20,7 @@ import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
-import { useViewZones, ViewZonePortal } from "./useViewZones";
+import { useViewZones } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -35,13 +35,13 @@ export const SqlEditor = () => {
   const { executeQuery, resultLoading } = useQueryResult();
   const { databaseMetadata } = useData();
 
-  // We use the same monaco for both editors, seems to work?
   const [inlinePromptWidgets, setInlinePromptWidgets] = useState<
     {
       id: string;
       lineNumber: number;
     }[]
   >([]);
+
   const [monaco, setMonaco] = useState<Monaco | null>(null);
   const [codeEditor, setCodeEditor] =
     useState<editor.IStandaloneCodeEditor | null>(null);
@@ -50,7 +50,7 @@ export const SqlEditor = () => {
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
-  const { viewZones, updateZoneHeight } = useViewZones({
+  const { renderViewZone } = useViewZones({
     viewZoneInstances: inlinePromptWidgets,
     codeEditor,
     monaco,
@@ -454,21 +454,16 @@ export const SqlEditor = () => {
           </div>
         )}
       </div>
-      {viewZones.map((zone) => {
+      {inlinePromptWidgets.map((widget) => {
         const removeZone = () => {
           setInlinePromptWidgets((prev) =>
-            prev.filter((widget) => widget.id !== zone.id),
+            prev.filter((w) => w.id !== widget.id),
           );
         };
 
-        return (
-          <ViewZonePortal
-            key={zone.id}
-            zone={zone}
-            onHeightChange={updateZoneHeight}
-          >
-            <InlinePromptWidget id={zone.id} onRemove={removeZone} />
-          </ViewZonePortal>
+        return renderViewZone(
+          widget.id,
+          <InlinePromptWidget id={widget.id} onRemove={removeZone} />,
         );
       })}
     </div>
