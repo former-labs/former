@@ -1,19 +1,26 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useData } from "@/contexts/DataContext";
 import { env } from "@/env";
 import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
+import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
 import { useQueryResult } from "../queryResultStore";
 import { DiffWidget } from "./DiffWidget";
-import { useEditor } from "./editorStore";
+import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
-import { SchemaContextAlert } from "./SchemaContextAlert";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
-import { useViewZones, ViewZone, ViewZonePortal } from "./useViewZones";
+import { useEditorSelection } from "./useEditorSelection";
+import { useViewZones, type ViewZone, ViewZonePortal } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -21,10 +28,10 @@ export const SqlEditor = () => {
     editorContentPending,
     setEditorContent,
     setEditorContentPending,
-    setEditorSelection,
-  } = useEditor();
+    editorSelectionContent,
+  } = useActiveEditor();
 
-  const { executeQuery } = useQueryResult();
+  const { executeQuery, resultLoading } = useQueryResult();
   const { databaseMetadata } = useData();
 
   // We use the same monaco for both editors, seems to work?
@@ -43,6 +50,10 @@ export const SqlEditor = () => {
 
   useViewZones({ viewZones, codeEditor, monaco });
   useAutocomplete(monaco);
+  useEditorSelection({
+    codeEditor,
+    diffEditor,
+  });
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
@@ -137,7 +148,7 @@ export const SqlEditor = () => {
   // Add Cmd+Enter binding to execute query
   useEditorKeybind({
     id: "execute-query",
-    callback: executeQuery,
+    callback: () => executeQuery({ editorSelectionContent, editorContent }),
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
     codeEditor,
     diffEditor,
@@ -167,12 +178,6 @@ export const SqlEditor = () => {
   ) => {
     setCodeEditor(editor);
     setMonaco(monaco);
-
-    // Add selection change listener
-    editor.onDidChangeCursorSelection(() => {
-      const selection = editor.getSelection();
-      setEditorSelection(selection);
-    });
   };
 
   const handleDiffEditorDidMount = (
@@ -192,12 +197,6 @@ export const SqlEditor = () => {
 
     modifiedEditor.onDidChangeModelContent(() => {
       setEditorContentPending(modifiedEditor.getValue());
-    });
-
-    // Add selection change listener for diff editor
-    modifiedEditor.onDidChangeCursorSelection(() => {
-      const selection = modifiedEditor.getSelection();
-      setEditorSelection(selection);
     });
 
     modifiedEditor.updateOptions({
@@ -308,49 +307,83 @@ export const SqlEditor = () => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col pt-4">
-      <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto px-2">
-        <Button onClick={executeQuery}>Execute</Button>
+    <div className="flex h-full w-full flex-col">
+      <div className="flex flex-shrink-0 gap-2 overflow-x-auto bg-gray-50 px-2 py-1">
+        <Button
+          variant="ghost"
+          onClick={() =>
+            executeQuery({ editorSelectionContent, editorContent })
+          }
+          disabled={resultLoading}
+        >
+          {resultLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+        </Button>
         {env.NEXT_PUBLIC_NODE_ENV === "development" && (
-          <>
-            <Button onClick={setInitialContent}>Set Initial Content</Button>
-            <Button onClick={startDiff}>Start diff</Button>
-            <Button onClick={endDiff}>End diff</Button>
-            <Button onClick={printContent}>Print editor content</Button>
-            <Button onClick={setDecorations}>Set decorations</Button>
-            <Button onClick={printDecorations}>Print decorations</Button>
-            <Button onClick={removeWidgets}>Remove widgets</Button>
-            <Button onClick={() => diffEditor && updateDiffWidgets(diffEditor)}>
-              Update diff widgets
-            </Button>
-            <Button onClick={enableIntellisense}>Intellisense</Button>
-            <Button onClick={printSelection}>Print Selection</Button>
-            {editorContentPending !== null && (
-              <Button
-                onClick={() => {
-                  const newRenderSideBySide = !renderSideBySide;
-                  setRenderSideBySide(newRenderSideBySide);
-
-                  // Update line numbers when toggling view
-                  if (diffEditor) {
-                    diffEditor.getModifiedEditor().updateOptions({
-                      lineNumbers: newRenderSideBySide ? "on" : "off",
-                    });
-                  }
-                }}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost">Debug Actions</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={setInitialContent}>
+                Set Initial Content
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={startDiff}>
+                Start diff
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={endDiff}>End diff</DropdownMenuItem>
+              <DropdownMenuItem onClick={printContent}>
+                Print editor content
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={setDecorations}>
+                Set decorations
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={printDecorations}>
+                Print decorations
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={removeWidgets}>
+                Remove widgets
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => diffEditor && updateDiffWidgets(diffEditor)}
               >
-                {renderSideBySide ? "Inline View" : "Side by Side View"}
-              </Button>
-            )}
-          </>
+                Update diff widgets
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={enableIntellisense}>
+                Intellisense
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={printSelection}>
+                Print Selection
+              </DropdownMenuItem>
+              {editorContentPending !== null && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    const newRenderSideBySide = !renderSideBySide;
+                    setRenderSideBySide(newRenderSideBySide);
+
+                    // Update line numbers when toggling view
+                    if (diffEditor) {
+                      diffEditor.getModifiedEditor().updateOptions({
+                        lineNumbers: newRenderSideBySide ? "on" : "off",
+                      });
+                    }
+                  }}
+                >
+                  {renderSideBySide ? "Inline View" : "Side by Side View"}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
-      <SchemaContextAlert />
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 border-t">
         {editorContentPending === null ? (
           <Editor
             height="100%"
-            className="overflow-hidden border"
+            className="overflow-hidden"
             language="sql"
             value={editorContent}
             onChange={(value) => setEditorContent(value ?? "")}
@@ -385,7 +418,7 @@ export const SqlEditor = () => {
             </div>
             <DiffEditor
               height="100%"
-              className="overflow-hidden border"
+              className="overflow-hidden"
               language="sql"
               original={editorContent}
               modified={editorContentPending}

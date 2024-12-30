@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
 import { useData } from "@/contexts/DataContext";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import type { Selection } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import { useEventListener, useResizeObserver } from "usehooks-ts";
 import { StaticEditor } from "../chat/StaticEditor";
-import { getEditorSelectionContent, useEditor } from "./editorStore";
+import { useActiveEditor } from "./editorStore";
 
 export const InlinePromptWidget = ({
   id,
@@ -40,7 +41,7 @@ export const InlinePromptWidget = ({
   }, [height]);
 
   const { editorContent, editorSelection, setEditorContentPending } =
-    useEditor();
+    useActiveEditor();
   const { databaseMetadata } = useData();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 
@@ -105,7 +106,7 @@ export const InlinePromptWidget = ({
 
   return (
     <div ref={containerRef}>
-      <div className="relative flex h-fit w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
+      <div className="relative flex h-full w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
         <Button
           onClick={onRemove}
           variant="ghost"
@@ -126,7 +127,7 @@ export const InlinePromptWidget = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleTextareaKeyDown}
-          className="bg-white p-1 text-base"
+          className="bg-white p-1 text-base md:leading-normal"
           placeholder="Enter your prompt..."
           rows={2}
         />

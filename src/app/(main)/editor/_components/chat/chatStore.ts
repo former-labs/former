@@ -4,7 +4,6 @@ import type { DatabaseMetadata } from "@/types/connections";
 import type { Selection } from "monaco-editor";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
-import { useEditor } from "../editor/editorStore";
 
 type UserChatMessageType = {
   type: "user";
@@ -60,19 +59,20 @@ const useChatStore = create<ChatStore>((set) => ({
 
 export const useChat = () => {
   const { databaseMetadata } = useData();
-
   const chatStore = useChatStore();
-  const { editorContent, editorSelection } = useEditor();
   
   const activeChat = chatStore.chats.find(
     (chat) => chat.chatId === chatStore.activeChatId
   );
 
   const submitMessageMutation = api.editor.submitMessage.useMutation();
-
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 
-  const createChat = () => {
+  const createChat = ({
+    editorSelection
+  }: {
+    editorSelection: Selection | null;
+  }) => {
     // If there's an active chat with no messages, remove it first
     let updatedChats = [...chatStore.chats];
     if (activeChat && activeChat.messages.length === 0) {
@@ -95,9 +95,11 @@ export const useChat = () => {
   };
 
   const submitMessage = async ({
-    message
+    message,
+    editorContent
   }: {
     message: string;
+    editorContent: string;
   }) => {
     if (!chatStore.activeChatId || !activeChat || !databaseMetadata) return;
 

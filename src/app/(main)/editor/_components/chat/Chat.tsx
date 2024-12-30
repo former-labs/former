@@ -8,16 +8,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
-import { getEditorSelectionContent, useEditor } from "../editor/editorStore";
+import { useActiveEditor } from "../editor/editorStore";
 import { ApplyCodeBlock } from "./ApplyCodeBlock";
 import { useChat, type ChatMessageType } from "./chatStore";
 import { KnowledgeSourceComponent } from "./KnowledgeSourceComponent";
 import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {
+  const { editorSelection } = useActiveEditor();
   const { createChat, chats, setActiveChatId, activeChat } = useChat();
 
   return (
@@ -49,7 +51,15 @@ export const ChatSidebar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button onClick={createChat} size="icon" variant="outline">
+          <Button
+            onClick={() =>
+              createChat({
+                editorSelection,
+              })
+            }
+            size="icon"
+            variant="outline"
+          >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -64,6 +74,7 @@ export const ChatSidebar = () => {
 
 const ActiveChat = () => {
   const { activeChat, submitMessage } = useChat();
+  const { editorContent } = useActiveEditor();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -85,7 +96,10 @@ const ActiveChat = () => {
   }
 
   const handleSubmit = async (message: string) => {
-    await submitMessage({ message });
+    await submitMessage({
+      message,
+      editorContent,
+    });
   };
 
   const lastMessage = activeChat.messages[activeChat.messages.length - 1];
@@ -117,7 +131,7 @@ const ActiveChat = () => {
 const ChatMessage = ({ message }: { message: ChatMessageType }) => {
   if (message.type === "assistant") {
     return (
-      <div className="p-2">
+      <div className="p-2 text-sm">
         <ReactMarkdown
           components={{
             pre: CodeBlock,
@@ -152,7 +166,7 @@ const ChatMessage = ({ message }: { message: ChatMessageType }) => {
   }
 
   return (
-    <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
+    <div className="rounded-lg bg-white px-3 py-2 text-sm text-gray-800 shadow">
       {message.content}
     </div>
   );
@@ -169,7 +183,7 @@ const ChatInputBox = ({
     shouldFocusActiveChatTextarea,
     setShouldFocusActiveChatTextarea,
   } = useChat();
-  const { editorContent } = useEditor();
+  const { editorContent } = useActiveEditor();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const selectionContent = activeChat?.pendingEditorSelection
