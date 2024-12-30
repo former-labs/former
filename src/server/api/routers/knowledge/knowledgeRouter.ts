@@ -16,6 +16,34 @@ export const knowledgeRouter = createTRPCRouter({
       return knowledge;
     }),
 
+  getKnowledge: workspaceProtectedProcedure
+    .input(z.object({
+      knowledgeId: z.string().uuid()
+    }))
+    .query(async ({ input, ctx }) => {
+      const knowledge = await db
+        .select()
+        .from(knowledgeTable)
+        .where(
+          and(
+            eq(knowledgeTable.id, input.knowledgeId),
+            eq(knowledgeTable.workspaceId, ctx.activeWorkspaceId)
+          )
+        )
+        .limit(1);
+
+      const knowledgeItem = knowledge[0];
+
+      if (!knowledgeItem) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Knowledge not found or not authorized to access'
+        });
+      }
+
+      return knowledgeItem;
+    }),
+
   createKnowledge: workspaceProtectedProcedure
     .input(
       z.object({

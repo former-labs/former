@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 import { Check, Copy, ListCheck, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useEditor } from "./editorStore";
+import { useActiveEditor } from "../editor/editorStore";
 import { StaticEditor } from "./StaticEditor";
 
 export const ApplyCodeBlock = ({ codeContent }: { codeContent: string }) => {
-  const { editorContent, setEditorContentPending } = useEditor();
+  const { editorContent, setEditorContentPending } = useActiveEditor();
   const [isCopied, setIsCopied] = useState(false);
 
   const applyChangeMutation = api.editor.applyChange.useMutation();

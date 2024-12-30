@@ -3,6 +3,7 @@ import electronSquirrelStartup from 'electron-squirrel-startup';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import type { Integration } from '../types/connections.js';
+import type { IElectronAPI } from '../types/electron.js';
 import { database } from './database.js';
 import { env } from './env.electron.js';
 import storeUtils from './store.js';
@@ -50,47 +51,52 @@ function createWindow() {
   });
 }
 
+// Helper function to wrap IPC handlers and add _ to first parameter
+const ipcHandler = <T extends unknown[], R>(
+  channel: string,
+  handler: (...args: T) => Promise<R>
+) => {
+  ipcMain.handle(channel, async (_, ...args: T) => {
+    return await handler(...args);
+  });
+};
+
 // Set up IPC handlers
-ipcMain.handle('database:connect', async (_, config): Promise<{
-  success: boolean;
-  connectionId?: string;
-  error?: string;
-}> => {
+ipcHandler('database:connect', (async (config: Integration) => {
   return await database.connect(config);
-});
+}) as IElectronAPI['database']['connect']);
 
-ipcMain.handle('database:disconnect', async (_, connectionId): Promise<void> => {
+ipcHandler('database:disconnect', (async (connectionId: string) => {
   await database.disconnect(connectionId);
-});
+}) as IElectronAPI['database']['disconnect']);
 
-ipcMain.handle('database:execute', async (_, connectionId, query): Promise<unknown[]> => {
+ipcHandler('database:execute', (async (connectionId: string, query: string) => {
   return await database.execute(connectionId, query);
-});
+}) as IElectronAPI['database']['execute']);
 
-// Add these IPC handlers before app.whenReady()
-ipcMain.handle('store:getIntegrations', async (): Promise<Integration[]> => {
+ipcHandler('store:getIntegrations', (async () => {
   return storeUtils.getIntegrations();
-});
+}) as IElectronAPI['store']['getIntegrations']);
 
-ipcMain.handle('store:setIntegrations', async (_, integrations): Promise<void> => {
+ipcHandler('store:setIntegrations', (async (integrations: Integration[]) => {
   storeUtils.setIntegrations(integrations);
-});
+}) as IElectronAPI['store']['setIntegrations']);
 
-ipcMain.handle('store:getActiveIntegrationId', async (): Promise<string | null> => {
+ipcHandler('store:getActiveIntegrationId', (async () => {
   return storeUtils.getActiveIntegrationId();
-});
+}) as IElectronAPI['store']['getActiveIntegrationId']);
 
-ipcMain.handle('store:setActiveIntegrationId', async (_, id): Promise<void> => {
+ipcHandler('store:setActiveIntegrationId', (async (id: string | null) => {
   storeUtils.setActiveIntegrationId(id);
-});
+}) as IElectronAPI['store']['setActiveIntegrationId']);
 
-ipcMain.handle('database:getProjectsAndDatasets', async (_, connectionId) => {
-  return await database.getProjectsAndDatasets(connectionId);
-});
+ipcHandler('database:getProjectsAndDatasets', (async (connectionId: string) => {
+  return database.getProjectsAndDatasets(connectionId);
+}) as IElectronAPI['database']['getProjectsAndDatasets']);
 
-ipcMain.handle('database:getTablesForDataset', async (_, connectionId, datasetId, pageToken) => {
-  return await database.getTablesForDataset(connectionId, datasetId, pageToken);
-});
+ipcHandler('database:getTablesForDataset', (async (connectionId: string, datasetId: string, pageToken?: string) => {
+  return database.getTablesForDataset(connectionId, datasetId, pageToken);
+}) as IElectronAPI['database']['getTablesForDataset']);
 
 // Add handler for opening external URLs
 ipcMain.on('open-external', (_event, url) => {

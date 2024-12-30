@@ -1,17 +1,22 @@
 "use client";
 
 import { useData } from "@/contexts/DataContext";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { type Monaco } from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
-import { filterDatabaseMetadataContext } from "./chatStore";
-import { getEditorSelectionContent, useEditor } from "./editorStore";
+import { filterDatabaseMetadataContext } from "../chat/chatStore";
+import { useActiveEditor } from "./editorStore";
 
 export const useAutocomplete = (monaco: Monaco | null) => {
   const { databaseMetadata } = useData();
 
-  const { editorContent } = useEditor();
+  const { editorContent } = useActiveEditor();
   const getAutocomplete = api.editor.getAutocomplete.useMutation();
+
+  /*
+    A lot of the code here is purely to allow a specific debouncing setup.
+  */
   const pendingRequestRef = useRef<Promise<string | undefined> | null>(null);
   const latestArgsRef = useRef<{
     editorContent: string;

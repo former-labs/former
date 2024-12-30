@@ -1,18 +1,26 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useData } from "@/contexts/DataContext";
 import { env } from "@/env";
 import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
+import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { useQueryResult } from "../queryResultStore";
 import { DiffWidget } from "./DiffWidget";
-import { useEditor } from "./editorStore";
+import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
-import { useQueryResult } from "./queryResultStore";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
+import { useEditorSelection } from "./useEditorSelection";
+import { useViewZones, type ViewZone, ViewZonePortal } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -20,10 +28,11 @@ export const SqlEditor = () => {
     editorContentPending,
     setEditorContent,
     setEditorContentPending,
-    setEditorSelection,
-  } = useEditor();
+    editorSelectionContent,
+    editorSelection,
+  } = useActiveEditor();
 
-  const { executeQuery } = useQueryResult();
+  const { executeQuery, resultLoading } = useQueryResult();
   const { databaseMetadata } = useData();
 
   // We use the same monaco for both editors, seems to work?
@@ -34,11 +43,18 @@ export const SqlEditor = () => {
     useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
-  const [viewZoneIds, setViewZoneIds] = useState<string[]>([]);
+  const [viewZones, setViewZones] = useState<ViewZone[]>([]);
 
   useEffect(() => {
     console.log("Database metadata changed:", databaseMetadata);
   }, [databaseMetadata]);
+
+  useViewZones({ viewZones, codeEditor, monaco });
+  useAutocomplete(monaco);
+  useEditorSelection({
+    codeEditor,
+    diffEditor,
+  });
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
@@ -102,45 +118,32 @@ export const SqlEditor = () => {
     }
   };
 
-  useAutocomplete(monaco);
-
   // Add Cmd+K binding for view zone
   useEditorKeybind({
     id: "add-view-zone",
     callback: async () => {
       if (!codeEditor) return;
-      const position = codeEditor.getPosition();
-      if (!position) return;
 
-      codeEditor.changeViewZones(function (changeAccessor) {
-        // I think I am abusing the view zones API here by using a z-index of 10
-        // Pretty sure they expect you to use a view zone to make a gap and then
-        // add a widget to that gap.
-        const domNode = document.createElement("div");
-        domNode.style.position = "absolute";
-        domNode.style.zIndex = "10";
-        const root = createRoot(domNode);
+      if (!editorSelection) {
+        throw new Error("No editor selection.");
+      }
+      // const position = codeEditor.getPosition();
+      // if (!position) return;
 
-        const zoneId = changeAccessor.addZone({
-          afterLineNumber: position.lineNumber - 1,
-          heightInLines: 5,
-          domNode: domNode,
-        });
+      const newId = crypto.randomUUID();
 
-        const removeZone = () => {
-          console.log("Removing zone", zoneId);
-          codeEditor.changeViewZones((accessor) => {
-            accessor.removeZone(zoneId);
-            setViewZoneIds((prev) => prev.filter((id) => id !== zoneId));
-          });
-        };
+      const domNode = document.createElement("div");
+      domNode.style.position = "absolute";
+      domNode.style.zIndex = "10";
 
-        root.render(
-          <InlinePromptWidget zoneId={zoneId} onRemove={removeZone} />,
-        );
-
-        setViewZoneIds((prev) => [...prev, zoneId]);
-      });
+      setViewZones((prev) => [
+        ...prev,
+        {
+          id: newId,
+          lineNumber: editorSelection.startLineNumber - 1,
+          domNode,
+        },
+      ]);
     },
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK : null,
     codeEditor,
@@ -150,7 +153,7 @@ export const SqlEditor = () => {
   // Add Cmd+Enter binding to execute query
   useEditorKeybind({
     id: "execute-query",
-    callback: executeQuery,
+    callback: () => executeQuery({ editorSelectionContent, editorContent }),
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
     codeEditor,
     diffEditor,
@@ -180,12 +183,6 @@ export const SqlEditor = () => {
   ) => {
     setCodeEditor(editor);
     setMonaco(monaco);
-
-    // Add selection change listener
-    editor.onDidChangeCursorSelection(() => {
-      const selection = editor.getSelection();
-      setEditorSelection(selection);
-    });
   };
 
   const handleDiffEditorDidMount = (
@@ -205,12 +202,6 @@ export const SqlEditor = () => {
 
     modifiedEditor.onDidChangeModelContent(() => {
       setEditorContentPending(modifiedEditor.getValue());
-    });
-
-    // Add selection change listener for diff editor
-    modifiedEditor.onDidChangeCursorSelection(() => {
-      const selection = modifiedEditor.getSelection();
-      setEditorSelection(selection);
     });
 
     modifiedEditor.updateOptions({
@@ -321,48 +312,83 @@ export const SqlEditor = () => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col pt-4">
-      <div className="mb-4 flex flex-shrink-0 gap-2 overflow-x-auto">
-        <Button onClick={executeQuery}>Execute</Button>
+    <div className="flex h-full w-full flex-col">
+      <div className="flex flex-shrink-0 gap-2 overflow-x-auto bg-gray-50 px-2 py-1">
+        <Button
+          variant="ghost"
+          onClick={() =>
+            executeQuery({ editorSelectionContent, editorContent })
+          }
+          disabled={resultLoading}
+        >
+          {resultLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+        </Button>
         {env.NEXT_PUBLIC_NODE_ENV === "development" && (
-          <>
-            <Button onClick={setInitialContent}>Set Initial Content</Button>
-            <Button onClick={startDiff}>Start diff</Button>
-            <Button onClick={endDiff}>End diff</Button>
-            <Button onClick={printContent}>Print editor content</Button>
-            <Button onClick={setDecorations}>Set decorations</Button>
-            <Button onClick={printDecorations}>Print decorations</Button>
-            <Button onClick={removeWidgets}>Remove widgets</Button>
-            <Button onClick={() => diffEditor && updateDiffWidgets(diffEditor)}>
-              Update diff widgets
-            </Button>
-            <Button onClick={enableIntellisense}>Intellisense</Button>
-            <Button onClick={printSelection}>Print Selection</Button>
-            {editorContentPending !== null && (
-              <Button
-                onClick={() => {
-                  const newRenderSideBySide = !renderSideBySide;
-                  setRenderSideBySide(newRenderSideBySide);
-
-                  // Update line numbers when toggling view
-                  if (diffEditor) {
-                    diffEditor.getModifiedEditor().updateOptions({
-                      lineNumbers: newRenderSideBySide ? "on" : "off",
-                    });
-                  }
-                }}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost">Debug Actions</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={setInitialContent}>
+                Set Initial Content
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={startDiff}>
+                Start diff
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={endDiff}>End diff</DropdownMenuItem>
+              <DropdownMenuItem onClick={printContent}>
+                Print editor content
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={setDecorations}>
+                Set decorations
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={printDecorations}>
+                Print decorations
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={removeWidgets}>
+                Remove widgets
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => diffEditor && updateDiffWidgets(diffEditor)}
               >
-                {renderSideBySide ? "Inline View" : "Side by Side View"}
-              </Button>
-            )}
-          </>
+                Update diff widgets
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={enableIntellisense}>
+                Intellisense
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={printSelection}>
+                Print Selection
+              </DropdownMenuItem>
+              {editorContentPending !== null && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    const newRenderSideBySide = !renderSideBySide;
+                    setRenderSideBySide(newRenderSideBySide);
+
+                    // Update line numbers when toggling view
+                    if (diffEditor) {
+                      diffEditor.getModifiedEditor().updateOptions({
+                        lineNumbers: newRenderSideBySide ? "on" : "off",
+                      });
+                    }
+                  }}
+                >
+                  {renderSideBySide ? "Inline View" : "Side by Side View"}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 border-t">
         {editorContentPending === null ? (
           <Editor
             height="100%"
-            className="overflow-hidden border"
+            className="overflow-hidden"
             language="sql"
             value={editorContent}
             onChange={(value) => setEditorContent(value ?? "")}
@@ -397,7 +423,7 @@ export const SqlEditor = () => {
             </div>
             <DiffEditor
               height="100%"
-              className="overflow-hidden border"
+              className="overflow-hidden"
               language="sql"
               original={editorContent}
               modified={editorContentPending}
@@ -426,6 +452,29 @@ export const SqlEditor = () => {
           </div>
         )}
       </div>
+      {viewZones.map((zone) => {
+        const removeZone = () => {
+          setViewZones((prev) => prev.filter((vz) => vz.id !== zone.id));
+        };
+
+        const handleHeightChange = (height: number) => {
+          setViewZones((prev) =>
+            prev.map((vz) =>
+              vz.id === zone.id ? { ...vz, heightInPx: height } : vz,
+            ),
+          );
+        };
+
+        return (
+          <ViewZonePortal key={zone.id} zone={zone}>
+            <InlinePromptWidget
+              id={zone.id}
+              onRemove={removeZone}
+              onHeightChange={handleHeightChange}
+            />
+          </ViewZonePortal>
+        );
+      })}
     </div>
   );
 };

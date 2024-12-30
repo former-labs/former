@@ -4,27 +4,34 @@ import type { DatabaseMetadata } from "@/types/connections";
 import type { Selection } from "monaco-editor";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
-import { useEditor } from "./editorStore";
 
-interface ChatMessage {
-  type: "assistant" | "user";
+type UserChatMessageType = {
+  type: "user";
   content: string;
 }
 
-interface Chat {
+type AssistantChatMessageType = {
+  type: "assistant";
+  content: string;
+  knowledgeSources: string[];
+}
+
+export type ChatMessageType = UserChatMessageType | AssistantChatMessageType;
+
+type ChatType = {
   chatId: string;
-  messages: ChatMessage[];
+  messages: ChatMessageType[];
   createdAt: Date;
   pendingEditorSelection: Selection | null;
 }
 
-interface ChatStore {
-  chats: Chat[];
+type ChatStore = {
+  chats: ChatType[];
   activeChatId: string | null;
   shouldFocusActiveChatTextarea: boolean;
   setActiveChatId: (chatId: string) => void;
-  setChats: (chats: Chat[]) => void;
-  addMessage: (chatId: string, message: ChatMessage) => void;
+  setChats: (chats: ChatType[]) => void;
+  addMessage: (chatId: string, message: ChatMessageType) => void;
   setShouldFocusActiveChatTextarea: (value: boolean) => void;
 }
 
@@ -52,19 +59,20 @@ const useChatStore = create<ChatStore>((set) => ({
 
 export const useChat = () => {
   const { databaseMetadata } = useData();
-
   const chatStore = useChatStore();
-  const { editorContent, editorSelection } = useEditor();
   
   const activeChat = chatStore.chats.find(
     (chat) => chat.chatId === chatStore.activeChatId
   );
 
   const submitMessageMutation = api.editor.submitMessage.useMutation();
-
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 
-  const createChat = () => {
+  const createChat = ({
+    editorSelection
+  }: {
+    editorSelection: Selection | null;
+  }) => {
     // If there's an active chat with no messages, remove it first
     let updatedChats = [...chatStore.chats];
     if (activeChat && activeChat.messages.length === 0) {
@@ -87,14 +95,16 @@ export const useChat = () => {
   };
 
   const submitMessage = async ({
-    message
+    message,
+    editorContent
   }: {
     message: string;
+    editorContent: string;
   }) => {
     if (!chatStore.activeChatId || !activeChat || !databaseMetadata) return;
 
-    const newMessage = {
-      type: "user" as const,
+    const newMessage: UserChatMessageType = {
+      type: "user",
       content: message,
     };
 
@@ -112,7 +122,9 @@ export const useChat = () => {
 
     chatStore.addMessage(chatStore.activeChatId, newMessage);
     const response = await responsePromise;
-    chatStore.addMessage(chatStore.activeChatId, response.message);
+    chatStore.addMessage(chatStore.activeChatId, {
+      ...response.message,
+    });
   };
 
   return {
