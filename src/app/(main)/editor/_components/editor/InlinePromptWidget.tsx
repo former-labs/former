@@ -106,7 +106,7 @@ export const InlinePromptWidget = ({
 
   return (
     <div ref={containerRef}>
-      <div className="relative flex h-fit w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
+      <div className="relative flex h-full w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
         <Button
           onClick={onRemove}
           variant="ghost"
@@ -127,7 +127,7 @@ export const InlinePromptWidget = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleTextareaKeyDown}
-          className="bg-white p-1 text-base"
+          className="bg-white p-1 text-base md:leading-normal"
           placeholder="Enter your prompt..."
           rows={2}
         />
