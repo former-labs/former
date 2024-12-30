@@ -20,7 +20,7 @@ import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
-import { useViewZones, type ViewZone, ViewZonePortal } from "./useViewZones";
+import { useViewZones, ViewZonePortal, type ViewZone } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -43,13 +43,16 @@ export const SqlEditor = () => {
     useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
-  const [viewZones, setViewZones] = useState<ViewZone[]>([]);
+
+  const [viewZones, setViewZones, updateZoneHeight] = useViewZones({
+    codeEditor,
+    monaco,
+  });
 
   useEffect(() => {
     console.log("Database metadata changed:", databaseMetadata);
   }, [databaseMetadata]);
 
-  useViewZones({ viewZones, codeEditor, monaco });
   useAutocomplete(monaco);
   useEditorSelection({
     codeEditor,
@@ -136,7 +139,7 @@ export const SqlEditor = () => {
       domNode.style.position = "absolute";
       domNode.style.zIndex = "10";
 
-      setViewZones((prev) => [
+      setViewZones((prev: ViewZone[]) => [
         ...prev,
         {
           id: newId,
@@ -454,14 +457,8 @@ export const SqlEditor = () => {
       </div>
       {viewZones.map((zone) => {
         const removeZone = () => {
-          setViewZones((prev) => prev.filter((vz) => vz.id !== zone.id));
-        };
-
-        const updateZoneHeight = (height: number) => {
           setViewZones((prev) =>
-            prev.map((vz) =>
-              vz.id === zone.id ? { ...vz, heightInPx: height } : vz,
-            ),
+            prev.filter((vz: ViewZone) => vz.id !== zone.id),
           );
         };
 

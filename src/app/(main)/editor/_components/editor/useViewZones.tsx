@@ -2,6 +2,7 @@
 
 import { type Monaco } from "@monaco-editor/react";
 import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
+import type React from "react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useResizeObserver } from "usehooks-ts";
@@ -20,7 +21,7 @@ export const ViewZonePortal = ({
 }: {
   zone: ViewZone;
   children: ReactNode;
-  onHeightChange: (height: number) => void;
+  onHeightChange: (id: string, height: number) => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -32,9 +33,9 @@ export const ViewZonePortal = ({
   // Report height changes to parent
   useEffect(() => {
     if (height > 0) {
-      onHeightChange(height);
+      onHeightChange(zone.id, height);
     }
-  }, [height]);
+  }, [height, zone.id]);
 
   return createPortal(
     <div className="h-full">
@@ -48,20 +49,31 @@ export const ViewZonePortal = ({
 };
 
 export const useViewZones = ({
-  viewZones,
   codeEditor,
   monaco,
 }: {
-  viewZones: ViewZone[];
   codeEditor: editor.IStandaloneCodeEditor | null;
   monaco: Monaco | null;
-}) => {
+}): [
+  ViewZone[],
+  React.Dispatch<React.SetStateAction<ViewZone[]>>,
+  (id: string, height: number) => void,
+] => {
+  const [viewZones, setViewZones] = useState<ViewZone[]>([]);
   const [zoneIdMapping, setZoneIdMapping] = useState<
     {
       uuid: string;
       zoneId: string;
     }[]
   >([]);
+
+  const updateZoneHeight = (id: string, height: number) => {
+    setViewZones((prev) =>
+      prev.map((vz: ViewZone) =>
+        vz.id === id ? { ...vz, heightInPx: height } : vz,
+      ),
+    );
+  };
 
   useEffect(() => {
     if (!codeEditor || !monaco) return;
@@ -128,4 +140,6 @@ export const useViewZones = ({
       }
     };
   }, [codeEditor, viewZones, monaco]);
+
+  return [viewZones, setViewZones, updateZoneHeight];
 };
