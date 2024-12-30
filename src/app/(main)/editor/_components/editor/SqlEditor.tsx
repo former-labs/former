@@ -29,6 +29,7 @@ export const SqlEditor = () => {
     setEditorContent,
     setEditorContentPending,
     editorSelectionContent,
+    editorSelection,
   } = useActiveEditor();
 
   const { executeQuery, resultLoading } = useQueryResult();
@@ -122,8 +123,12 @@ export const SqlEditor = () => {
     id: "add-view-zone",
     callback: async () => {
       if (!codeEditor) return;
-      const position = codeEditor.getPosition();
-      if (!position) return;
+
+      if (!editorSelection) {
+        throw new Error("No editor selection.");
+      }
+      // const position = codeEditor.getPosition();
+      // if (!position) return;
 
       const newId = crypto.randomUUID();
 
@@ -135,7 +140,7 @@ export const SqlEditor = () => {
         ...prev,
         {
           id: newId,
-          lineNumber: position.lineNumber - 1,
+          lineNumber: editorSelection.startLineNumber - 1,
           domNode,
         },
       ]);
