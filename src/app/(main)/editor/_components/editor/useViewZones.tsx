@@ -1,9 +1,10 @@
 "use client";
 
 import { type Monaco } from "@monaco-editor/react";
-import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useEffect, useState, type ReactNode } from "react";
+import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useResizeObserver } from "usehooks-ts";
 
 export type ViewZone = {
   id: string;
@@ -15,12 +16,32 @@ export type ViewZone = {
 export const ViewZonePortal = ({
   zone,
   children,
+  onHeightChange,
 }: {
   zone: ViewZone;
   children: ReactNode;
+  onHeightChange: (height: number) => void;
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Watch container height changes
+  const { height = 0 } = useResizeObserver({
+    ref: containerRef,
+  });
+
+  // Report height changes to parent
+  useEffect(() => {
+    if (height > 0) {
+      onHeightChange(height);
+    }
+  }, [height]);
+
   return createPortal(
-    <div className="h-full">{children}</div>,
+    <div className="h-full">
+      <div ref={containerRef} className="h-fit">
+        {children}
+      </div>
+    </div>,
     zone.domNode,
     zone.id,
   );

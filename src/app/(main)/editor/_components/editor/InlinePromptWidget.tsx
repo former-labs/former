@@ -8,37 +8,22 @@ import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import type { Selection } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
-import { useEventListener, useResizeObserver } from "usehooks-ts";
+import { useEventListener } from "usehooks-ts";
 import { StaticEditor } from "../chat/StaticEditor";
 import { useActiveEditor } from "./editorStore";
 
 export const InlinePromptWidget = ({
   id,
   onRemove,
-  onHeightChange,
 }: {
   id: string;
   onRemove: () => void;
-  onHeightChange: (height: number) => void;
 }) => {
   const [text, setText] = useState("");
   const [storedSelection, setStoredSelection] = useState<Selection | null>(
     null,
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Watch container height changes
-  const { height = 0 } = useResizeObserver({
-    ref: containerRef,
-  });
-
-  // Report height changes to parent
-  useEffect(() => {
-    if (height > 0) {
-      onHeightChange(height);
-    }
-  }, [height]);
 
   const { editorContent, editorSelection, setEditorContentPending } =
     useActiveEditor();
@@ -105,7 +90,7 @@ export const InlinePromptWidget = ({
   };
 
   return (
-    <div ref={containerRef}>
+    <div>
       <div className="relative flex h-full w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
         <Button
           onClick={onRemove}

@@ -457,7 +457,7 @@ export const SqlEditor = () => {
           setViewZones((prev) => prev.filter((vz) => vz.id !== zone.id));
         };
 
-        const handleHeightChange = (height: number) => {
+        const updateZoneHeight = (height: number) => {
           setViewZones((prev) =>
             prev.map((vz) =>
               vz.id === zone.id ? { ...vz, heightInPx: height } : vz,
@@ -466,12 +466,12 @@ export const SqlEditor = () => {
         };
 
         return (
-          <ViewZonePortal key={zone.id} zone={zone}>
-            <InlinePromptWidget
-              id={zone.id}
-              onRemove={removeZone}
-              onHeightChange={handleHeightChange}
-            />
+          <ViewZonePortal
+            key={zone.id}
+            zone={zone}
+            onHeightChange={updateZoneHeight}
+          >
+            <InlinePromptWidget id={zone.id} onRemove={removeZone} />
           </ViewZonePortal>
         );
       })}
