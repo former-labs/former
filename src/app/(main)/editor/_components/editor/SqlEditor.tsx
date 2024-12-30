@@ -30,17 +30,12 @@ export const SqlEditor = () => {
     setEditorContentPending,
     editorSelectionContent,
     editorSelection,
+    inlinePromptWidgets,
+    setInlinePromptWidgets,
   } = useActiveEditor();
 
   const { executeQuery, resultLoading } = useQueryResult();
   const { databaseMetadata } = useData();
-
-  const [inlinePromptWidgets, setInlinePromptWidgets] = useState<
-    {
-      id: string;
-      lineNumber: number;
-    }[]
-  >([]);
 
   const [monaco, setMonaco] = useState<Monaco | null>(null);
   const [codeEditor, setCodeEditor] =
@@ -139,8 +134,8 @@ export const SqlEditor = () => {
       }
 
       const newId = crypto.randomUUID();
-      setInlinePromptWidgets((prev) => [
-        ...prev,
+      setInlinePromptWidgets([
+        ...inlinePromptWidgets,
         {
           id: newId,
           lineNumber: editorSelection.startLineNumber - 1,
@@ -456,8 +451,8 @@ export const SqlEditor = () => {
       </div>
       {inlinePromptWidgets.map((widget) => {
         const removeZone = () => {
-          setInlinePromptWidgets((prev) =>
-            prev.filter((w) => w.id !== widget.id),
+          setInlinePromptWidgets(
+            inlinePromptWidgets.filter((w) => w.id !== widget.id),
           );
         };
 
