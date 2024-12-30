@@ -20,7 +20,7 @@ import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
-import { useViewZones, ViewZonePortal, type ViewZone } from "./useViewZones";
+import { useViewZones, ViewZonePortal } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -36,6 +36,12 @@ export const SqlEditor = () => {
   const { databaseMetadata } = useData();
 
   // We use the same monaco for both editors, seems to work?
+  const [inlinePromptWidgets, setInlinePromptWidgets] = useState<
+    {
+      id: string;
+      lineNumber: number;
+    }[]
+  >([]);
   const [monaco, setMonaco] = useState<Monaco | null>(null);
   const [codeEditor, setCodeEditor] =
     useState<editor.IStandaloneCodeEditor | null>(null);
@@ -44,7 +50,8 @@ export const SqlEditor = () => {
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
-  const [viewZones, setViewZones, updateZoneHeight] = useViewZones({
+  const { viewZones, updateZoneHeight } = useViewZones({
+    viewZoneInstances: inlinePromptWidgets,
     codeEditor,
     monaco,
   });
@@ -130,21 +137,13 @@ export const SqlEditor = () => {
       if (!editorSelection) {
         throw new Error("No editor selection.");
       }
-      // const position = codeEditor.getPosition();
-      // if (!position) return;
 
       const newId = crypto.randomUUID();
-
-      const domNode = document.createElement("div");
-      domNode.style.position = "absolute";
-      domNode.style.zIndex = "10";
-
-      setViewZones((prev: ViewZone[]) => [
+      setInlinePromptWidgets((prev) => [
         ...prev,
         {
           id: newId,
           lineNumber: editorSelection.startLineNumber - 1,
-          domNode,
         },
       ]);
     },
@@ -457,8 +456,8 @@ export const SqlEditor = () => {
       </div>
       {viewZones.map((zone) => {
         const removeZone = () => {
-          setViewZones((prev) =>
-            prev.filter((vz: ViewZone) => vz.id !== zone.id),
+          setInlinePromptWidgets((prev) =>
+            prev.filter((widget) => widget.id !== zone.id),
           );
         };
 

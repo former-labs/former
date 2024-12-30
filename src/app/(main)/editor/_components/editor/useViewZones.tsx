@@ -2,7 +2,6 @@
 
 import { type Monaco } from "@monaco-editor/react";
 import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
-import type React from "react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useResizeObserver } from "usehooks-ts";
@@ -48,24 +47,59 @@ export const ViewZonePortal = ({
   );
 };
 
+/*
+  This is unfortunately a bit confusing.
+  It syncs the incoming viewZoneInstances with actual viewZones in Monaco reactively.
+*/
 export const useViewZones = ({
+  viewZoneInstances,
   codeEditor,
   monaco,
 }: {
+  viewZoneInstances: {
+    id: string;
+    lineNumber: number;
+  }[];
   codeEditor: editor.IStandaloneCodeEditor | null;
   monaco: Monaco | null;
-}): [
-  ViewZone[],
-  React.Dispatch<React.SetStateAction<ViewZone[]>>,
-  (id: string, height: number) => void,
-] => {
+}): {
+  viewZones: ViewZone[];
+  updateZoneHeight: (id: string, height: number) => void;
+} => {
   const [viewZones, setViewZones] = useState<ViewZone[]>([]);
   const [zoneIdMapping, setZoneIdMapping] = useState<
     {
-      uuid: string;
-      zoneId: string;
+      id: string;
+      editorZoneId: string;
     }[]
   >([]);
+
+  // Sync viewZoneInstances with viewZones
+  useEffect(() => {
+    setViewZones((currentViewZones) => {
+      // Keep existing zones that are still in instances
+      const updatedZones = currentViewZones.filter((zone) =>
+        viewZoneInstances.some((instance) => instance.id === zone.id),
+      );
+
+      // Add new zones
+      viewZoneInstances.forEach((instance) => {
+        if (!updatedZones.some((zone) => zone.id === instance.id)) {
+          const domNode = document.createElement("div");
+          domNode.style.position = "absolute";
+          domNode.style.zIndex = "10";
+
+          updatedZones.push({
+            id: instance.id,
+            lineNumber: instance.lineNumber,
+            domNode,
+          });
+        }
+      });
+
+      return updatedZones;
+    });
+  }, [viewZoneInstances]);
 
   const updateZoneHeight = (id: string, height: number) => {
     setViewZones((prev) =>
@@ -75,6 +109,7 @@ export const useViewZones = ({
     );
   };
 
+  // Sync viewZones with Monaco editor
   useEffect(() => {
     if (!codeEditor || !monaco) return;
 
@@ -83,14 +118,14 @@ export const useViewZones = ({
 
     // Remove existing view zones
     codeEditor.changeViewZones((changeAccessor) => {
-      zoneIdMapping.forEach(({ zoneId }) => {
-        changeAccessor.removeZone(zoneId);
+      zoneIdMapping.forEach(({ editorZoneId }) => {
+        changeAccessor.removeZone(editorZoneId);
       });
     });
 
     const newZoneIdMapping: {
-      uuid: string;
-      zoneId: string;
+      id: string;
+      editorZoneId: string;
     }[] = [];
 
     // Create new view zones
@@ -107,15 +142,15 @@ export const useViewZones = ({
           );
         }
 
-        const zoneId = changeAccessor.addZone({
+        const editorZoneId = changeAccessor.addZone({
           afterLineNumber: zone.lineNumber,
           heightInLines,
           domNode: zone.domNode,
         });
 
         newZoneIdMapping.push({
-          uuid: zone.id,
-          zoneId,
+          id: zone.id,
+          editorZoneId,
         });
       });
 
@@ -133,13 +168,16 @@ export const useViewZones = ({
     return () => {
       if (codeEditor) {
         codeEditor.changeViewZones((changeAccessor) => {
-          zoneIdMapping.forEach(({ zoneId }) => {
-            changeAccessor.removeZone(zoneId);
+          zoneIdMapping.forEach(({ editorZoneId }) => {
+            changeAccessor.removeZone(editorZoneId);
           });
         });
       }
     };
-  }, [codeEditor, viewZones, monaco]);
+  }, [viewZones, codeEditor, monaco]);
 
-  return [viewZones, setViewZones, updateZoneHeight];
+  return {
+    viewZones,
+    updateZoneHeight,
+  };
 };
