@@ -344,7 +344,7 @@ const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
   // SQL just works as a schema definition language.
   return `\
 <DATABASE_SCHEMA>
-${JSON.stringify(metadata, null, 2)}
+${JSON.stringify(metadata.projects, null, 2)}
 </DATABASE_SCHEMA>\
 `;
 };
