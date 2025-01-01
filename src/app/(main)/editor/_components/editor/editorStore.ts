@@ -9,6 +9,11 @@ interface Editor {
   editorContent: string;
   editorContentPending: string | null;
   editorSelection: Selection | null;
+  inlinePromptWidgets: {
+    id: string;
+    lineNumber: number;
+    text: string;
+  }[];
 }
 
 interface EditorStore {
@@ -21,6 +26,7 @@ interface EditorStore {
   setActiveEditorId: (id: string) => void;
   createEditor: () => void;
   deleteEditor: (id: string) => void;
+  setInlinePromptWidgets: (widgets: { id: string; lineNumber: number; text: string; }[]) => void;
 }
 
 const initialEditorId = uuidv4();
@@ -31,7 +37,8 @@ const useEditorStore = create<EditorStore>((set, get) => ({
     title: "Query 1",
     editorContent: "",
     editorContentPending: null,
-    editorSelection: null
+    editorSelection: null,
+    inlinePromptWidgets: []
   }],
   activeEditorId: initialEditorId,
   nextEditorNumber: 2,
@@ -89,6 +96,21 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
+  setInlinePromptWidgets: (widgets) => {
+    set((state) => {
+      if (!state.activeEditorId) return state;
+      const newEditorList = state.editorList.map(editor => {
+        if (editor.id === state.activeEditorId) {
+          return {
+            ...editor,
+            inlinePromptWidgets: widgets
+          };
+        }
+        return editor;
+      });
+      return { editorList: newEditorList };
+    });
+  },
   setActiveEditorId: (id) => {
     set({ activeEditorId: id });
   },
@@ -100,7 +122,8 @@ const useEditorStore = create<EditorStore>((set, get) => ({
         title: `Query ${state.nextEditorNumber}`,
         editorContent: "",
         editorContentPending: null,
-        editorSelection: null
+        editorSelection: null,
+        inlinePromptWidgets: []
       }],
       activeEditorId: newId,
       nextEditorNumber: state.nextEditorNumber + 1
@@ -116,7 +139,8 @@ const useEditorStore = create<EditorStore>((set, get) => ({
             title: `Query ${state.nextEditorNumber}`,
             editorContent: "",
             editorContentPending: null,
-            editorSelection: null
+            editorSelection: null,
+            inlinePromptWidgets: []
           }],
           activeEditorId: newId,
           nextEditorNumber: state.nextEditorNumber + 1
@@ -180,8 +204,35 @@ export const useActiveEditor = () => {
     editorContentPending: activeEditor.editorContentPending,
     editorSelection: activeEditor.editorSelection,
     editorSelectionContent,
+    inlinePromptWidgets: activeEditor.inlinePromptWidgets,
     setEditorContent: store.setEditorContent,
     setEditorContentPending: store.setEditorContentPending,
     setEditorSelection: store.setEditorSelection,
+    setInlinePromptWidgets: store.setInlinePromptWidgets,
+  };
+};
+
+export const useActiveEditorInlinePromptWidget = (id: string) => {
+  const { inlinePromptWidgets, setInlinePromptWidgets } = useActiveEditor();
+
+  const widget = inlinePromptWidgets.find(w => w.id === id);
+  if (!widget) {
+    throw new Error(`Prompt widget with id ${id} not found`);
+  }
+
+  const removePromptWidget = () => {
+    setInlinePromptWidgets(
+      inlinePromptWidgets.filter((w) => w.id !== id)
+    );
+  };
+
+  return {
+    text: widget.text,
+    setText: (text: string) => setInlinePromptWidgets(
+      inlinePromptWidgets.map(w => 
+        w.id === id ? { ...w, text } : w
+      )
+    ),
+    removePromptWidget
   };
 };

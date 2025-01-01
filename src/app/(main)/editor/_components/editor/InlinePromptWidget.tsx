@@ -8,40 +8,23 @@ import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import type { Selection } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
-import { useEventListener, useResizeObserver } from "usehooks-ts";
+import { useEventListener } from "usehooks-ts";
 import { StaticEditor } from "../chat/StaticEditor";
-import { useActiveEditor } from "./editorStore";
+import {
+  useActiveEditor,
+  useActiveEditorInlinePromptWidget,
+} from "./editorStore";
 
-export const InlinePromptWidget = ({
-  id,
-  onRemove,
-  onHeightChange,
-}: {
-  id: string;
-  onRemove: () => void;
-  onHeightChange: (height: number) => void;
-}) => {
-  const [text, setText] = useState("");
+export const InlinePromptWidget = ({ id }: { id: string }) => {
   const [storedSelection, setStoredSelection] = useState<Selection | null>(
     null,
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Watch container height changes
-  const { height = 0 } = useResizeObserver({
-    ref: containerRef,
-  });
-
-  // Report height changes to parent
-  useEffect(() => {
-    if (height > 0) {
-      onHeightChange(height);
-    }
-  }, [height]);
 
   const { editorContent, editorSelection, setEditorContentPending } =
     useActiveEditor();
+  const { removePromptWidget, text, setText } =
+    useActiveEditorInlinePromptWidget(id);
   const { databaseMetadata } = useData();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 
@@ -74,7 +57,7 @@ export const InlinePromptWidget = ({
       event.key === "Escape" &&
       document.activeElement === textareaRef.current
     ) {
-      onRemove();
+      removePromptWidget();
     }
   };
 
@@ -92,7 +75,7 @@ export const InlinePromptWidget = ({
     });
 
     setEditorContentPending(response);
-    onRemove();
+    removePromptWidget();
   };
 
   const handleTextareaKeyDown = (
@@ -105,10 +88,10 @@ export const InlinePromptWidget = ({
   };
 
   return (
-    <div ref={containerRef}>
+    <div>
       <div className="relative flex h-full w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
         <Button
-          onClick={onRemove}
+          onClick={removePromptWidget}
           variant="ghost"
           size="icon"
           className="absolute right-2 top-2 h-4 w-4"
@@ -127,7 +110,7 @@ export const InlinePromptWidget = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleTextareaKeyDown}
-          className="bg-white p-1 text-base md:leading-normal"
+          className="bg-white p-1 text-base"
           placeholder="Enter your prompt..."
           rows={2}
         />

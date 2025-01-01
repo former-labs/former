@@ -20,7 +20,7 @@ import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useAutocomplete } from "./useAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
-import { useViewZones, type ViewZone, ViewZonePortal } from "./useViewZones";
+import { useViewZones } from "./useViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -30,12 +30,13 @@ export const SqlEditor = () => {
     setEditorContentPending,
     editorSelectionContent,
     editorSelection,
+    inlinePromptWidgets,
+    setInlinePromptWidgets,
   } = useActiveEditor();
 
   const { executeQuery, resultLoading } = useQueryResult();
   const { databaseMetadata } = useData();
 
-  // We use the same monaco for both editors, seems to work?
   const [monaco, setMonaco] = useState<Monaco | null>(null);
   const [codeEditor, setCodeEditor] =
     useState<editor.IStandaloneCodeEditor | null>(null);
@@ -43,13 +44,17 @@ export const SqlEditor = () => {
     useState<editor.IStandaloneDiffEditor | null>(null);
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
-  const [viewZones, setViewZones] = useState<ViewZone[]>([]);
+
+  const { renderViewZone } = useViewZones({
+    viewZoneInstances: inlinePromptWidgets,
+    codeEditor,
+    monaco,
+  });
 
   useEffect(() => {
     console.log("Database metadata changed:", databaseMetadata);
   }, [databaseMetadata]);
 
-  useViewZones({ viewZones, codeEditor, monaco });
   useAutocomplete(monaco);
   useEditorSelection({
     codeEditor,
@@ -127,21 +132,14 @@ export const SqlEditor = () => {
       if (!editorSelection) {
         throw new Error("No editor selection.");
       }
-      // const position = codeEditor.getPosition();
-      // if (!position) return;
 
       const newId = crypto.randomUUID();
-
-      const domNode = document.createElement("div");
-      domNode.style.position = "absolute";
-      domNode.style.zIndex = "10";
-
-      setViewZones((prev) => [
-        ...prev,
+      setInlinePromptWidgets([
+        ...inlinePromptWidgets,
         {
           id: newId,
           lineNumber: editorSelection.startLineNumber - 1,
-          domNode,
+          text: "",
         },
       ]);
     },
@@ -452,28 +450,8 @@ export const SqlEditor = () => {
           </div>
         )}
       </div>
-      {viewZones.map((zone) => {
-        const removeZone = () => {
-          setViewZones((prev) => prev.filter((vz) => vz.id !== zone.id));
-        };
-
-        const handleHeightChange = (height: number) => {
-          setViewZones((prev) =>
-            prev.map((vz) =>
-              vz.id === zone.id ? { ...vz, heightInPx: height } : vz,
-            ),
-          );
-        };
-
-        return (
-          <ViewZonePortal key={zone.id} zone={zone}>
-            <InlinePromptWidget
-              id={zone.id}
-              onRemove={removeZone}
-              onHeightChange={handleHeightChange}
-            />
-          </ViewZonePortal>
-        );
+      {inlinePromptWidgets.map((widget) => {
+        return renderViewZone(widget.id, <InlinePromptWidget id={widget.id} />);
       })}
     </div>
   );
