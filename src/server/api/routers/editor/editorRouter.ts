@@ -86,45 +86,11 @@ Respond in Markdown format.
         `
       }
 
-
-      // Transform messages to OpenAI format
-      const openAiMessages: ChatCompletionMessageParam[] = input.messages.map(msg => {
-        if (msg.type === "assistant") {
-          return {
-            role: msg.type,
-            content: msg.content
-          };
-        } else {
-          if (!msg.editorSelectionContent) {
-            return {
-              role: msg.type,
-              content: msg.content
-            }
-          } else {
-            return {
-              role: msg.type,
-              content: `\
-<MESSAGE_METADATA>
-When sending this message, the user had highlighted a section of the code in their editor.
-This may be referred to in the current message and any future messages.
-
-\`\`\`sql
-${msg.editorSelectionContent}
-\`\`\`
-</MESSAGE_METADATA>
-
-${msg.content}`
-            };
-
-          }
-      }
-      });
-
       // Get AI response
       const aiResponse = await getAIChatResponse({
         messages: [
           systemMessage,
-          ...openAiMessages
+          ...formatChatMessages(input.messages)
         ],
         schemaOutput: z.object({
           response: z.string().describe("The response to the user's request, in Markdown format."),
@@ -153,20 +119,64 @@ If you did not use any knowledge sources, return an empty array.
   applyChange: workspaceProtectedProcedure
     .input(z.object({
       editorContent: z.string(),
-      applyContent: z.string()
+      applyContent: z.string(),
+      messages: z.array(z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("user"),
+          content: z.string(),
+          editorSelectionContent: z.string().nullable(),
+        }),
+        z.object({
+          type: z.literal("assistant"), 
+          content: z.string(),
+          knowledgeSources: z.array(z.string()),
+        })
+      ])).min(1),
     }))
     .mutation(async ({ input }) => {
-      const systemMessage: ChatCompletionMessageParam = {
+      const initialSystemMessage: ChatCompletionMessageParam = {
         role: "system",
         content: `
 You are a SQL assistant. You will apply the provided changes to the SQL code.
 Please output only the final SQL code with the changes applied to the original SQL code.
+
+Make sure you fully apply the changes to the original SQL code so that it perfectly matches the target changes.
 
 If the changes only apply to a subsection of the SQL code, please ensure you contain the full code in your response
 and modify only the relevant part of the code.
 
 Feel free to use SQL comments to act as shorthand for sections of the code you are not modifying.
 e.g. -- Existing query that does X goes here
+
+<EXAMPLE>
+An example of how you should apply the changes is below:
+
+<EXAMPLE_INPUT>
+Original SQL code:
+\`\`\`sql
+select
+  foo
+from my_table;
+\`\`\`
+
+Changes to apply:
+\`\`\`sql
+  foo as bar
+\`\`\`
+</EXAMPLE_INPUT>
+
+<EXAMPLE_OUTPUT>
+select
+  foo as bar
+from my_table;
+</EXAMPLE_OUTPUT>
+</EXAMPLE>`
+      }
+
+      const finalSystemMessage: ChatCompletionMessageParam = {
+        role: "system",
+        content: `
+The user has asked you to apply the following changes to the SQL code:
 
 Original SQL code:
 \`\`\`sql
@@ -180,11 +190,16 @@ ${input.applyContent}
         `
       }
 
+      // Get AI response
       const aiResponse = await getAIChatResponse({
         model: "gpt-4o-mini",
-        messages: [systemMessage],
+        messages: [
+          initialSystemMessage,
+          ...formatChatMessages(input.messages),
+          finalSystemMessage
+        ],
         schemaOutput: z.object({
-          sql: z.string().describe("The final SQL code with changes applied. Output as pure SQL without any Markdown \`\`\` formatting.")
+          sql: z.string().describe(`The final SQL code with changes applied. Output as pure SQL without any Markdown \`\`\` formatting.`)
         }),
       });
 
@@ -397,4 +412,42 @@ ${knowledge.query}
 `).join("\n")}
 </EXAMPLE_QUERIES>\
 `;
+};
+
+const formatChatMessages = (messages: Array<{
+  type: "user" | "assistant";
+  content: string;
+  editorSelectionContent?: string | null;
+  knowledgeSources?: string[];
+}>): ChatCompletionMessageParam[] => {
+  return messages.map(msg => {
+    if (msg.type === "assistant") {
+      return {
+        role: msg.type,
+        content: msg.content
+      };
+    } else {
+      if (!msg.editorSelectionContent) {
+        return {
+          role: msg.type,
+          content: msg.content
+        }
+      } else {
+        return {
+          role: msg.type,
+          content: `\
+<MESSAGE_METADATA>
+When sending this message, the user had highlighted a section of the code in their editor.
+This may be referred to in the current message and any future messages.
+
+\`\`\`sql
+${msg.editorSelectionContent}
+\`\`\`
+</MESSAGE_METADATA>
+
+${msg.content}`
+        };
+      }
+    }
+  });
 };
