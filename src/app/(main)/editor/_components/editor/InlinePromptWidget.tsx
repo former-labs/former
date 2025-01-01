@@ -94,7 +94,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
           onClick={removePromptWidget}
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-2 h-4 w-4"
+          className="absolute right-2 top-2 z-10 h-4 w-4"
         >
           <X />
         </Button>

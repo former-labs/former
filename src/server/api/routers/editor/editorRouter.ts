@@ -10,20 +10,20 @@ import { z } from "zod";
 export const editorRouter = createTRPCRouter({
   submitMessage: workspaceProtectedProcedure
     .input(z.object({
-      messages: z.array(
+      messages: z.array(z.discriminatedUnion("type", [
         z.object({
-          type: z.enum(["assistant", "user"]),
+          type: z.literal("user"),
           content: z.string(),
-          knowledgeSources: z.array(z.string().uuid()).optional(),
+          editorSelectionContent: z.string().nullable(),
+        }),
+        z.object({
+          type: z.literal("assistant"), 
+          content: z.string(),
+          knowledgeSources: z.array(z.string()),
         })
-      ).min(1),
+      ])).min(1),
       editorContent: z.string(),
-      editorSelection: z.object({
-        startLineNumber: z.number(),
-        startColumn: z.number(),
-        endLineNumber: z.number(),
-        endColumn: z.number(),
-      }).nullable(),
+      editorSelectionContent: z.string().nullable(),
       databaseMetadata: databaseMetadataSchema,
       knowledge: z.array(z.object({
         id: z.string(),
@@ -38,7 +38,7 @@ export const editorRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
       console.log("Editor content received:", input.editorContent);
-      console.log("Editor selection received:", input.editorSelection);
+      console.log("Editor selection content received:", input.editorSelectionContent);
       console.log("Database metadata received:", input.databaseMetadata);
       console.log("Knowledge base items received:", input.knowledge);
 
@@ -74,14 +74,11 @@ The user's current SQL code in their editor is below:
 ${input.editorContent}
 \`\`\`
 
-${input.editorSelection && `
+${input.editorSelectionContent && `
 The user has also highlighted a section of the code in their editor.
 The request they are making is likely related to this highlighted code, so you should take this into account.
 \`\`\`sql
-${getEditorSelectionContent({
-  editorSelection: input.editorSelection,
-  editorContent: input.editorContent
-})}
+${input.editorSelectionContent}
 \`\`\`
 `}
 
@@ -91,10 +88,37 @@ Respond in Markdown format.
 
 
       // Transform messages to OpenAI format
-      const openAiMessages: ChatCompletionMessageParam[] = input.messages.map(msg => ({
-        role: msg.type,
-        content: msg.content
-      }));
+      const openAiMessages: ChatCompletionMessageParam[] = input.messages.map(msg => {
+        if (msg.type === "assistant") {
+          return {
+            role: msg.type,
+            content: msg.content
+          };
+        } else {
+          if (!msg.editorSelectionContent) {
+            return {
+              role: msg.type,
+              content: msg.content
+            }
+          } else {
+            return {
+              role: msg.type,
+              content: `\
+<MESSAGE_METADATA>
+When sending this message, the user had highlighted a section of the code in their editor.
+This may be referred to in the current message and any future messages.
+
+\`\`\`sql
+${msg.editorSelectionContent}
+\`\`\`
+</MESSAGE_METADATA>
+
+${msg.content}`
+            };
+
+          }
+      }
+      });
 
       // Get AI response
       const aiResponse = await getAIChatResponse({

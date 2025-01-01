@@ -8,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
@@ -19,7 +18,7 @@ import { KnowledgeSourceComponent } from "./KnowledgeSourceComponent";
 import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {
-  const { editorSelection } = useActiveEditor();
+  const { editorSelectionContent } = useActiveEditor();
   const { createChat, chats, setActiveChatId, activeChat } = useChat();
 
   return (
@@ -54,7 +53,7 @@ export const ChatSidebar = () => {
           <Button
             onClick={() =>
               createChat({
-                editorSelection,
+                editorSelectionContent,
               })
             }
             size="icon"
@@ -167,6 +166,11 @@ const ChatMessage = ({ message }: { message: ChatMessageType }) => {
 
   return (
     <div className="rounded-lg bg-white px-3 py-2 text-sm text-gray-800 shadow">
+      {message.editorSelectionContent && (
+        <div className="mb-2 border pr-3">
+          <StaticEditor value={message.editorSelectionContent} />
+        </div>
+      )}
       {message.content}
     </div>
   );
@@ -186,12 +190,7 @@ const ChatInputBox = ({
   const { editorContent } = useActiveEditor();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const selectionContent = activeChat?.pendingEditorSelection
-    ? getEditorSelectionContent({
-        editorSelection: activeChat.pendingEditorSelection,
-        editorContent,
-      })
-    : null;
+  const selectionContent = activeChat?.pendingEditorSelectionContent;
 
   const handleSubmit = () => {
     if (!value.trim()) return;

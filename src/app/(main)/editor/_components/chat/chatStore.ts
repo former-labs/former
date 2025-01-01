@@ -1,13 +1,13 @@
 import { useData } from "@/contexts/DataContext";
 import { api } from "@/trpc/react";
 import type { DatabaseMetadata } from "@/types/connections";
-import type { Selection } from "monaco-editor";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 
 type UserChatMessageType = {
   type: "user";
   content: string;
+  editorSelectionContent: string | null;
 }
 
 type AssistantChatMessageType = {
@@ -22,7 +22,7 @@ type ChatType = {
   chatId: string;
   messages: ChatMessageType[];
   createdAt: Date;
-  pendingEditorSelection: Selection | null;
+  pendingEditorSelectionContent: string | null;
 }
 
 type ChatStore = {
@@ -69,9 +69,9 @@ export const useChat = () => {
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 
   const createChat = ({
-    editorSelection
+    editorSelectionContent
   }: {
-    editorSelection: Selection | null;
+    editorSelectionContent: string | null;
   }) => {
     // If there's an active chat with no messages, remove it first
     let updatedChats = [...chatStore.chats];
@@ -84,7 +84,7 @@ export const useChat = () => {
       chatId, 
       messages: [],
       createdAt: new Date(),
-      pendingEditorSelection: editorSelection
+      pendingEditorSelectionContent: editorSelectionContent
     };
 
     // Add the new chat to the beginning of the list
@@ -106,6 +106,7 @@ export const useChat = () => {
     const newMessage: UserChatMessageType = {
       type: "user",
       content: message,
+      editorSelectionContent: activeChat.pendingEditorSelectionContent,
     };
 
     console.log("original metadata", databaseMetadata);
@@ -115,10 +116,17 @@ export const useChat = () => {
     const responsePromise = submitMessageMutation.mutateAsync({
       messages: [...activeChat.messages, newMessage],
       editorContent,
-      editorSelection: activeChat.pendingEditorSelection,
+      editorSelectionContent: activeChat.pendingEditorSelectionContent,
       databaseMetadata: filteredDatabaseMetadata,
       knowledge: knowledgeList,
     });
+
+    // Clear the pending editor selection content after creating the message
+    chatStore.setChats(chatStore.chats.map(chat => 
+      chat.chatId === chatStore.activeChatId 
+        ? { ...chat, pendingEditorSelectionContent: null }
+        : chat
+    ));
 
     chatStore.addMessage(chatStore.activeChatId, newMessage);
     const response = await responsePromise;
