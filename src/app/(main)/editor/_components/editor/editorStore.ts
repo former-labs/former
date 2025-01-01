@@ -12,6 +12,7 @@ interface Editor {
   inlinePromptWidgets: {
     id: string;
     lineNumber: number;
+    text: string;
   }[];
 }
 
@@ -25,7 +26,7 @@ interface EditorStore {
   setActiveEditorId: (id: string) => void;
   createEditor: () => void;
   deleteEditor: (id: string) => void;
-  setInlinePromptWidgets: (widgets: { id: string; lineNumber: number; }[]) => void;
+  setInlinePromptWidgets: (widgets: { id: string; lineNumber: number; text: string; }[]) => void;
 }
 
 const initialEditorId = uuidv4();
@@ -208,5 +209,30 @@ export const useActiveEditor = () => {
     setEditorContentPending: store.setEditorContentPending,
     setEditorSelection: store.setEditorSelection,
     setInlinePromptWidgets: store.setInlinePromptWidgets,
+  };
+};
+
+export const useActiveEditorInlinePromptWidget = (id: string) => {
+  const { inlinePromptWidgets, setInlinePromptWidgets } = useActiveEditor();
+
+  const widget = inlinePromptWidgets.find(w => w.id === id);
+  if (!widget) {
+    throw new Error(`Prompt widget with id ${id} not found`);
+  }
+
+  const removePromptWidget = () => {
+    setInlinePromptWidgets(
+      inlinePromptWidgets.filter((w) => w.id !== id)
+    );
+  };
+
+  return {
+    text: widget.text,
+    setText: (text: string) => setInlinePromptWidgets(
+      inlinePromptWidgets.map(w => 
+        w.id === id ? { ...w, text } : w
+      )
+    ),
+    removePromptWidget
   };
 };

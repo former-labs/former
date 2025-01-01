@@ -139,6 +139,7 @@ export const SqlEditor = () => {
         {
           id: newId,
           lineNumber: editorSelection.startLineNumber - 1,
+          text: "",
         },
       ]);
     },
@@ -450,16 +451,7 @@ export const SqlEditor = () => {
         )}
       </div>
       {inlinePromptWidgets.map((widget) => {
-        const removeZone = () => {
-          setInlinePromptWidgets(
-            inlinePromptWidgets.filter((w) => w.id !== widget.id),
-          );
-        };
-
-        return renderViewZone(
-          widget.id,
-          <InlinePromptWidget id={widget.id} onRemove={removeZone} />,
-        );
+        return renderViewZone(widget.id, <InlinePromptWidget id={widget.id} />);
       })}
     </div>
   );

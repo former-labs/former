@@ -11,6 +11,7 @@ type ViewZone = {
   lineNumber: number;
   domNode: HTMLDivElement;
   heightInPx?: number;
+  needsRerender: boolean;
 };
 
 /*
@@ -58,6 +59,7 @@ export const useViewZones = ({
             id: instance.id,
             lineNumber: instance.lineNumber,
             domNode,
+            needsRerender: true,
           });
         }
       });
@@ -66,10 +68,32 @@ export const useViewZones = ({
     });
   }, [viewZoneInstances]);
 
+  /*
+    Clean up viewZones and any internal state tracking view zones when the editor changes.
+  */
+  useEffect(() => {
+    return () => {
+      if (codeEditor) {
+        codeEditor.changeViewZones((changeAccessor) => {
+          zoneIdMapping.forEach(({ editorZoneId }) => {
+            changeAccessor.removeZone(editorZoneId);
+          });
+        });
+      }
+      setViewZones((prev) =>
+        prev.map((zone) => ({
+          ...zone,
+          needsRerender: true,
+        })),
+      );
+      setZoneIdMapping([]);
+    };
+  }, [codeEditor]);
+
   const updateZoneHeight = (id: string, height: number) => {
     setViewZones((prev) =>
       prev.map((vz: ViewZone) =>
-        vz.id === id ? { ...vz, heightInPx: height } : vz,
+        vz.id === id ? { ...vz, heightInPx: height, needsRerender: true } : vz,
       ),
     );
   };
@@ -81,42 +105,51 @@ export const useViewZones = ({
     // Store the active element before changing zones
     const activeElement = document.activeElement;
 
-    // Remove existing view zones
-    codeEditor.changeViewZones((changeAccessor) => {
-      zoneIdMapping.forEach(({ editorZoneId }) => {
-        changeAccessor.removeZone(editorZoneId);
-      });
-    });
-
     const newZoneIdMapping: {
       id: string;
       editorZoneId: string;
     }[] = [];
 
-    // Create new view zones
+    // Keep existing mappings for zones that don't need rerender
+    zoneIdMapping.forEach((mapping) => {
+      const zone = viewZones.find((z) => z.id === mapping.id);
+      if (zone && !zone.needsRerender) {
+        newZoneIdMapping.push(mapping);
+      }
+    });
+
+    // Remove zones that no longer exist or need rerender
+    codeEditor.changeViewZones((changeAccessor) => {
+      zoneIdMapping.forEach(({ id, editorZoneId }) => {
+        const zone = viewZones.find((z) => z.id === id);
+        if (!zone || zone.needsRerender) {
+          changeAccessor.removeZone(editorZoneId);
+        }
+      });
+    });
+
+    // Create new view zones for ones that need rerender
     codeEditor.changeViewZones((changeAccessor) => {
       viewZones.forEach((zone) => {
-        let heightInLines = 1;
-        if (zone.heightInPx) {
-          const lineHeight = codeEditor.getOption(
-            monaco.editor.EditorOption.lineHeight,
-          );
-          heightInLines = Math.max(
-            heightInLines,
-            Math.ceil(zone.heightInPx / lineHeight),
+        if (zone.needsRerender) {
+          const editorZoneId = changeAccessor.addZone({
+            afterLineNumber: zone.lineNumber,
+            heightInPx: zone.heightInPx,
+            domNode: zone.domNode,
+          });
+
+          newZoneIdMapping.push({
+            id: zone.id,
+            editorZoneId,
+          });
+
+          // Clear the needsRerender flag
+          setViewZones((prev) =>
+            prev.map((vz) =>
+              vz.id === zone.id ? { ...vz, needsRerender: false } : vz,
+            ),
           );
         }
-
-        const editorZoneId = changeAccessor.addZone({
-          afterLineNumber: zone.lineNumber,
-          heightInLines,
-          domNode: zone.domNode,
-        });
-
-        newZoneIdMapping.push({
-          id: zone.id,
-          editorZoneId,
-        });
       });
 
       // Restore focus after zones are updated
@@ -129,16 +162,16 @@ export const useViewZones = ({
 
     setZoneIdMapping(newZoneIdMapping);
 
-    // Cleanup
-    return () => {
-      if (codeEditor) {
-        codeEditor.changeViewZones((changeAccessor) => {
-          zoneIdMapping.forEach(({ editorZoneId }) => {
-            changeAccessor.removeZone(editorZoneId);
-          });
-        });
-      }
-    };
+    // // Cleanup
+    // return () => {
+    //   if (codeEditor) {
+    //     codeEditor.changeViewZones((changeAccessor) => {
+    //       zoneIdMapping.forEach(({ editorZoneId }) => {
+    //         changeAccessor.removeZone(editorZoneId);
+    //       });
+    //     });
+    //   }
+    // };
   }, [viewZones, codeEditor, monaco]);
 
   const renderViewZone = (id: string, children: ReactNode) => {
