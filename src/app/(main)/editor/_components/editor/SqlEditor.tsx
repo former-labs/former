@@ -400,7 +400,7 @@ export const SqlEditor = () => {
           />
         ) : (
           <div className="relative h-full">
-            <div className="absolute right-8 top-4 z-10 flex gap-2">
+            <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-2">
               <Button
                 onClick={() => {
                   if (editorContentPending) {
@@ -408,6 +408,7 @@ export const SqlEditor = () => {
                     setEditorContentPending(null);
                   }
                 }}
+                className="bg-green-600"
               >
                 Accept All
               </Button>
@@ -415,6 +416,7 @@ export const SqlEditor = () => {
                 onClick={() => {
                   setEditorContentPending(null);
                 }}
+                className="bg-red-600"
               >
                 Reject All
               </Button>

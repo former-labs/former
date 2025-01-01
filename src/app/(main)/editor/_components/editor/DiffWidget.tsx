@@ -240,13 +240,13 @@ const DiffWidgetButtons = ({
     <div className="flex w-full justify-end gap-1 pr-4">
       <button
         onClick={handleClick}
-        className="rounded-b bg-blue-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-blue-700"
+        className="rounded-b bg-green-600 px-2 py-0.5 text-xs font-bold text-white hover:bg-green-700"
       >
         Accept
       </button>
       <button
         onClick={handleReject}
-        className="rounded-b bg-red-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-red-700"
+        className="rounded-b bg-red-600 px-2 py-0.5 text-xs font-bold text-white hover:bg-red-700"
       >
         Reject
       </button>
