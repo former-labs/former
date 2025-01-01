@@ -35,9 +35,17 @@ export const useEditorSelection = ({
     }
   }, [diffEditor, editorSelection]);
 
-  // Listen for code editor selection changes
+  // Listen for code editor selection changes and set initial selection
   useEffect(() => {
     if (!codeEditor) return;
+
+    // Set initial selection if none exists
+    if (!editorSelection) {
+      const initialSelection = codeEditor.getSelection();
+      if (initialSelection) {
+        setEditorSelection(initialSelection);
+      }
+    }
 
     const disposable = codeEditor.onDidChangeCursorSelection((e) => {
       if (!editorSelection || !e.selection.equalsSelection(editorSelection)) {
@@ -53,6 +61,15 @@ export const useEditorSelection = ({
     if (!diffEditor) return;
 
     const modifiedEditor = diffEditor.getModifiedEditor();
+
+    // Set initial selection if none exists
+    if (!editorSelection) {
+      const initialSelection = modifiedEditor.getSelection();
+      if (initialSelection) {
+        setEditorSelection(initialSelection);
+      }
+    }
+    
     const disposable = modifiedEditor.onDidChangeCursorSelection((e) => {
       if (!editorSelection || !e.selection.equalsSelection(editorSelection)) {
         setEditorSelection(e.selection);
