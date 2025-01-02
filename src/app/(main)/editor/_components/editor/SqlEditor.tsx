@@ -408,7 +408,7 @@ export const SqlEditor = () => {
                     setEditorContentPending(null);
                   }
                 }}
-                className="bg-green-600"
+                className="bg-green-600 hover:bg-green-700"
               >
                 Accept All
               </Button>
@@ -416,7 +416,7 @@ export const SqlEditor = () => {
                 onClick={() => {
                   setEditorContentPending(null);
                 }}
-                className="bg-red-600"
+                className="bg-red-600 hover:bg-red-700"
               >
                 Reject All
               </Button>
