@@ -52,6 +52,32 @@ const TableDataView = ({ data }: { data: ResultRow[] }) => {
     return Object.keys(data[0]).map((key) => ({
       field: key,
       // filter: true,
+      cellRenderer: (params: { value: ResultRow[keyof ResultRow] }) => {
+        // Handle rendering of custom types
+        if (params.value === null) {
+          return <span className="text-gray-500">&lt;null&gt;</span>;
+        }
+        if (Array.isArray(params.value)) {
+          return (
+            <span>
+              {"{"}
+              {params.value
+                .map((val: unknown) => {
+                  if (typeof val !== "number") {
+                    throw new Error("Array contains non-number value");
+                  }
+                  return val.toString();
+                })
+                .join(",")}
+              {"}"}
+            </span>
+          );
+        }
+        if (typeof params.value === "object" && params.value !== null) {
+          return <span>{JSON.stringify(params.value)}</span>;
+        }
+        return params.value;
+      },
     }));
   }, [data]);
 

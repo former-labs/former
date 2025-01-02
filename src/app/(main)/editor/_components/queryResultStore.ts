@@ -2,7 +2,15 @@ import { useData } from "@/contexts/DataContext";
 import { z } from "zod";
 import { create } from "zustand";
 
-const resultRowSchema = z.array(z.record(z.union([z.string(), z.number(), z.boolean(), z.date()])));
+const resultRowSchema = z.array(z.record(z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.date(),
+  z.null(),
+  z.array(z.number()),
+  z.record(z.unknown()), // Add JSON support
+])));
 export type ResultRow = z.infer<typeof resultRowSchema>[number];
 
 interface QueryResultStore {
@@ -42,6 +50,7 @@ export const useQueryResult = () => {
       const query = editorSelectionContent ?? editorContent;
       console.log("Executing query", [query]);
       const rawResult = await executeQuery(query);
+      // console.log("rawResult", rawResult);
       const validatedResult = resultRowSchema.parse(rawResult);
       store.setResult(validatedResult);
       console.log("Execute result", validatedResult);

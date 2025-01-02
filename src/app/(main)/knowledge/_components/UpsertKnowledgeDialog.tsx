@@ -47,8 +47,6 @@ export const UpsertKnowledgeDialog = ({
     query: string;
   };
 }) => {
-  console.log("initialData", initialData);
-
   const utils = api.useUtils();
   const createKnowledge = api.knowledge.createKnowledge.useMutation({
     onSuccess: async () => {
