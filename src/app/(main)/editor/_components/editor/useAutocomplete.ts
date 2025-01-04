@@ -12,7 +12,7 @@ export const useAutocomplete = (monaco: Monaco | null) => {
   const { databaseMetadata } = useData();
 
   const { editorContent } = useActiveEditor();
-  const getAutocomplete = api.editor.getAutocomplete.useMutation();
+  const getAutocompleteMutation = api.editor.getAutocomplete.useMutation();
 
   /*
     A lot of the code here is purely to allow a specific debouncing setup.
@@ -59,7 +59,7 @@ export const useAutocomplete = (monaco: Monaco | null) => {
 
           // Only make a new request if these are still the latest args
           if (latestArgsRef.current === args) {
-            pendingRequestRef.current = getAutocomplete.mutateAsync({
+            pendingRequestRef.current = getAutocompleteMutation.mutateAsync({
               ...args,
               databaseMetadata: filterDatabaseMetadataContext(databaseMetadata),
             });
@@ -98,5 +98,5 @@ export const useAutocomplete = (monaco: Monaco | null) => {
     return () => {
       disposable.dispose();
     };
-  }, [monaco, editorContent, getAutocomplete]);
+  }, [monaco, editorContent, getAutocompleteMutation]);
 };
