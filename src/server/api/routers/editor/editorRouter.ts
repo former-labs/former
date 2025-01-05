@@ -357,13 +357,15 @@ Cursor is at the end of a line: ${editorContentAfterCursor.startsWith("\n") || e
         messages: [systemMessage],
         schemaOutput: z.object({
           completionNeeded: z.boolean().describe(`
-Whether the user needs a completion at the current cursor position.
+Whether the user likely needs a completion at the current cursor position.
 
-If the user is at the end of a valid statement and doesn't need completion, you should return false.
-If the user is likely in the middle of a typing code, you should return true.
+If the user is at the end of a valid statement and doesn't need completion, this should be false.
+If the user is likely in the middle of a typing code, this should be true.
+
+If the user has their cursor in the middle of a statement that appears to be complete, this should be false.
 `),
           completion: z.string().describe(`\
-The predicted characters that should follow the cursor.
+The predicted characters that should replace the <AUTOCOMPLETE_CURSOR_FILL_ME> in the editor content.
 In most cases, this is a fraction of a single line.
 If you are highly certain you can output more than 1 line.
 
