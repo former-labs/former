@@ -18,7 +18,7 @@ type ViewZone = {
   This is unfortunately a bit confusing.
   It syncs the incoming viewZoneInstances with actual viewZones in Monaco reactively.
 */
-export const useViewZones = ({
+export const useEditorViewZones = ({
   viewZoneInstances,
   codeEditor,
   monaco,

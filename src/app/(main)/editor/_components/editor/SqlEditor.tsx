@@ -17,10 +17,10 @@ import { useQueryResult } from "../queryResultStore";
 import { DiffWidget } from "./DiffWidget";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
-import { useAutocomplete } from "./useAutocomplete";
+import { useEditorAutocomplete } from "./useEditorAutocomplete";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
-import { useViewZones } from "./useViewZones";
+import { useEditorViewZones } from "./useEditorViewZones";
 
 export const SqlEditor = () => {
   const {
@@ -46,7 +46,7 @@ export const SqlEditor = () => {
   const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
-  const { renderViewZone } = useViewZones({
+  const { renderViewZone } = useEditorViewZones({
     viewZoneInstances: inlinePromptWidgets,
     codeEditor,
     monaco,
@@ -56,7 +56,7 @@ export const SqlEditor = () => {
     console.log("Database metadata changed:", databaseMetadata);
   }, [databaseMetadata]);
 
-  useAutocomplete(monaco);
+  useEditorAutocomplete(monaco);
   useEditorSelection({
     codeEditor,
   });

@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
 import { filterDatabaseMetadataContext } from "../chat/chatStore";
 import { useActiveEditor } from "./editorStore";
 
-export const useAutocomplete = (monaco: Monaco | null) => {
+export const useEditorAutocomplete = (monaco: Monaco | null) => {
   const { databaseMetadata } = useData();
 
   const { editorContent } = useActiveEditor();
