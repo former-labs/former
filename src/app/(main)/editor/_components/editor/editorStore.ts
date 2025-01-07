@@ -78,6 +78,9 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
+  /**
+   * Use this to set the editor content and activate a diff for the changes.
+   */
   setEditorContentDiff: (content) => {
     set((state) => {
       if (!state.activeEditorId) return state;

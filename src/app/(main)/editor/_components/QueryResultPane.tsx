@@ -6,16 +6,35 @@ import {
   ModuleRegistry,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type ResultRow, useQueryResult } from "./queryResultStore";
 
+const QueryTimer = ({ startTime }: { startTime: Date }) => {
+  const [elapsedTime, setElapsedTime] = useState("0s");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const seconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+      setElapsedTime(`${seconds}s`);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  return (
+    <div className="mt-2 text-sm text-gray-500">Running for {elapsedTime}</div>
+  );
+};
+
 export const QueryResultPane = () => {
-  const { result, resultLoading, resultError } = useQueryResult();
+  const { result, resultLoading, resultError, queryStartTime } =
+    useQueryResult();
 
   if (resultLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full flex-col items-center justify-center">
         <div className="text-gray-500">Loading query results...</div>
+        {queryStartTime && <QueryTimer startTime={queryStartTime} />}
       </div>
     );
   }

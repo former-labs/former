@@ -17,18 +17,22 @@ interface QueryResultStore {
   result: ResultRow[] | null;
   resultLoading: boolean;
   resultError: string | null;
+  queryStartTime: Date | null;
   setResult: (result: ResultRow[] | null) => void;
   setResultLoading: (resultLoading: boolean) => void;
   setResultError: (resultError: string | null) => void;
+  setQueryStartTime: (time: Date | null) => void;
 }
 
 const useQueryResultStore = create<QueryResultStore>((set) => ({
   result: null,
   resultLoading: false,
   resultError: null,
+  queryStartTime: null,
   setResult: (result) => set({ result }),
   setResultLoading: (resultLoading) => set({ resultLoading }),
   setResultError: (resultError) => set({ resultError }),
+  setQueryStartTime: (time) => set({ queryStartTime: time }),
 }));
 
 export const useQueryResult = () => {
@@ -44,6 +48,7 @@ export const useQueryResult = () => {
   }) => {
     store.setResultLoading(true);
     store.setResultError(null);
+    store.setQueryStartTime(new Date());
     
     try {
       // Use pending content if available, otherwise use current content
@@ -60,6 +65,7 @@ export const useQueryResult = () => {
       store.setResult(null);
     } finally {
       store.setResultLoading(false);
+      store.setQueryStartTime(null);
     }
   };
 
@@ -67,6 +73,7 @@ export const useQueryResult = () => {
     result: store.result,
     resultLoading: store.resultLoading,
     resultError: store.resultError,
+    queryStartTime: store.queryStartTime,
     executeQuery: handleExecuteQuery,
   };
 };
