@@ -182,14 +182,12 @@ export const useEditor = () => {
   };
 };
 
-export const useActiveEditor = () => {
-  const store = useEditorStore();
-
-  if (!store.activeEditorId) {
+const getActiveEditorData = (state: EditorStore) => {
+  if (!state.activeEditorId) {
     throw new Error("No active editor selected");
   }
 
-  const activeEditor = store.editorList.find(editor => editor.id === store.activeEditorId);
+  const activeEditor = state.editorList.find(editor => editor.id === state.activeEditorId);
   if (!activeEditor) {
     throw new Error("Active editor not found");
   }
@@ -205,11 +203,21 @@ export const useActiveEditor = () => {
     editorSelection: activeEditor.editorSelection,
     editorSelectionContent,
     inlinePromptWidgets: activeEditor.inlinePromptWidgets,
-    setEditorContent: store.setEditorContent,
-    setEditorContentPending: store.setEditorContentPending,
-    setEditorSelection: store.setEditorSelection,
-    setInlinePromptWidgets: store.setInlinePromptWidgets,
+    setEditorContent: state.setEditorContent,
+    setEditorContentPending: state.setEditorContentPending,
+    setEditorSelection: state.setEditorSelection,
+    setInlinePromptWidgets: state.setInlinePromptWidgets,
   };
+};
+
+export const getActiveEditor = () => {
+  const state = useEditorStore.getState();
+  return getActiveEditorData(state);
+};
+
+export const useActiveEditor = () => {
+  const store = useEditorStore();
+  return getActiveEditorData(store);
 };
 
 export const useActiveEditorInlinePromptWidget = (id: string) => {
