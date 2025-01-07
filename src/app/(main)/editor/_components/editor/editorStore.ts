@@ -7,7 +7,7 @@ interface Editor {
   id: string;
   title: string;
   editorContent: string;
-  editorContentPending: string | null;
+  editorContentOld: string | null;
   editorSelection: Selection | null;
   inlinePromptWidgets: {
     id: string;
@@ -21,7 +21,8 @@ interface EditorStore {
   activeEditorId: string;
   nextEditorNumber: number;
   setEditorContent: (content: string) => void;
-  setEditorContentPending: (content: string | null) => void;
+  setEditorContentOld: (content: string | null) => void;
+  setEditorContentDiff: (content: string) => void;
   setEditorSelection: (selection: Selection | null) => void;
   setActiveEditorId: (id: string) => void;
   createEditor: () => void;
@@ -36,7 +37,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
     id: initialEditorId,
     title: "Query 1",
     editorContent: "",
-    editorContentPending: null,
+    editorContentOld: null,
     editorSelection: null,
     inlinePromptWidgets: []
   }],
@@ -47,14 +48,10 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
         if (editor.id === state.activeEditorId) {
-          // If the editor content is set to the same as the pending content,
-          // this is equivalent to accepting all changes.
-          // In this case we disable the diff editor by setting the pending content to null.
-          const newPending = editor.editorContentPending === content ? null : editor.editorContentPending;
           return {
             ...editor,
             editorContent: content,
-            editorContentPending: newPending
+            editorContentOld: content === editor.editorContentOld ? null : editor.editorContentOld
           };
         }
         return editor;
@@ -62,18 +59,34 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
-  setEditorContentPending: (content) => {
+  setEditorContentOld: (content) => {
     set((state) => {
       if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
         if (editor.id === state.activeEditorId) {
-          // If the pending content is set to the same as the editor content,
+          // If the old content is set to the same as the editor content,
           // this is equivalent to accepting all changes.
-          // In this case we disable the diff editor by setting the pending content to null.
-          const newPending = editor.editorContent === content ? null : content;
+          // In this case we disable the diff editor by setting the old content to null.
+          const newOld = editor.editorContent === content ? null : content;
           return {
             ...editor,
-            editorContentPending: newPending
+            editorContentOld: newOld
+          };
+        }
+        return editor;
+      });
+      return { editorList: newEditorList };
+    });
+  },
+  setEditorContentDiff: (content) => {
+    set((state) => {
+      if (!state.activeEditorId) return state;
+      const newEditorList = state.editorList.map(editor => {
+        if (editor.id === state.activeEditorId) {
+          return {
+            ...editor,
+            editorContentOld: content === editor.editorContent ? null : editor.editorContent,
+            editorContent: content
           };
         }
         return editor;
@@ -121,7 +134,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
         id: newId,
         title: `Query ${state.nextEditorNumber}`,
         editorContent: "",
-        editorContentPending: null,
+        editorContentOld: null,
         editorSelection: null,
         inlinePromptWidgets: []
       }],
@@ -138,7 +151,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
             id: newId,
             title: `Query ${state.nextEditorNumber}`,
             editorContent: "",
-            editorContentPending: null,
+            editorContentOld: null,
             editorSelection: null,
             inlinePromptWidgets: []
           }],
@@ -168,7 +181,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
 
       return { editorList: newEditorList };
     });
-  }
+  },
 }));
 
 export const useEditor = () => {
@@ -199,12 +212,13 @@ const getActiveEditorData = (state: EditorStore) => {
 
   return {
     editorContent: activeEditor.editorContent,
-    editorContentPending: activeEditor.editorContentPending,
+    editorContentOld: activeEditor.editorContentOld,
     editorSelection: activeEditor.editorSelection,
     editorSelectionContent,
     inlinePromptWidgets: activeEditor.inlinePromptWidgets,
     setEditorContent: state.setEditorContent,
-    setEditorContentPending: state.setEditorContentPending,
+    setEditorContentOld: state.setEditorContentOld,
+    setEditorContentDiff: state.setEditorContentDiff,
     setEditorSelection: state.setEditorSelection,
     setInlinePromptWidgets: state.setInlinePromptWidgets,
   };

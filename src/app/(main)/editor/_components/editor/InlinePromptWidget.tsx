@@ -21,7 +21,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { editorContent, editorSelection, setEditorContentPending } =
+  const { editorContent, editorSelection, setEditorContentDiff } =
     useActiveEditor();
   const { removePromptWidget, text, setText } =
     useActiveEditorInlinePromptWidget(id);
@@ -74,7 +74,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
       knowledge: knowledgeList,
     });
 
-    setEditorContentPending(response);
+    setEditorContentDiff(response);
     removePromptWidget();
   };
 

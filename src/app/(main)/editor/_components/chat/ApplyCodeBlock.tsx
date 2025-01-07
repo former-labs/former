@@ -9,7 +9,7 @@ import { StaticEditor } from "./StaticEditor";
 import { useChat } from "./chatStore";
 
 export const ApplyCodeBlock = ({ codeContent }: { codeContent: string }) => {
-  const { editorContent, setEditorContentPending } = useActiveEditor();
+  const { editorContent, setEditorContentDiff } = useActiveEditor();
   const { activeChat } = useChat();
   const [isCopied, setIsCopied] = useState(false);
 
@@ -27,7 +27,7 @@ export const ApplyCodeBlock = ({ codeContent }: { codeContent: string }) => {
       applyContent: codeContent,
       messages: activeChat?.messages ?? [],
     });
-    setEditorContentPending(response);
+    setEditorContentDiff(response);
   };
 
   return (
