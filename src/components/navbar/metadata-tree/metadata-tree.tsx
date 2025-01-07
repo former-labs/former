@@ -252,7 +252,7 @@ export function MetadataTree() {
       <SidebarGroup className="flex h-full flex-col">
         <SidebarGroupLabel>Active Integration</SidebarGroupLabel>
 
-        <div className="mb-2 px-2">
+        <div className="mb-1 px-2">
           {integrations.length > 0 ? (
             <div>
               <Select
@@ -296,7 +296,7 @@ export function MetadataTree() {
 
         {activeIntegration && (
           <>
-            <div className="mb-2 px-2">
+            <div className="mb-1 px-2">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -308,7 +308,7 @@ export function MetadataTree() {
               </div>
             </div>
 
-            <div className="flex-1 space-y-1 overflow-y-auto">
+            <div className="flex-1 space-y-0.5 overflow-y-auto">
               {isFetchingMetadata ? (
                 <div className="flex h-32 items-center justify-center">
                   <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
@@ -364,7 +364,7 @@ function ProjectItem({
   toggleTable: (id: string) => void;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       <Button
         variant="ghost"
         size="sm"
@@ -416,7 +416,7 @@ function ProjectItem({
         </Tooltip>
       </Button>
       {isExpanded && (
-        <div className="space-y-1 pl-4">
+        <div className="space-y-0.5 pl-4">
           {project.datasets.map((dataset) => (
             <DatasetItem
               key={dataset.id}
@@ -466,7 +466,7 @@ function DatasetItem({
   const isLoading = loadingDatasets.has(dataset.id);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       <Button
         variant="ghost"
         size="sm"
@@ -522,7 +522,7 @@ function DatasetItem({
         </Tooltip>
       </Button>
       {isExpanded && (
-        <div className="space-y-1 pl-4">
+        <div className="pl-4">
           {isLoading ? (
             <div className="flex items-center gap-2 py-2 pl-2">
               <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-gray-900" />
@@ -568,7 +568,7 @@ function TableItem({
   const { setTableIncludedInAIContext } = useData();
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       <div className="flex w-full items-center">
         <Checkbox
           checked={table.includedInAIContext}
@@ -635,7 +635,7 @@ function TableItem({
         </Button>
       </div>
       {isExpanded && (
-        <div className="space-y-1 pl-4">
+        <div className="pl-4">
           {table.fields?.map((field) => (
             <FieldItem
               key={field.name}
@@ -672,7 +672,7 @@ function FieldItem({
   const hasNestedFields = field.fields && field.fields.length > 0;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       <Button
         variant="ghost"
         size="sm"
@@ -728,7 +728,7 @@ function FieldItem({
         </Tooltip>
       </Button>
       {isExpanded && hasNestedFields && (
-        <div className={`space-y-1 pl-${level > 0 ? "4" : "6"}`}>
+        <div className={`space-y-0.5 pl-${level > 0 ? "4" : "6"}`}>
           {field.fields?.map((nestedField) => (
             <FieldItem
               key={nestedField.name}
