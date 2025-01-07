@@ -7,17 +7,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useData } from "@/contexts/DataContext";
 import { env } from "@/env";
 import { DiffEditor, type Monaco } from "@monaco-editor/react";
 import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useQueryResult } from "../queryResultStore";
-import { DiffWidget } from "./DiffWidget";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useEditorAutocomplete } from "./useEditorAutocomplete";
+import { useEditorDiffWidgets } from "./useEditorDiffWidgets";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
 import { useEditorViewZones } from "./useEditorViewZones";
@@ -35,7 +34,6 @@ export const SqlEditor = () => {
   } = useActiveEditor();
 
   const { executeQuery, resultLoading } = useQueryResult();
-  const { databaseMetadata } = useData();
 
   const [monaco, setMonaco] = useState<Monaco | null>(null);
 
@@ -43,7 +41,6 @@ export const SqlEditor = () => {
     useState<editor.IStandaloneDiffEditor | null>(null);
   const codeEditor = diffEditor?.getModifiedEditor() || null;
 
-  const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
   const { renderViewZone } = useEditorViewZones({
@@ -52,11 +49,14 @@ export const SqlEditor = () => {
     monaco,
   });
 
-  useEffect(() => {
-    console.log("Database metadata changed:", databaseMetadata);
-  }, [databaseMetadata]);
+  useEditorDiffWidgets({
+    diffEditor,
+    setEditorContentOld,
+    setEditorContent,
+  });
 
   useEditorAutocomplete(monaco);
+
   useEditorSelection({
     codeEditor,
   });
@@ -191,11 +191,6 @@ export const SqlEditor = () => {
     // Override the default Cmd+L binding in the modified editor
     const modifiedEditor = editor.getModifiedEditor();
 
-    // Listen for diff updates instead of content changes
-    editor.onDidUpdateDiff(() => {
-      updateDiffWidgets(editor);
-    });
-
     modifiedEditor.onDidChangeModelContent(() => {
       const value = modifiedEditor.getValue();
       setEditorContent(value);
@@ -203,46 +198,6 @@ export const SqlEditor = () => {
 
     modifiedEditor.updateOptions({
       lineNumbers: renderSideBySide ? "on" : "off",
-    });
-
-    // Create the widgets when we first activate the diff editor
-    setTimeout(() => {
-      updateDiffWidgets(editor);
-    }, 0);
-  };
-
-  const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
-    // Remove existing widgets
-    const modifiedEditor = editor.getModifiedEditor();
-    diffWidgetsRef.current.forEach((widget) => {
-      modifiedEditor.removeContentWidget(widget);
-    });
-
-    diffWidgetsRef.current = [];
-
-    // Add new widgets for each change
-    const changes = editor.getLineChanges();
-    const originalModel = editor.getModel()?.original;
-    if (!originalModel) return;
-
-    changes?.forEach((change, index) => {
-      const widget = new DiffWidget({
-        id: `${index}`,
-        originalStartLineNumber: change.originalStartLineNumber,
-        originalEndLineNumber: change.originalEndLineNumber,
-        modifiedStartLineNumber: change.modifiedStartLineNumber,
-        modifiedEndLineNumber: change.modifiedEndLineNumber,
-        diffEditor: editor,
-        onApply: (newContent: string) => {
-          setEditorContentOld(newContent);
-        },
-        onReject: (newContent: string) => {
-          setEditorContent(newContent);
-        },
-        originalLineCount: originalModel.getLineCount(),
-      });
-      editor.getModifiedEditor().addContentWidget(widget);
-      diffWidgetsRef.current.push(widget);
     });
   };
 
@@ -286,15 +241,6 @@ export const SqlEditor = () => {
   const printDecorations = () => {
     if (diffEditor) {
       console.log(diffEditor.getModel()?.modified.getAllDecorations());
-    }
-  };
-
-  const removeWidgets = () => {
-    if (codeEditor) {
-      diffWidgetsRef.current.forEach((widget) => {
-        codeEditor.removeContentWidget(widget);
-      });
-      diffWidgetsRef.current = [];
     }
   };
 
@@ -357,14 +303,6 @@ export const SqlEditor = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={printDecorations}>
                 Print decorations
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={removeWidgets}>
-                Remove widgets
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => diffEditor && updateDiffWidgets(diffEditor)}
-              >
-                Update diff widgets
               </DropdownMenuItem>
               <DropdownMenuItem onClick={enableIntellisense}>
                 Intellisense
