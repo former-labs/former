@@ -61,6 +61,15 @@ export const SqlEditor = () => {
     codeEditor,
   });
 
+  // useEditorDecorations({
+  //   decorations: inlinePromptWidgets.map((widget) => ({
+  //     id: widget.id,
+  //     lineNumber: widget.lineNumber + 1,
+  //   })),
+  //   codeEditor,
+  //   monaco,
+  // });
+
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
     const tableNames = [
@@ -246,8 +255,32 @@ export const SqlEditor = () => {
     console.log(diffEditor?.getLineChanges());
   };
 
+  const [previousDecorations, setPreviousDecorations] = useState<string[]>([]);
+
   const setDecorations = () => {
-    // Example: Adding decorations if needed
+    if (codeEditor && monaco) {
+      console.log("Setting decorations");
+      const lineCount = codeEditor.getModel()?.getLineCount() ?? 1;
+      const randomLine = Math.floor(Math.random() * lineCount) + 1;
+      const decorations = [
+        {
+          range: new monaco.Range(randomLine, 1, randomLine, 1),
+          options: {
+            isWholeLine: true,
+            className: "lineHighlight",
+          },
+        },
+      ];
+      // Remove previous decorations before setting new ones
+      console.log("Previous decorations", previousDecorations);
+
+      const decs = codeEditor.deltaDecorations(
+        previousDecorations,
+        decorations,
+      );
+      setPreviousDecorations(decs);
+      console.log("New decorations", decs);
+    }
   };
 
   const printDecorations = () => {
