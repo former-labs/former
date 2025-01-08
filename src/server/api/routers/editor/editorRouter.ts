@@ -240,11 +240,14 @@ You are a SQL assistant for the AI-first SQL IDE called "Yerve".
 
 The user is writing SQL code in the editor.
 They have asked you to edit the code in their editor.
-Please respond with the entire SQL code with the follow change applied:
 
+Please respond with the entire SQL code with the follow change applied:
 <USER_REQUEST>
 ${input.userMessage}
 </USER_REQUEST>
+
+If the change does not make sense, you can ignore it and just return the entire original editor content.
+
 
 To help you write queries, you must adhere to the below database schema.
 Do not generate SQL code that is not for the provided database schema.
@@ -277,6 +280,49 @@ ${getEditorSelectionContent({
 \`\`\`
 `}
 
+<EXAMPLE>
+An example of how you might apply the user's request is below.
+Note that we have only applied to change to the select code, and have left the rest of the code unchanged.
+
+<EXAMPLE_INPUT>
+<USER_REQUEST>
+make this also select bar
+</USER_REQUEST>
+
+<EXAMPLE_EDITOR_CONTENT>
+\`\`\`sql
+select
+  foo
+from my_table;
+
+select
+  *
+from my_other_table;
+
+\`\`\`
+</EXAMPLE_EDITOR_CONTENT>
+
+<EXAMPLE_EDITOR_SELECTION>
+\`\`\`sql
+select
+  foo
+from my_table;
+\`\`\`
+</EXAMPLE_EDITOR_SELECTION>
+
+<EXAMPLE_OUTPUT>
+select
+  foo,
+  bar
+from my_table;
+
+select
+  *
+from my_other_table;
+
+</EXAMPLE_OUTPUT>
+</EXAMPLE>
+
 Respond in Markdown format.
         `
       }
@@ -292,6 +338,7 @@ The entire raw SQL code in the editor with the change applied.
 Do not surround the SQL code with \`\`\` formatting.
 
 Make sure you don't modify the SQL in any way except to satisfy the user's request.
+
 Try to keep whitespace the same across all the lines, do not add or remove any newlines.
 `)
         }),
