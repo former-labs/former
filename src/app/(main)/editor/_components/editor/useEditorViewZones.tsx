@@ -64,7 +64,6 @@ export const useEditorViewZones = ({
           });
         }
       });
-
       return updatedZones;
     });
   }, [viewZoneInstances]);
@@ -134,7 +133,7 @@ export const useEditorViewZones = ({
       viewZones.forEach((zone) => {
         if (zone.needsRerender) {
           const editorZoneId = changeAccessor.addZone({
-            afterLineNumber: zone.lineNumber,
+            afterLineNumber: zone.lineNumber - 1,
             heightInPx: zone.heightInPx,
             domNode: zone.domNode,
             // onDomNodeTop: (top) => {

@@ -72,11 +72,15 @@ export const SqlEditor = () => {
   useEditorDecorations({
     decorations: inlinePromptWidgets.map((widget) => ({
       id: widget.id,
-      lineNumberStart: widget.lineNumberStart + 1,
-      lineNumberEnd: widget.lineNumberEnd + 1,
+      lineNumberStart: widget.lineNumberStart,
+      lineNumberEnd: widget.lineNumberEnd,
     })),
     onDecorationsChange: (changedDecorations) => {
-      console.log("changedDecorations", changedDecorations);
+      console.log(
+        "changedDecorations",
+        changedDecorations,
+        inlinePromptWidgets,
+      );
       setInlinePromptWidgets(
         changedDecorations.map((decoration) => {
           const widget = inlinePromptWidgets.find(
@@ -87,8 +91,8 @@ export const SqlEditor = () => {
           }
           return {
             ...widget,
-            lineNumberStart: decoration.lineNumberStart - 1,
-            lineNumberEnd: decoration.lineNumberEnd - 1,
+            lineNumberStart: decoration.lineNumberStart,
+            lineNumberEnd: decoration.lineNumberEnd,
           };
         }),
       );
@@ -174,8 +178,8 @@ export const SqlEditor = () => {
         ...inlinePromptWidgets,
         {
           id: newId,
-          lineNumberStart: editorSelection.startLineNumber - 1,
-          lineNumberEnd: editorSelection.endLineNumber - 1,
+          lineNumberStart: editorSelection.startLineNumber,
+          lineNumberEnd: editorSelection.endLineNumber,
           text: "",
         },
       ]);

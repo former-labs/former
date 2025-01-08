@@ -27,8 +27,8 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
   // Get selection content
   // const selectionContent = getEditorSelectionContent({
   //   editorSelection: {
-  //     startLineNumber: lineNumberStart + 1,
-  //     endLineNumber: lineNumberEnd + 1,
+  //     startLineNumber: lineNumberStart,
+  //     endLineNumber: lineNumberEnd,
   //   },
   //   editorContent,
   // });
@@ -58,8 +58,8 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
       userMessage: text,
       editorContent,
       editorSelection: {
-        startLineNumber: lineNumberStart + 1,
-        endLineNumber: lineNumberEnd + 1,
+        startLineNumber: lineNumberStart,
+        endLineNumber: lineNumberEnd,
       },
       databaseMetadata,
       knowledge: knowledgeList,
@@ -108,7 +108,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
 
         <div className="flex items-center justify-between">
           <div className="pl-1 text-xs text-gray-500">
-            Line {lineNumberStart + 1}-{lineNumberEnd + 1}
+            Line {lineNumberStart}-{lineNumberEnd}
           </div>
           <Button
             onClick={handleSubmit}
