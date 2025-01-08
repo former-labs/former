@@ -258,6 +258,8 @@ export const useActiveEditorInlinePromptWidget = (id: string) => {
   };
 
   return {
+    lineNumberStart: widget.lineNumberStart,
+    lineNumberEnd: widget.lineNumberEnd,
     text: widget.text,
     setText: (text: string) => setInlinePromptWidgets(
       inlinePromptWidgets.map(w => 

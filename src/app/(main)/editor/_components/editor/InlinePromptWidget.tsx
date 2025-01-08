@@ -3,47 +3,35 @@
 import { Button } from "@/components/ui/button";
 import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
 import { useData } from "@/contexts/DataContext";
-import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { X } from "lucide-react";
-import type { Selection } from "monaco-editor";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useEventListener } from "usehooks-ts";
-import { StaticEditor } from "../chat/StaticEditor";
 import {
   useActiveEditor,
   useActiveEditorInlinePromptWidget,
 } from "./editorStore";
 
 export const InlinePromptWidget = ({ id }: { id: string }) => {
-  const [storedSelection, setStoredSelection] = useState<Selection | null>(
-    null,
-  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { editorContent, editorSelection, setEditorContentDiff } =
-    useActiveEditor();
-  const { removePromptWidget, text, setText } =
+  const { editorContent, setEditorContentDiff } = useActiveEditor();
+  const { removePromptWidget, text, setText, lineNumberStart, lineNumberEnd } =
     useActiveEditorInlinePromptWidget(id);
+
   const { databaseMetadata } = useData();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 
   const inlineEditMutation = api.editor.inlineEdit.useMutation();
 
-  // Store selection when component mounts
-  useEffect(() => {
-    if (editorSelection) {
-      setStoredSelection(editorSelection);
-    }
-  }, []);
-
   // Get selection content
-  const selectionContent = storedSelection
-    ? getEditorSelectionContent({
-        editorSelection: storedSelection,
-        editorContent,
-      })
-    : null;
+  // const selectionContent = getEditorSelectionContent({
+  //   editorSelection: {
+  //     startLineNumber: lineNumberStart + 1,
+  //     endLineNumber: lineNumberEnd + 1,
+  //   },
+  //   editorContent,
+  // });
 
   useEffect(() => {
     // Focus when first mounted
@@ -69,7 +57,10 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
     const response = await inlineEditMutation.mutateAsync({
       userMessage: text,
       editorContent,
-      editorSelection: storedSelection,
+      editorSelection: {
+        startLineNumber: lineNumberStart + 1,
+        endLineNumber: lineNumberEnd + 1,
+      },
       databaseMetadata,
       knowledge: knowledgeList,
     });
@@ -99,11 +90,11 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
           <X />
         </Button>
 
-        {selectionContent && (
+        {/* {selectionContent && (
           <div className="border pr-3">
             <StaticEditor value={selectionContent} />
           </div>
-        )}
+        )} */}
 
         <TextareaAutoResize
           ref={textareaRef}
@@ -115,14 +106,19 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
           rows={2}
         />
 
-        <Button
-          onClick={handleSubmit}
-          size="sm"
-          className="h-5 self-end"
-          loading={inlineEditMutation.isPending}
-        >
-          Submit
-        </Button>
+        <div className="flex items-center justify-between">
+          <div className="pl-1 text-xs text-gray-500">
+            Line {lineNumberStart + 1}-{lineNumberEnd + 1}
+          </div>
+          <Button
+            onClick={handleSubmit}
+            size="sm"
+            className="h-5"
+            loading={inlineEditMutation.isPending}
+          >
+            Submit
+          </Button>
+        </div>
       </div>
     </div>
   );

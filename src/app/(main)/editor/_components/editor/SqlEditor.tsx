@@ -16,6 +16,7 @@ import { useQueryResult } from "../queryResultStore";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useEditorAutocomplete } from "./useEditorAutocomplete";
+import { useEditorDecorations } from "./useEditorDecorations";
 import { useEditorDiffWidgets } from "./useEditorDiffWidgets";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
@@ -68,33 +69,33 @@ export const SqlEditor = () => {
     codeEditor,
   });
 
-  // useEditorDecorations({
-  //   decorations: inlinePromptWidgets.map((widget) => ({
-  //     id: widget.id,
-  //     lineNumberStart: widget.lineNumberStart + 1,
-  //     lineNumberEnd: widget.lineNumberEnd + 1,
-  //   })),
-  //   onDecorationsChange: (changedDecorations) => {
-  //     console.log("changedDecorations", changedDecorations);
-  //     setInlinePromptWidgets(
-  //       changedDecorations.map((decoration) => {
-  //         const widget = inlinePromptWidgets.find(
-  //           (w) => w.id === decoration.id,
-  //         );
-  //         if (!widget) {
-  //           throw new Error(`Widget not found for decoration ${decoration.id}`);
-  //         }
-  //         return {
-  //           ...widget,
-  //           lineNumberStart: decoration.lineNumberStart - 1,
-  //           lineNumberEnd: decoration.lineNumberEnd - 1,
-  //         };
-  //       }),
-  //     );
-  //   },
-  //   codeEditor,
-  //   monaco,
-  // });
+  useEditorDecorations({
+    decorations: inlinePromptWidgets.map((widget) => ({
+      id: widget.id,
+      lineNumberStart: widget.lineNumberStart + 1,
+      lineNumberEnd: widget.lineNumberEnd + 1,
+    })),
+    onDecorationsChange: (changedDecorations) => {
+      console.log("changedDecorations", changedDecorations);
+      setInlinePromptWidgets(
+        changedDecorations.map((decoration) => {
+          const widget = inlinePromptWidgets.find(
+            (w) => w.id === decoration.id,
+          );
+          if (!widget) {
+            throw new Error(`Widget not found for decoration ${decoration.id}`);
+          }
+          return {
+            ...widget,
+            lineNumberStart: decoration.lineNumberStart - 1,
+            lineNumberEnd: decoration.lineNumberEnd - 1,
+          };
+        }),
+      );
+    },
+    codeEditor,
+    monaco,
+  });
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
@@ -174,7 +175,7 @@ export const SqlEditor = () => {
         {
           id: newId,
           lineNumberStart: editorSelection.startLineNumber - 1,
-          lineNumberEnd: editorSelection.startLineNumber - 1,
+          lineNumberEnd: editorSelection.endLineNumber - 1,
           text: "",
         },
       ]);

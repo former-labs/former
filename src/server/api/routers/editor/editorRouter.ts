@@ -212,9 +212,7 @@ ${input.applyContent}
       editorContent: z.string(),
       editorSelection: z.object({
         startLineNumber: z.number(),
-        startColumn: z.number(),
         endLineNumber: z.number(),
-        endColumn: z.number(),
       }).nullable(),
       databaseMetadata: databaseMetadataSchema,
       knowledge: z.array(z.object({

@@ -42,37 +42,37 @@ export const useEditorDecorations = ({
     */
     const decorationChangeListener = codeEditor.onDidChangeModelDecorations(() => {
       const currentDecorations = codeEditor.getModel()?.getAllDecorations();
-      if (currentDecorations) {
-        const updatedDecorations: { id: string; lineNumberStart: number; lineNumberEnd: number; }[] = [];
-        let hasChanges = false;
+      if (!currentDecorations) return;
 
-        currentDecorations.forEach((decoration) => {
-          const decorationId = decoration.id;
-          const decorationKey = Array.from(existingDecorationsRef.current.entries()).find(
-            ([, value]) => value === decorationId
-          )?.[0];
-          if (!decorationKey) return;
+      const updatedDecorations: { id: string; lineNumberStart: number; lineNumberEnd: number; }[] = [];
+      let hasChanges = false;
 
-          const originalDecoration = decorations.find(d => d.id === decorationKey);
-          if (!originalDecoration) return;
+      currentDecorations.forEach((decoration) => {
+        const decorationId = decoration.id;
+        const decorationKey = Array.from(existingDecorationsRef.current.entries()).find(
+          ([, value]) => value === decorationId
+        )?.[0];
+        if (!decorationKey) return;
 
-          const { startLineNumber, endLineNumber } = decoration.range;
-          const updatedDecoration = {
-            id: decorationKey,
-            lineNumberStart: startLineNumber,
-            lineNumberEnd: endLineNumber,
-          };
-          updatedDecorations.push(updatedDecoration);
+        const originalDecoration = decorations.find(d => d.id === decorationKey);
+        if (!originalDecoration) return;
 
-          if (startLineNumber !== originalDecoration.lineNumberStart || endLineNumber !== originalDecoration.lineNumberEnd) {
-            console.log(`Decoration changed: ${decorationKey}, from (${originalDecoration.lineNumberStart}, ${originalDecoration.lineNumberEnd}) to (${startLineNumber}, ${endLineNumber})`);
-            hasChanges = true;
-          }
-        });
+        const { startLineNumber, endLineNumber } = decoration.range;
+        const updatedDecoration = {
+          id: decorationKey,
+          lineNumberStart: startLineNumber,
+          lineNumberEnd: endLineNumber,
+        };
+        updatedDecorations.push(updatedDecoration);
 
-        if (hasChanges) {
-          onDecorationsChange(updatedDecorations);
+        if (startLineNumber !== originalDecoration.lineNumberStart || endLineNumber !== originalDecoration.lineNumberEnd) {
+          console.log(`Decoration changed: ${decorationKey}, from (${originalDecoration.lineNumberStart}, ${originalDecoration.lineNumberEnd}) to (${startLineNumber}, ${endLineNumber})`);
+          hasChanges = true;
         }
+      });
+
+      if (hasChanges) {
+        onDecorationsChange(updatedDecorations);
       }
     });
 
