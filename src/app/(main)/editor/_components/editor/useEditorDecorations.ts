@@ -6,46 +6,80 @@ import { useEffect, useRef } from "react";
 import styles from './useEditorDecorations.module.css';
 
 /*
-TODO:
-Make this reactive for the decorations input.
-This should take in decorations and also provide some setter I think maybe.
-Like the goal is to have the source of truth for the range of each decoration
-stored externally. This should just make it easy to apply them to the editor
-and also track them as they change.
+  This will apply decorations to the editor in ranges, and also track the ranges as they change.
+  It's complex, but the interface is hopefully simple enough and not a leaky abstraction.
 
-Use
-codeEditor.onDidChangeModelDecorations
+  This is reactive to the input decorations array prop, but it will only be reactive at a granular level
+  of the IDs. If the input array reference changes but the decorations are the same, it will not be reactive.
 */
 export const useEditorDecorations = ({
   decorations,
+  onDecorationsChange,
   codeEditor,
   monaco,
 }: {
   decorations: {
     id: string;
-    lineNumber: number;
+    lineNumberStart: number;
+    lineNumberEnd: number;
   }[];
+  onDecorationsChange: (changedDecorations: { id: string; lineNumberStart: number; lineNumberEnd: number; }[]) => void;
   codeEditor: editor.IStandaloneCodeEditor | null;
   monaco: Monaco | null;
 }) => {
   // Use ref to track decorations with a map from id to decoration string
   const existingDecorationsRef = useRef<Map<string, string>>(new Map());
 
-  if (codeEditor) {
-    const currentDecorations = codeEditor?.getModel()?.getAllDecorations();
-    if (currentDecorations) {
-      currentDecorations.forEach((decoration) => {
-        const decorationId = decoration.id;
-        const decorationKey = Array.from(existingDecorationsRef.current.entries()).find(
-          ([, value]) => value === decorationId
-        )?.[0];
+  useEffect(() => {
+    if (!codeEditor) return;
 
-        if (decorationKey) {
-          console.log(`Decoration Key: ${decorationKey}, Editor Decoration ID: ${decorationId}`, decoration);
+    /*
+      Tbh I dont 100% trust the logic here.
+      But essentially we want to trigger updates when we detect changes to the decorations.
+      And not just when onDidChange runs, but specifically when we detect the monaco decorations
+      have different line numbers to the decorations array prop, which means the user must have
+      performed some editor action which moved the decorations.
+    */
+    const decorationChangeListener = codeEditor.onDidChangeModelDecorations(() => {
+      const currentDecorations = codeEditor.getModel()?.getAllDecorations();
+      if (currentDecorations) {
+        const updatedDecorations: { id: string; lineNumberStart: number; lineNumberEnd: number; }[] = [];
+        let hasChanges = false;
+
+        currentDecorations.forEach((decoration) => {
+          const decorationId = decoration.id;
+          const decorationKey = Array.from(existingDecorationsRef.current.entries()).find(
+            ([, value]) => value === decorationId
+          )?.[0];
+          if (!decorationKey) return;
+
+          const originalDecoration = decorations.find(d => d.id === decorationKey);
+          if (!originalDecoration) return;
+
+          const { startLineNumber, endLineNumber } = decoration.range;
+          const updatedDecoration = {
+            id: decorationKey,
+            lineNumberStart: startLineNumber,
+            lineNumberEnd: endLineNumber,
+          };
+          updatedDecorations.push(updatedDecoration);
+
+          if (startLineNumber !== originalDecoration.lineNumberStart || endLineNumber !== originalDecoration.lineNumberEnd) {
+            console.log(`Decoration changed: ${decorationKey}, from (${originalDecoration.lineNumberStart}, ${originalDecoration.lineNumberEnd}) to (${startLineNumber}, ${endLineNumber})`);
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) {
+          onDecorationsChange(updatedDecorations);
         }
-      });
-    }
-  }
+      }
+    });
+
+    return () => {
+      decorationChangeListener.dispose();
+    };
+  }, [codeEditor, decorations, onDecorationsChange]);
 
   useEffect(() => {
     if (!codeEditor || !monaco) return;
@@ -54,7 +88,7 @@ export const useEditorDecorations = ({
     const newDecorationMap = new Map<string, editor.IModelDeltaDecoration>();
     decorations.forEach((decoration) => {
       newDecorationMap.set(decoration.id, {
-        range: new monaco.Range(decoration.lineNumber, 1, decoration.lineNumber, 1),
+        range: new monaco.Range(decoration.lineNumberStart, 1, decoration.lineNumberEnd, 1),
         options: {
           isWholeLine: true,
           className: styles.lineHighlight,

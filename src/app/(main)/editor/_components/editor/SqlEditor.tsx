@@ -11,7 +11,7 @@ import { env } from "@/env";
 import { DiffEditor, type Monaco } from "@monaco-editor/react";
 import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryResult } from "../queryResultStore";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
@@ -44,7 +44,14 @@ export const SqlEditor = () => {
   const [renderSideBySide, setRenderSideBySide] = useState(false);
 
   const { renderViewZone } = useEditorViewZones({
-    viewZoneInstances: inlinePromptWidgets,
+    viewZoneInstances: useMemo(
+      () =>
+        inlinePromptWidgets.map((widget) => ({
+          id: widget.id,
+          lineNumber: widget.lineNumberStart,
+        })),
+      [inlinePromptWidgets],
+    ),
     codeEditor,
     monaco,
   });
@@ -64,8 +71,27 @@ export const SqlEditor = () => {
   // useEditorDecorations({
   //   decorations: inlinePromptWidgets.map((widget) => ({
   //     id: widget.id,
-  //     lineNumber: widget.lineNumber + 1,
+  //     lineNumberStart: widget.lineNumberStart + 1,
+  //     lineNumberEnd: widget.lineNumberEnd + 1,
   //   })),
+  //   onDecorationsChange: (changedDecorations) => {
+  //     console.log("changedDecorations", changedDecorations);
+  //     setInlinePromptWidgets(
+  //       changedDecorations.map((decoration) => {
+  //         const widget = inlinePromptWidgets.find(
+  //           (w) => w.id === decoration.id,
+  //         );
+  //         if (!widget) {
+  //           throw new Error(`Widget not found for decoration ${decoration.id}`);
+  //         }
+  //         return {
+  //           ...widget,
+  //           lineNumberStart: decoration.lineNumberStart - 1,
+  //           lineNumberEnd: decoration.lineNumberEnd - 1,
+  //         };
+  //       }),
+  //     );
+  //   },
   //   codeEditor,
   //   monaco,
   // });
@@ -147,7 +173,8 @@ export const SqlEditor = () => {
         ...inlinePromptWidgets,
         {
           id: newId,
-          lineNumber: editorSelection.startLineNumber - 1,
+          lineNumberStart: editorSelection.startLineNumber - 1,
+          lineNumberEnd: editorSelection.startLineNumber - 1,
           text: "",
         },
       ]);

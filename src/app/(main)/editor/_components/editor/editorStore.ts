@@ -11,7 +11,8 @@ interface Editor {
   editorSelection: Selection | null;
   inlinePromptWidgets: {
     id: string;
-    lineNumber: number;
+    lineNumberStart: number;
+    lineNumberEnd: number;
     text: string;
   }[];
 }
@@ -27,7 +28,12 @@ interface EditorStore {
   setActiveEditorId: (id: string) => void;
   createEditor: () => void;
   deleteEditor: (id: string) => void;
-  setInlinePromptWidgets: (widgets: { id: string; lineNumber: number; text: string; }[]) => void;
+  setInlinePromptWidgets: (widgets: {
+    id: string;
+    lineNumberStart: number;
+    lineNumberEnd: number;
+    text: string;
+  }[]) => void;
 }
 
 const initialEditorId = uuidv4();
@@ -112,7 +118,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
-  setInlinePromptWidgets: (widgets) => {
+  setInlinePromptWidgets: (widgets: { id: string; lineNumberStart: number; lineNumberEnd: number; text: string; }[]) => {
     set((state) => {
       if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {

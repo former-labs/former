@@ -12,6 +12,7 @@ type ViewZone = {
   domNode: HTMLDivElement;
   heightInPx?: number;
   needsRerender: boolean;
+  // previousTop?: number;
 };
 
 /*
@@ -136,6 +137,19 @@ export const useEditorViewZones = ({
             afterLineNumber: zone.lineNumber,
             heightInPx: zone.heightInPx,
             domNode: zone.domNode,
+            // onDomNodeTop: (top) => {
+            //   // Rerender if the zone has moved
+            //   console.log("onDomNodeTop", top);
+            //   if (zone.previousTop !== top) {
+            //     setViewZones((prev) =>
+            //       prev.map((vz) =>
+            //         vz.id === zone.id
+            //           ? { ...vz, needsRerender: true, previousTop: top }
+            //           : vz,
+            //       ),
+            //     );
+            //   }
+            // },
           });
 
           newZoneIdMapping.push({
