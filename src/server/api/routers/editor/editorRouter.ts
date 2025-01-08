@@ -107,11 +107,18 @@ If you did not use any knowledge sources, return an empty array.
         }),
       });
 
+      // Validate the knowledge sources from the response
+      const knowledgeSources = z.array(
+        z.string()
+         .uuid()
+         .refine(id => input.knowledge.some(knowledge => knowledge.id === id))
+      ).parse(aiResponse.knowledgeSources);
+
       return {
         message: {
           type: "assistant" as const,
           content: aiResponse.response,
-          knowledgeSources: aiResponse.knowledgeSources,
+          knowledgeSources: knowledgeSources,
         }
       };
     }),
@@ -449,7 +456,7 @@ const formatKnowledge = (knowledge: Array<{
   return `\
 <EXAMPLE_QUERIES>
 ${knowledge.map((knowledge, index) => `
-<EXAMPLE_QUERY_${index + 1}>
+<EXAMPLE_QUERY_${index + 1} id="${knowledge.id}">
 ID: ${knowledge.id}
 Title: ${knowledge.name}
 Description: ${knowledge.description}
