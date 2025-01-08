@@ -79,7 +79,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
   };
 
   return (
-    <div>
+    <div className="py-1">
       <div className="relative flex h-full w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
         <Button
           onClick={removePromptWidget}
