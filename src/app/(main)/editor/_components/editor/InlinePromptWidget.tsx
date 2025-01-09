@@ -16,8 +16,15 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { editorContent, setEditorContentDiff } = useActiveEditor();
-  const { removePromptWidget, text, setText, lineNumberStart, lineNumberEnd } =
-    useActiveEditorInlinePromptWidget(id);
+  const {
+    removePromptWidget,
+    text,
+    setText,
+    lineNumberStart,
+    lineNumberEnd,
+    shouldFocus,
+    setShouldFocus,
+  } = useActiveEditorInlinePromptWidget(id);
 
   const { databaseMetadata } = useData();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
@@ -34,11 +41,15 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
   // });
 
   useEffect(() => {
-    // Focus when first mounted
-    requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-    });
-  }, []);
+    // Focus this inline prompt widget if shouldFocus is true
+    if (textareaRef.current && shouldFocus) {
+      const timer = setTimeout(() => {
+        textareaRef.current?.focus();
+        setShouldFocus(false);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [textareaRef, shouldFocus]);
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (

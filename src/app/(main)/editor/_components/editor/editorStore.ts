@@ -14,6 +14,7 @@ interface Editor {
     lineNumberStart: number;
     lineNumberEnd: number;
     text: string;
+    shouldFocus: boolean;
   }[];
 }
 
@@ -33,6 +34,7 @@ interface EditorStore {
     lineNumberStart: number;
     lineNumberEnd: number;
     text: string;
+    shouldFocus: boolean;
   }[]) => void;
 }
 
@@ -118,7 +120,13 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
-  setInlinePromptWidgets: (widgets: { id: string; lineNumberStart: number; lineNumberEnd: number; text: string; }[]) => {
+  setInlinePromptWidgets: (widgets: {
+    id: string;
+    lineNumberStart: number;
+    lineNumberEnd: number;
+    text: string;
+    shouldFocus: boolean;
+  }[]) => {
     set((state) => {
       if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
@@ -257,15 +265,29 @@ export const useActiveEditorInlinePromptWidget = (id: string) => {
     );
   };
 
+  const setText = (text: string) => {
+    setInlinePromptWidgets(
+      inlinePromptWidgets.map(w => 
+        w.id === id ? { ...w, text } : w
+      )
+    );
+  };
+
+  const setShouldFocus = (shouldFocus: boolean) => {
+    setInlinePromptWidgets(
+      inlinePromptWidgets.map(w => 
+        w.id === id ? { ...w, shouldFocus } : w
+      )
+    );
+  };
+
   return {
     lineNumberStart: widget.lineNumberStart,
     lineNumberEnd: widget.lineNumberEnd,
     text: widget.text,
-    setText: (text: string) => setInlinePromptWidgets(
-      inlinePromptWidgets.map(w => 
-        w.id === id ? { ...w, text } : w
-      )
-    ),
+    shouldFocus: widget.shouldFocus,
+    setText,
+    setShouldFocus,
     removePromptWidget
   };
 };

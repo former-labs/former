@@ -173,16 +173,39 @@ export const SqlEditor = () => {
         throw new Error("No editor selection.");
       }
 
-      const newId = crypto.randomUUID();
-      setInlinePromptWidgets([
-        ...inlinePromptWidgets,
-        {
-          id: newId,
-          lineNumberStart: editorSelection.startLineNumber,
-          lineNumberEnd: editorSelection.endLineNumber,
-          text: "",
-        },
-      ]);
+      const { positionLineNumber, startLineNumber, endLineNumber } =
+        editorSelection;
+
+      // Check if any existing inlinePromptWidgets contain the current positionLineNumber
+      const existingWidget = inlinePromptWidgets.find(
+        (widget) =>
+          positionLineNumber >= widget.lineNumberStart &&
+          positionLineNumber <= widget.lineNumberEnd,
+      );
+
+      if (existingWidget) {
+        // Set shouldFocus to true for the existing widget
+        setInlinePromptWidgets(
+          inlinePromptWidgets.map((widget) =>
+            widget.id === existingWidget.id
+              ? { ...widget, shouldFocus: true }
+              : widget,
+          ),
+        );
+      } else {
+        // Create a new prompt widget
+        const newId = crypto.randomUUID();
+        setInlinePromptWidgets([
+          ...inlinePromptWidgets,
+          {
+            id: newId,
+            lineNumberStart: startLineNumber,
+            lineNumberEnd: endLineNumber,
+            text: "",
+            shouldFocus: true,
+          },
+        ]);
+      }
     },
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK : null,
     codeEditor,
