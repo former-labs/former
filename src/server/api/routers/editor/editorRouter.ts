@@ -220,7 +220,7 @@ ${input.applyContent}
       editorSelection: z.object({
         startLineNumber: z.number(),
         endLineNumber: z.number(),
-      }).nullable(),
+      }),
       databaseMetadata: databaseMetadataSchema,
       knowledge: z.array(z.object({
         id: z.string(),
@@ -234,16 +234,19 @@ ${input.applyContent}
     }))
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
-      console.log("User message received:", input.userMessage);
-      console.log("Editor content received:", input.editorContent);
-      console.log("Editor selection received:", input.editorSelection);
-      console.log("Database metadata received:", input.databaseMetadata);
-      console.log("Knowledge base items received:", input.knowledge);
+      console.log("User message received:", [input.userMessage]);
+      console.log("Editor content received:", [input.editorContent]);
+      console.log("Editor selection received:", input.editorSelection, [getEditorSelectionContent({
+        editorSelection: input.editorSelection,
+        editorContent: input.editorContent
+      })]);
+      // console.log("Database metadata received:", input.databaseMetadata);
+      // console.log("Knowledge base items received:", input.knowledge);
 
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",
         content: `
-You are a SQL assistant for the AI-first SQL IDE called "Yerve".
+You are a SQL assistant that makes changes to the user's SQL editor content.
 
 The user is writing SQL code in the editor.
 They have requested that you edit the code in their editor.
@@ -265,9 +268,10 @@ You should refer to these when writing your own SQL code.
 
 ${formatKnowledge(input.knowledge)}
 
-<EXAMPLE>
+<EXAMPLE_1>
 An example of how you might apply the user's request is below.
-Note that we have only applied to change to the select code, and have left the rest of the code unchanged.
+Note that we have only responsed with code to replace the SQL that was selected.
+The rest of the code will remain unchanged and you should not output it.
 
 <EXAMPLE_INPUT>
 <USER_REQUEST>
@@ -275,38 +279,39 @@ make this also select bar
 </USER_REQUEST>
 
 <EXAMPLE_EDITOR_CONTENT>
-\`\`\`sql
-select
-  foo
-from my_table;
-
-select
-  *
-from my_other_table;
-
-\`\`\`
+select\n  foo\nfrom my_table;\n\nselect\n  *\nfrom my_other_table;\n
 </EXAMPLE_EDITOR_CONTENT>
 
 <EXAMPLE_EDITOR_SELECTION>
-\`\`\`sql
-select
-  foo
-from my_table;
-\`\`\`
+select\n  foo\nfrom my_table;\n\n
 </EXAMPLE_EDITOR_SELECTION>
 
 <EXAMPLE_OUTPUT>
-select
-  foo,
-  bar
-from my_table;
-
-select
-  *
-from my_other_table;
-
+select\n  foo,\n  bar\nfrom my_table;\n\n
 </EXAMPLE_OUTPUT>
-</EXAMPLE>
+</EXAMPLE_1>
+
+<EXAMPLE_2>
+Another example is below.
+Note how we output the entire line, including the trailing newline at the end, like "  foo as bar\n"
+
+<EXAMPLE_INPUT>
+<USER_REQUEST>
+alias this to bar
+</USER_REQUEST>
+
+<EXAMPLE_EDITOR_CONTENT>
+select\n  foo\nfrom my_table;\n
+</EXAMPLE_EDITOR_CONTENT>
+
+<EXAMPLE_EDITOR_SELECTION>
+  foo\n
+</EXAMPLE_EDITOR_SELECTION>
+
+<EXAMPLE_OUTPUT>
+  foo as bar\n
+</EXAMPLE_OUTPUT>
+</EXAMPLE_2>
 
 
 <USER_REQUEST>
@@ -316,20 +321,18 @@ ${input.userMessage}
 </REQUESTED_CHANGE>
 
 The user's current SQL code in their editor is below:
-\`\`\`sql
+<EDITOR_CONTENT>
 ${input.editorContent}
-\`\`\`
+</EDITOR_CONTENT>
 
-${input.editorSelection && `
 The user has also highlighted a section of the code in their editor.
 The request they are making should only apply to this highlighted code, so you should not modify any other code.
-\`\`\`sql
+<EDITOR_SELECTION>
 ${getEditorSelectionContent({
   editorSelection: input.editorSelection,
   editorContent: input.editorContent
 })}
-\`\`\`
-`}
+</EDITOR_SELECTION>
 </USER_REQUEST>
 
         `
@@ -341,18 +344,21 @@ ${getEditorSelectionContent({
           systemMessage,
         ],
         schemaOutput: z.object({
-          newEditorContent: z.string().describe(`
-The entire raw SQL code in the editor with the change applied.
-Do not surround the SQL code with \`\`\` formatting.
+          newEditorSelection: z.string().describe(`
+SQL code to replace the section of code that was highlighted, with the requested changes applied to it.
 
+Do not surround the SQL code with \`\`\` formatting or XML tags.
 Make sure you don't modify the SQL in any way except to satisfy the user's request.
 
-Try to keep whitespace the same across all the lines, do not add or remove any newlines.
+Make sure you output entire lines, including any leading or trailing newline that exists in the original SQL selection.
+Look at the examples to see how this works.
+
+DO NOT FORGET ANY TRAILING NEWLINES.
 `)
         }),
       });
 
-      return aiResponse.newEditorContent;
+      return aiResponse.newEditorSelection;
     }),
 
   getAutocomplete: workspaceProtectedProcedure

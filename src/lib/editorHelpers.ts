@@ -42,7 +42,10 @@ export const getEditorSelectionContent = ({
     // Find the start of the target line
     while (currentLine < lineNumber) {
       const nextNewline = content.indexOf("\n", offset);
-      if (nextNewline === -1) break;
+      if (nextNewline === -1) {
+        offset = content.length;
+        break;
+      }
       offset = nextNewline + 1;
       currentLine++;
     }
@@ -72,7 +75,7 @@ export const getEditorSelectionContent = ({
     const endOffset = getPositionOffset(
       editorContent,
       editorSelection.endLineNumber + 1,
-    ) - 1;
+    );
     return editorContent.slice(startOffset, endOffset);
   }
 };

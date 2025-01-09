@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
 import { useData } from "@/contexts/DataContext";
+import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -81,7 +82,27 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
       knowledge: knowledgeList,
     });
 
-    setEditorContentDiff(response);
+    const updatedEditorContent = [
+      lineNumberStart === 1
+        ? ""
+        : getEditorSelectionContent({
+            editorSelection: {
+              startLineNumber: 1,
+              endLineNumber: lineNumberStart - 1,
+            },
+            editorContent,
+          }),
+      response,
+      getEditorSelectionContent({
+        editorSelection: {
+          startLineNumber: lineNumberEnd + 1,
+          endLineNumber: editorContent.split("\n").length,
+        },
+        editorContent,
+      }),
+    ].join("");
+    setEditorContentDiff(updatedEditorContent);
+
     removePromptWidget();
   };
 
