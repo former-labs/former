@@ -27,14 +27,25 @@ import { isAdminEmail } from "../auth/admin";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const getAuth = async () => {
+    // const startTime = Date.now();
+
+    // In my test now this takes typically 200-300ms
+    // Not great for autocomplete AI
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // const endTime = Date.now();
+    // console.log(`Auth time taken: ${endTime - startTime} ms`);
+
+    return user;
+  };
 
   return {
     db,
-    auth: user,
+    getAuth: getAuth,
     ...opts,
   };
 };
@@ -93,6 +104,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   if (t._config.isDev) {
     // artificial delay in dev
     const waitMs = Math.floor(Math.random() * 400) + 100;
+    // const waitMs = Math.floor(Math.random() * 50) + 50;
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
 
@@ -118,14 +130,16 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 export const authUserProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    if (!ctx.auth?.id) {
+    const auth = await ctx.getAuth();
+
+    if (!auth?.id) {
       throw new Error("You must be logged in to access this resource");
     }
 
     return next({
       ctx: {
         ...ctx,
-        auth: ctx.auth,
+        auth: auth,
       },
     });
   });
@@ -148,7 +162,7 @@ export const adminProtectedProcedure = authUserProcedure
 export const userProtectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    const auth = ctx.auth;
+    const auth = await ctx.getAuth();
     if (!auth) {
       throw new Error("You must be logged in to access this resource");
     }
@@ -186,11 +200,13 @@ export const userProtectedProcedure = t.procedure
 export const workspaceProtectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    if (!ctx.auth?.id) {
+    const auth = await ctx.getAuth();
+
+    if (!auth?.id) {
       throw new Error("You must be logged in to access this resource");
     }
     
-    const activeRole = ctx.auth.app_metadata?.activeRole as ActiveRole | null;
+    const activeRole = auth.app_metadata?.activeRole as ActiveRole | null;
     const activeRoleId = activeRole?.id ?? null;
     const activeWorkspaceId = activeRole?.workspaceId ?? null; 
     const activeRoleType = activeRole?.roleType ?? null;
@@ -210,7 +226,7 @@ export const workspaceProtectedProcedure = t.procedure
     return next({
       ctx: {
         ...ctx,
-        auth: ctx.auth,
+        auth,
         activeRoleId,
         activeRoleType,
         activeWorkspaceId,
