@@ -9,6 +9,7 @@ interface Editor {
   editorContent: string;
   editorContentOld: string | null;
   editorSelection: Selection | null;
+  shouldFocus: boolean;
   inlinePromptWidgets: {
     id: string;
     lineNumberStart: number;
@@ -27,6 +28,7 @@ interface EditorStore {
   setEditorContentDiff: (content: string) => void;
   setEditorSelection: (selection: Selection | null) => void;
   setActiveEditorId: (id: string) => void;
+  setShouldFocus: (shouldFocus: boolean) => void;
   createEditor: () => void;
   deleteEditor: (id: string) => void;
   setInlinePromptWidgets: (widgets: {
@@ -47,6 +49,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
     editorContent: "",
     editorContentOld: null,
     editorSelection: null,
+    shouldFocus: false,
     inlinePromptWidgets: []
   }],
   activeEditorId: initialEditorId,
@@ -120,6 +123,21 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
+  setShouldFocus: (shouldFocus) => {
+    set((state) => {
+      if (!state.activeEditorId) return state;
+      const newEditorList = state.editorList.map(editor => {
+        if (editor.id === state.activeEditorId) {
+          return {
+            ...editor,
+            shouldFocus
+          };
+        }
+        return editor;
+      });
+      return { editorList: newEditorList };
+    });
+  },
   setInlinePromptWidgets: (widgets: {
     id: string;
     lineNumberStart: number;
@@ -153,6 +171,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
         editorContent: "",
         editorContentOld: null,
         editorSelection: null,
+        shouldFocus: false,
         inlinePromptWidgets: []
       }],
       activeEditorId: newId,
@@ -170,6 +189,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
             editorContent: "",
             editorContentOld: null,
             editorSelection: null,
+            shouldFocus: false,
             inlinePromptWidgets: []
           }],
           activeEditorId: newId,
@@ -233,11 +253,13 @@ const getActiveEditorData = (state: EditorStore) => {
     editorSelection: activeEditor.editorSelection,
     editorSelectionContent,
     inlinePromptWidgets: activeEditor.inlinePromptWidgets,
+    shouldFocus: activeEditor.shouldFocus,
     setEditorContent: state.setEditorContent,
     setEditorContentOld: state.setEditorContentOld,
     setEditorContentDiff: state.setEditorContentDiff,
     setEditorSelection: state.setEditorSelection,
     setInlinePromptWidgets: state.setInlinePromptWidgets,
+    setShouldFocus: state.setShouldFocus,
   };
 };
 

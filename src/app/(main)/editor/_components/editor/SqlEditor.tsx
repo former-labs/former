@@ -11,7 +11,7 @@ import { env } from "@/env";
 import { DiffEditor, type Monaco } from "@monaco-editor/react";
 import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryResult } from "../queryResultStore";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
@@ -32,6 +32,8 @@ export const SqlEditor = () => {
     editorSelection,
     inlinePromptWidgets,
     setInlinePromptWidgets,
+    shouldFocus,
+    setShouldFocus,
   } = useActiveEditor();
 
   const { executeQuery, resultLoading } = useQueryResult();
@@ -100,6 +102,16 @@ export const SqlEditor = () => {
     codeEditor,
     monaco,
   });
+
+  useEffect(() => {
+    if (shouldFocus && codeEditor) {
+      const timer = setTimeout(() => {
+        codeEditor.focus();
+        setShouldFocus(false);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldFocus, codeEditor, setShouldFocus]);
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema

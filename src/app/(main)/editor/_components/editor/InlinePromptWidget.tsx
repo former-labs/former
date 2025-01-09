@@ -15,7 +15,11 @@ import {
 export const InlinePromptWidget = ({ id }: { id: string }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { editorContent, setEditorContentDiff } = useActiveEditor();
+  const {
+    editorContent,
+    setEditorContentDiff,
+    setShouldFocus: setActiveEditorFocus,
+  } = useActiveEditor();
   const {
     removePromptWidget,
     text,
@@ -57,6 +61,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
       document.activeElement === textareaRef.current
     ) {
       removePromptWidget();
+      setActiveEditorFocus(true);
     }
   };
 
