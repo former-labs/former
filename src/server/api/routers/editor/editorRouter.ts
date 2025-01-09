@@ -1,6 +1,6 @@
 import { getEditorSelectionContent } from "@/lib/editorHelpers";
-import { getAIChatResponse } from "@/server/ai/openai";
-import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
+import { getAIChatStructuredResponse, getAIChatTextResponse } from "@/server/ai/openai";
+import { createTRPCRouter, publicProcedure, workspaceProtectedProcedure } from "@/server/api/trpc";
 import type { DatabaseMetadata } from "@/types/connections";
 import { databaseMetadataSchema } from "@/types/connections";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
@@ -87,7 +87,7 @@ Respond in Markdown format.
       }
 
       // Get AI response
-      const aiResponse = await getAIChatResponse({
+      const aiResponse = await getAIChatStructuredResponse({
         messages: [
           systemMessage,
           ...formatChatMessages(input.messages)
@@ -198,7 +198,7 @@ ${input.applyContent}
       }
 
       // Get AI response
-      const aiResponse = await getAIChatResponse({
+      const aiResponse = await getAIChatStructuredResponse({
         model: "gpt-4o-mini",
         messages: [
           initialSystemMessage,
@@ -339,7 +339,7 @@ ${getEditorSelectionContent({
       }
 
       // Get AI response
-      const aiResponse = await getAIChatResponse({
+      const aiResponse = await getAIChatStructuredResponse({
         messages: [
           systemMessage,
         ],
@@ -361,7 +361,7 @@ DO NOT FORGET ANY TRAILING NEWLINES.
       return aiResponse.newEditorSelection;
     }),
 
-  getAutocomplete: workspaceProtectedProcedure
+  getAutocomplete: publicProcedure
     .input(z.object({
       editorContent: z.string(),
       editorContentBeforeCursor: z.string(),
@@ -383,60 +383,105 @@ Do not generate SQL code that is not for the provided database schema.
 
 ${formatDatabaseMetadata(input.databaseMetadata)}
 
-The current editor content is:
-\`\`\`sql
-${input.editorContent}
-\`\`\`
+In the editor content, the current cursor position is at the location of <REPLACE_ME>.
+You need to replace the <REPLACE_ME> with the right SQL.
 
-In the editor content, the current cursor position is at the location of <AUTOCOMPLETE_CURSOR_FILL_ME>.
-You need to replace the <AUTOCOMPLETE_CURSOR_FILL_ME> with the right SQL.
+You need to generate an autocomplete by predicting what characters are likely to exist at the location of <REPLACE_ME>.
+Output only the predicted characters to replace <REPLACE_ME>, with no additional formatting or explanation.
 
-\`\`\`sql
-${input.editorContentBeforeCursor}<AUTOCOMPLETE_CURSOR_FILL_ME>${editorContentAfterCursor}
-\`\`\`
-
-You need to generate an autocomplete by predicting what characters are likely to exist at the location of <AUTOCOMPLETE_CURSOR_FILL_ME>.
-Output only the predicted characters, with no additional formatting or explanation.
-
-Do not autocomplete code that currently exists after the cursor <AUTOCOMPLETE_CURSOR_FILL_ME> in the editor content.
-Your job it to think of *new* SQL code that will likely follow the cursor and will fit before code that exists after the cursor.
+Do not just suggest the code that already exists after the cursor <REPLACE_ME> in the editor content.
+You must instead guess the SQL code that will likely replace the <REPLACE_ME> symbol in the existing editor content.
 
 Make sure you handle newlines and whitespace carefully.
 Look for trailing newlines and whitespace in the content before the cursor.
 If you are at the end of a line and you wish to start a new line, you will need to start your autocomplete with a newline character.
 
-Cursor is at the start of a newline: ${input.editorContentBeforeCursor.endsWith("\n") || input.editorContentBeforeCursor === ""}
-Cursor is at the start of a word: ${/\s$/.test(input.editorContentBeforeCursor) || input.editorContentBeforeCursor === ""}
-Cursor is at the end of a line: ${editorContentAfterCursor.startsWith("\n") || editorContentAfterCursor === ""}
-        `
-      }
+If the <REPLACE_ME> cursor is at a location that likely does not need completion, just return nothing.
 
-      const aiResponse = await getAIChatResponse({
-        model: "gpt-4o-mini",
-        messages: [systemMessage],
-        schemaOutput: z.object({
-          completionNeeded: z.boolean().describe(`
-Whether the user likely needs a completion at the current cursor position.
+<EXAMPLE_1>
+An example is included below that does likely need autocompletion.
 
-If the user is at the end of a valid statement and doesn't need completion, this should be false.
-If the user is likely in the middle of a typing code, this should be true.
+<EDITOR_CONTENT>
+select
+  foo
+fr<REPLACE_ME> my_table;
+</EDITOR_CONTENT>
 
-If the user has their cursor in the middle of a statement that appears to be complete, this should be false.
-`),
-          completion: z.string().describe(`\
-The predicted characters that should replace the <AUTOCOMPLETE_CURSOR_FILL_ME> in the editor content.
+<OUTPUT>
+om
+</OUTPUT>
+
+Notice how we only output the characters that would replace the <REPLACE_ME> symbol.
+</EXAMPLE_1>
+
+<EXAMPLE_2>
+An example is included below that does not likely need autocompletion.
+
+<EDITOR_CONTENT>
+select
+  foo
+<REPLACE_ME>from my_table;
+</EDITOR_CONTENT>
+
+<OUTPUT>
+
+</OUTPUT>
+
+Notice how we return an empty string.
+</EXAMPLE_2>
+
+Respond with only the predicted characters that should replace the <REPLACE_ME> in the editor content.
 In most cases, this is a fraction of a single line.
 If you are highly certain you can output more than 1 line.
 
-Do not autocomplete new comments unless the user is already typing a comment.
+Do NOT say anything else except the predicted characters.
+Do NOT surround the predicted characters with \`\`\` or any other formatting.
+Only respond with the predicted characters or respond with nothing (empty response).
 
-Do not autocomplete purely whitespace.
-\
-`).nullable()
-        }),
+Make sure you carefully analyse the characters surrounding the <REPLACE_ME> symbol.
+
+The editor content is below:
+<EDITOR_CONTENT>
+${input.editorContentBeforeCursor}<REPLACE_ME>${editorContentAfterCursor}
+<EDITOR_CONTENT>
+`
+      }
+
+      // console.log("systemMessage", systemMessage);
+
+      const aiResponse = await getAIChatTextResponse({
+        // model: "gpt-4o-mini",
+        model: "gpt-4o-mini",
+        messages: [systemMessage],
+        // prediction: input.editorContent,
       });
 
-      return aiResponse.completion || "";
+      return aiResponse;
+
+//       const aiResponse = await getAIChatStructuredResponse({
+//         model: "gpt-4o",
+//         messages: [systemMessage],
+//         schemaOutput: z.object({
+//           thoughtProcess: z.string().describe(`
+// Write your thought process in a couple sentences.
+// Explain where the cursor is and what you think the user is trying to do.
+// Then analyse what the user might do next.
+
+// Don't forget your analyse can end with deciding that the user is not in need of a completion.
+// `),
+//           completion: z.string().describe(`
+// The prediction characters, or leave this null if you are not confident about what to predict.
+// `).nullable()
+//         }),
+//       });
+
+//       console.log("aiResponse", aiResponse);
+
+//       if (aiResponse.completion === "\n") {
+//         return "";
+//       }
+//       return aiResponse.completion || "";
+
     }),
 });
 
