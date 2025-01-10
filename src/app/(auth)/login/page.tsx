@@ -28,19 +28,17 @@ export default function LoginPage() {
             className="w-full"
             onClick={async () => {
               if (typeof window !== "undefined" && window.electron) {
-                console.log("ELECTRON LOGIN");
                 const result = await loginWithProvider({
                   provider: "google",
-                  redirectTo: `http://localhost:3000${PATH_ELECTRON_CALLBACK}`,
+                  redirectTo: `${window.location.origin}${PATH_ELECTRON_CALLBACK}`,
                   isElectron: true,
                 });
-                const url = typeof result === "string" ? result : result.url;
-                window.electron.send("open-external", url);
-                console.log("ELECTRON LOGIN DONE");
+                if (result && typeof result === "object" && "url" in result) {
+                  window.electron.send("open-external", result.url);
+                }
                 return;
-              } else {
-                await loginWithProvider({ provider: "google" });
               }
+              await loginWithProvider({ provider: "google" });
             }}
           >
             <Image
