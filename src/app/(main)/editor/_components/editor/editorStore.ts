@@ -7,8 +7,16 @@ interface Editor {
   id: string;
   title: string;
   editorContent: string;
-  editorContentPending: string | null;
+  editorContentOld: string | null;
   editorSelection: Selection | null;
+  shouldFocus: boolean;
+  inlinePromptWidgets: {
+    id: string;
+    lineNumberStart: number;
+    lineNumberEnd: number;
+    text: string;
+    shouldFocus: boolean;
+  }[];
 }
 
 interface EditorStore {
@@ -16,11 +24,20 @@ interface EditorStore {
   activeEditorId: string;
   nextEditorNumber: number;
   setEditorContent: (content: string) => void;
-  setEditorContentPending: (content: string | null) => void;
+  setEditorContentOld: (content: string | null) => void;
+  setEditorContentDiff: (content: string) => void;
   setEditorSelection: (selection: Selection | null) => void;
   setActiveEditorId: (id: string) => void;
+  setShouldFocus: (shouldFocus: boolean) => void;
   createEditor: () => void;
   deleteEditor: (id: string) => void;
+  setInlinePromptWidgets: (widgets: {
+    id: string;
+    lineNumberStart: number;
+    lineNumberEnd: number;
+    text: string;
+    shouldFocus: boolean;
+  }[]) => void;
 }
 
 const initialEditorId = uuidv4();
@@ -30,8 +47,10 @@ const useEditorStore = create<EditorStore>((set, get) => ({
     id: initialEditorId,
     title: "Query 1",
     editorContent: "",
-    editorContentPending: null,
-    editorSelection: null
+    editorContentOld: null,
+    editorSelection: null,
+    shouldFocus: false,
+    inlinePromptWidgets: []
   }],
   activeEditorId: initialEditorId,
   nextEditorNumber: 2,
@@ -40,14 +59,10 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
         if (editor.id === state.activeEditorId) {
-          // If the editor content is set to the same as the pending content,
-          // this is equivalent to accepting all changes.
-          // In this case we disable the diff editor by setting the pending content to null.
-          const newPending = editor.editorContentPending === content ? null : editor.editorContentPending;
           return {
             ...editor,
             editorContent: content,
-            editorContentPending: newPending
+            editorContentOld: content === editor.editorContentOld ? null : editor.editorContentOld
           };
         }
         return editor;
@@ -55,18 +70,37 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
-  setEditorContentPending: (content) => {
+  setEditorContentOld: (content) => {
     set((state) => {
       if (!state.activeEditorId) return state;
       const newEditorList = state.editorList.map(editor => {
         if (editor.id === state.activeEditorId) {
-          // If the pending content is set to the same as the editor content,
+          // If the old content is set to the same as the editor content,
           // this is equivalent to accepting all changes.
-          // In this case we disable the diff editor by setting the pending content to null.
-          const newPending = editor.editorContent === content ? null : content;
+          // In this case we disable the diff editor by setting the old content to null.
+          const newOld = editor.editorContent === content ? null : content;
           return {
             ...editor,
-            editorContentPending: newPending
+            editorContentOld: newOld
+          };
+        }
+        return editor;
+      });
+      return { editorList: newEditorList };
+    });
+  },
+  /**
+   * Use this to set the editor content and activate a diff for the changes.
+   */
+  setEditorContentDiff: (content) => {
+    set((state) => {
+      if (!state.activeEditorId) return state;
+      const newEditorList = state.editorList.map(editor => {
+        if (editor.id === state.activeEditorId) {
+          return {
+            ...editor,
+            editorContentOld: content === editor.editorContent ? null : editor.editorContent,
+            editorContent: content
           };
         }
         return editor;
@@ -89,6 +123,42 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       return { editorList: newEditorList };
     });
   },
+  setShouldFocus: (shouldFocus) => {
+    set((state) => {
+      if (!state.activeEditorId) return state;
+      const newEditorList = state.editorList.map(editor => {
+        if (editor.id === state.activeEditorId) {
+          return {
+            ...editor,
+            shouldFocus
+          };
+        }
+        return editor;
+      });
+      return { editorList: newEditorList };
+    });
+  },
+  setInlinePromptWidgets: (widgets: {
+    id: string;
+    lineNumberStart: number;
+    lineNumberEnd: number;
+    text: string;
+    shouldFocus: boolean;
+  }[]) => {
+    set((state) => {
+      if (!state.activeEditorId) return state;
+      const newEditorList = state.editorList.map(editor => {
+        if (editor.id === state.activeEditorId) {
+          return {
+            ...editor,
+            inlinePromptWidgets: widgets
+          };
+        }
+        return editor;
+      });
+      return { editorList: newEditorList };
+    });
+  },
   setActiveEditorId: (id) => {
     set({ activeEditorId: id });
   },
@@ -99,8 +169,10 @@ const useEditorStore = create<EditorStore>((set, get) => ({
         id: newId,
         title: `Query ${state.nextEditorNumber}`,
         editorContent: "",
-        editorContentPending: null,
-        editorSelection: null
+        editorContentOld: null,
+        editorSelection: null,
+        shouldFocus: false,
+        inlinePromptWidgets: []
       }],
       activeEditorId: newId,
       nextEditorNumber: state.nextEditorNumber + 1
@@ -115,8 +187,10 @@ const useEditorStore = create<EditorStore>((set, get) => ({
             id: newId,
             title: `Query ${state.nextEditorNumber}`,
             editorContent: "",
-            editorContentPending: null,
-            editorSelection: null
+            editorContentOld: null,
+            editorSelection: null,
+            shouldFocus: false,
+            inlinePromptWidgets: []
           }],
           activeEditorId: newId,
           nextEditorNumber: state.nextEditorNumber + 1
@@ -144,7 +218,7 @@ const useEditorStore = create<EditorStore>((set, get) => ({
 
       return { editorList: newEditorList };
     });
-  }
+  },
 }));
 
 export const useEditor = () => {
@@ -158,14 +232,12 @@ export const useEditor = () => {
   };
 };
 
-export const useActiveEditor = () => {
-  const store = useEditorStore();
-
-  if (!store.activeEditorId) {
+const getActiveEditorData = (state: EditorStore) => {
+  if (!state.activeEditorId) {
     throw new Error("No active editor selected");
   }
 
-  const activeEditor = store.editorList.find(editor => editor.id === store.activeEditorId);
+  const activeEditor = state.editorList.find(editor => editor.id === state.activeEditorId);
   if (!activeEditor) {
     throw new Error("Active editor not found");
   }
@@ -177,11 +249,67 @@ export const useActiveEditor = () => {
 
   return {
     editorContent: activeEditor.editorContent,
-    editorContentPending: activeEditor.editorContentPending,
+    editorContentOld: activeEditor.editorContentOld,
     editorSelection: activeEditor.editorSelection,
     editorSelectionContent,
-    setEditorContent: store.setEditorContent,
-    setEditorContentPending: store.setEditorContentPending,
-    setEditorSelection: store.setEditorSelection,
+    inlinePromptWidgets: activeEditor.inlinePromptWidgets,
+    shouldFocus: activeEditor.shouldFocus,
+    setEditorContent: state.setEditorContent,
+    setEditorContentOld: state.setEditorContentOld,
+    setEditorContentDiff: state.setEditorContentDiff,
+    setEditorSelection: state.setEditorSelection,
+    setInlinePromptWidgets: state.setInlinePromptWidgets,
+    setShouldFocus: state.setShouldFocus,
+  };
+};
+
+export const getActiveEditor = () => {
+  const state = useEditorStore.getState();
+  return getActiveEditorData(state);
+};
+
+export const useActiveEditor = () => {
+  const store = useEditorStore();
+  return getActiveEditorData(store);
+};
+
+export const useActiveEditorInlinePromptWidget = (id: string) => {
+  const { inlinePromptWidgets, setInlinePromptWidgets } = useActiveEditor();
+
+  const widget = inlinePromptWidgets.find(w => w.id === id);
+  if (!widget) {
+    throw new Error(`Prompt widget with id ${id} not found`);
+  }
+
+  const removePromptWidget = () => {
+    setInlinePromptWidgets(
+      inlinePromptWidgets.filter((w) => w.id !== id)
+    );
+  };
+
+  const setText = (text: string) => {
+    setInlinePromptWidgets(
+      inlinePromptWidgets.map(w => 
+        w.id === id ? { ...w, text } : w
+      )
+    );
+  };
+
+  const setShouldFocus = (shouldFocus: boolean) => {
+    setInlinePromptWidgets(
+      inlinePromptWidgets.map(w => 
+        w.id === id ? { ...w, shouldFocus } : w
+      )
+    );
+  };
+
+  return {
+    lineNumberStart: widget.lineNumberStart,
+    lineNumberEnd: widget.lineNumberEnd,
+    text: widget.text,
+    shouldFocus: widget.shouldFocus,
+    setText,
+    setShouldFocus,
+    removePromptWidget
   };
 };

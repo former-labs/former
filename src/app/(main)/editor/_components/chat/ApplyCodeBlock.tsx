@@ -6,9 +6,11 @@ import { Check, Copy, ListCheck, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useActiveEditor } from "../editor/editorStore";
 import { StaticEditor } from "./StaticEditor";
+import { useChat } from "./chatStore";
 
 export const ApplyCodeBlock = ({ codeContent }: { codeContent: string }) => {
-  const { editorContent, setEditorContentPending } = useActiveEditor();
+  const { editorContent, setEditorContentDiff } = useActiveEditor();
+  const { activeChat } = useChat();
   const [isCopied, setIsCopied] = useState(false);
 
   const applyChangeMutation = api.editor.applyChange.useMutation();
@@ -23,8 +25,9 @@ export const ApplyCodeBlock = ({ codeContent }: { codeContent: string }) => {
     const response = await applyChangeMutation.mutateAsync({
       editorContent,
       applyContent: codeContent,
+      messages: activeChat?.messages ?? [],
     });
-    setEditorContentPending(response);
+    setEditorContentDiff(response);
   };
 
   return (

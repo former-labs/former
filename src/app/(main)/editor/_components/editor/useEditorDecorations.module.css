@@ -1,0 +1,8 @@
+.lineHighlight {
+  /*
+    Without a z index, highlighting text inside the line highlight will not be visible.
+    There are still some rendering issues to fix when highlighting text though...
+  */
+  background-color: #f5f5f5;
+  z-index: -1;
+}

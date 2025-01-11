@@ -11,7 +11,8 @@ export const knowledgeRouter = createTRPCRouter({
       const knowledge = await db
         .select()
         .from(knowledgeTable)
-        .where(eq(knowledgeTable.workspaceId, ctx.activeWorkspaceId));
+        .where(eq(knowledgeTable.workspaceId, ctx.activeWorkspaceId))
+        .orderBy(knowledgeTable.name);
 
       return knowledge;
     }),

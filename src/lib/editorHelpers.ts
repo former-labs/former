@@ -4,51 +4,78 @@
 
 export const getEditorSelectionContent = ({
   editorSelection,
-  editorContent
+  editorContent,
 }: {
-  editorSelection: {
-    startLineNumber: number;
-    startColumn: number;
-    endLineNumber: number;
-    endColumn: number;
-  } | null;
+  editorSelection:
+    | {
+        startLineNumber: number;
+        startColumn: number;
+        endLineNumber: number;
+        endColumn: number;
+      }
+    | {
+        startLineNumber: number;
+        endLineNumber: number;
+      }
+    | null;
   editorContent: string;
 }) => {
   if (!editorSelection || !editorContent) return null;
 
   if (
+    "startColumn" in editorSelection &&
+    "endColumn" in editorSelection &&
     editorSelection.startLineNumber === editorSelection.endLineNumber &&
     editorSelection.startColumn === editorSelection.endColumn
   ) {
     return null;
   }
 
-  const getPositionOffset = (content: string, lineNumber: number, column: number) => {
+  const getPositionOffset = (
+    content: string,
+    lineNumber: number,
+    column?: number,
+  ) => {
     let offset = 0;
     let currentLine = 1;
 
     // Find the start of the target line
     while (currentLine < lineNumber) {
-      const nextNewline = content.indexOf('\n', offset);
-      if (nextNewline === -1) break;
+      const nextNewline = content.indexOf("\n", offset);
+      if (nextNewline === -1) {
+        offset = content.length;
+        break;
+      }
       offset = nextNewline + 1;
       currentLine++;
     }
 
-    // Add the column offset
-    return offset + column - 1;
+    // Add the column offset if provided
+    return column ? offset + column - 1 : offset;
   };
 
-  return editorContent.slice(
-    getPositionOffset(
+  if ("startColumn" in editorSelection && "endColumn" in editorSelection) {
+    return editorContent.slice(
+      getPositionOffset(
+        editorContent,
+        editorSelection.startLineNumber,
+        editorSelection.startColumn,
+      ),
+      getPositionOffset(
+        editorContent,
+        editorSelection.endLineNumber,
+        editorSelection.endColumn,
+      ),
+    );
+  } else {
+    const startOffset = getPositionOffset(
       editorContent,
       editorSelection.startLineNumber,
-      editorSelection.startColumn
-    ),
-    getPositionOffset(
+    );
+    const endOffset = getPositionOffset(
       editorContent,
-      editorSelection.endLineNumber,
-      editorSelection.endColumn
-    )
-  );
+      editorSelection.endLineNumber + 1,
+    );
+    return editorContent.slice(startOffset, endOffset);
+  }
 };

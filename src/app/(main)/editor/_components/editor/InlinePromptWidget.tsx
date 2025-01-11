@@ -6,75 +6,63 @@ import { useData } from "@/contexts/DataContext";
 import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { X } from "lucide-react";
-import type { Selection } from "monaco-editor";
-import { useEffect, useRef, useState } from "react";
-import { useEventListener, useResizeObserver } from "usehooks-ts";
-import { StaticEditor } from "../chat/StaticEditor";
-import { useActiveEditor } from "./editorStore";
+import { useEffect, useRef } from "react";
+import { useEventListener } from "usehooks-ts";
+import {
+  useActiveEditor,
+  useActiveEditorInlinePromptWidget,
+} from "./editorStore";
 
-export const InlinePromptWidget = ({
-  id,
-  onRemove,
-  onHeightChange,
-}: {
-  id: string;
-  onRemove: () => void;
-  onHeightChange: (height: number) => void;
-}) => {
-  const [text, setText] = useState("");
-  const [storedSelection, setStoredSelection] = useState<Selection | null>(
-    null,
-  );
+export const InlinePromptWidget = ({ id }: { id: string }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Watch container height changes
-  const { height = 0 } = useResizeObserver({
-    ref: containerRef,
-  });
+  const {
+    editorContent,
+    setEditorContentDiff,
+    setShouldFocus: setActiveEditorFocus,
+  } = useActiveEditor();
+  const {
+    removePromptWidget,
+    text,
+    setText,
+    lineNumberStart,
+    lineNumberEnd,
+    shouldFocus,
+    setShouldFocus,
+  } = useActiveEditorInlinePromptWidget(id);
 
-  // Report height changes to parent
-  useEffect(() => {
-    if (height > 0) {
-      onHeightChange(height);
-    }
-  }, [height]);
-
-  const { editorContent, editorSelection, setEditorContentPending } =
-    useActiveEditor();
   const { databaseMetadata } = useData();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
 
   const inlineEditMutation = api.editor.inlineEdit.useMutation();
 
-  // Store selection when component mounts
-  useEffect(() => {
-    if (editorSelection) {
-      setStoredSelection(editorSelection);
-    }
-  }, []);
-
   // Get selection content
-  const selectionContent = storedSelection
-    ? getEditorSelectionContent({
-        editorSelection: storedSelection,
-        editorContent,
-      })
-    : null;
+  // const selectionContent = getEditorSelectionContent({
+  //   editorSelection: {
+  //     startLineNumber: lineNumberStart,
+  //     endLineNumber: lineNumberEnd,
+  //   },
+  //   editorContent,
+  // });
 
   useEffect(() => {
-    // Focus when first mounted
-    requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-    });
-  }, []);
+    // Focus this inline prompt widget if shouldFocus is true
+    if (textareaRef.current && shouldFocus) {
+      const timer = setTimeout(() => {
+        textareaRef.current?.focus();
+        setShouldFocus(false);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [textareaRef, shouldFocus]);
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (
       event.key === "Escape" &&
       document.activeElement === textareaRef.current
     ) {
-      onRemove();
+      removePromptWidget();
+      setActiveEditorFocus(true);
     }
   };
 
@@ -86,13 +74,36 @@ export const InlinePromptWidget = ({
     const response = await inlineEditMutation.mutateAsync({
       userMessage: text,
       editorContent,
-      editorSelection: storedSelection,
+      editorSelection: {
+        startLineNumber: lineNumberStart,
+        endLineNumber: lineNumberEnd,
+      },
       databaseMetadata,
       knowledge: knowledgeList,
     });
 
-    setEditorContentPending(response);
-    onRemove();
+    const updatedEditorContent = [
+      lineNumberStart === 1
+        ? ""
+        : getEditorSelectionContent({
+            editorSelection: {
+              startLineNumber: 1,
+              endLineNumber: lineNumberStart - 1,
+            },
+            editorContent,
+          }),
+      response,
+      getEditorSelectionContent({
+        editorSelection: {
+          startLineNumber: lineNumberEnd + 1,
+          endLineNumber: editorContent.split("\n").length,
+        },
+        editorContent,
+      }),
+    ].join("");
+    setEditorContentDiff(updatedEditorContent);
+
+    removePromptWidget();
   };
 
   const handleTextareaKeyDown = (
@@ -105,41 +116,46 @@ export const InlinePromptWidget = ({
   };
 
   return (
-    <div ref={containerRef}>
+    <div className="py-1">
       <div className="relative flex h-full w-96 flex-col gap-1 rounded-lg border bg-gray-100 p-1">
         <Button
-          onClick={onRemove}
+          onClick={removePromptWidget}
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-2 h-4 w-4"
+          className="absolute right-2 top-2 z-10 h-4 w-4"
         >
           <X />
         </Button>
 
-        {selectionContent && (
+        {/* {selectionContent && (
           <div className="border pr-3">
             <StaticEditor value={selectionContent} />
           </div>
-        )}
+        )} */}
 
         <TextareaAutoResize
           ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleTextareaKeyDown}
-          className="bg-white p-1 text-base md:leading-normal"
+          className="bg-white p-1 text-base"
           placeholder="Enter your prompt..."
           rows={2}
         />
 
-        <Button
-          onClick={handleSubmit}
-          size="sm"
-          className="h-5 self-end"
-          loading={inlineEditMutation.isPending}
-        >
-          Submit
-        </Button>
+        <div className="flex items-center justify-between">
+          <div className="pl-1 text-xs text-gray-500">
+            Line {lineNumberStart}-{lineNumberEnd}
+          </div>
+          <Button
+            onClick={handleSubmit}
+            size="sm"
+            className="h-5"
+            loading={inlineEditMutation.isPending}
+          >
+            Submit
+          </Button>
+        </div>
       </div>
     </div>
   );

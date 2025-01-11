@@ -7,54 +7,111 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useData } from "@/contexts/DataContext";
 import { env } from "@/env";
-import { DiffEditor, Editor, type Monaco } from "@monaco-editor/react";
+import { DiffEditor, type Monaco } from "@monaco-editor/react";
 import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryResult } from "../queryResultStore";
-import { DiffWidget } from "./DiffWidget";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
-import { useAutocomplete } from "./useAutocomplete";
+import { useEditorAutocomplete } from "./useEditorAutocomplete";
+import { useEditorDecorations } from "./useEditorDecorations";
+import { useEditorDiffWidgets } from "./useEditorDiffWidgets";
 import { useEditorKeybind } from "./useEditorKeybind";
 import { useEditorSelection } from "./useEditorSelection";
-import { useViewZones, type ViewZone, ViewZonePortal } from "./useViewZones";
+import { useEditorViewZones } from "./useEditorViewZones";
 
 export const SqlEditor = () => {
   const {
     editorContent,
-    editorContentPending,
+    editorContentOld,
     setEditorContent,
-    setEditorContentPending,
+    setEditorContentOld,
     editorSelectionContent,
     editorSelection,
+    inlinePromptWidgets,
+    setInlinePromptWidgets,
+    shouldFocus,
+    setShouldFocus,
   } = useActiveEditor();
 
   const { executeQuery, resultLoading } = useQueryResult();
-  const { databaseMetadata } = useData();
 
-  // We use the same monaco for both editors, seems to work?
   const [monaco, setMonaco] = useState<Monaco | null>(null);
-  const [codeEditor, setCodeEditor] =
-    useState<editor.IStandaloneCodeEditor | null>(null);
+
   const [diffEditor, setDiffEditor] =
     useState<editor.IStandaloneDiffEditor | null>(null);
-  const diffWidgetsRef = useRef<editor.IContentWidget[]>([]);
+  const codeEditor = diffEditor?.getModifiedEditor() || null;
+
   const [renderSideBySide, setRenderSideBySide] = useState(false);
-  const [viewZones, setViewZones] = useState<ViewZone[]>([]);
 
-  useEffect(() => {
-    console.log("Database metadata changed:", databaseMetadata);
-  }, [databaseMetadata]);
+  const { renderViewZone } = useEditorViewZones({
+    viewZoneInstances: useMemo(
+      () =>
+        inlinePromptWidgets.map((widget) => ({
+          id: widget.id,
+          lineNumber: widget.lineNumberStart,
+        })),
+      [inlinePromptWidgets],
+    ),
+    codeEditor,
+    monaco,
+  });
 
-  useViewZones({ viewZones, codeEditor, monaco });
-  useAutocomplete(monaco);
+  useEditorDiffWidgets({
+    diffEditor,
+    setEditorContentOld,
+    setEditorContent,
+  });
+
+  useEditorAutocomplete(monaco);
+
   useEditorSelection({
     codeEditor,
-    diffEditor,
   });
+
+  useEditorDecorations({
+    decorations: inlinePromptWidgets.map((widget) => ({
+      id: widget.id,
+      lineNumberStart: widget.lineNumberStart,
+      lineNumberEnd: widget.lineNumberEnd,
+    })),
+    onDecorationsChange: (changedDecorations) => {
+      console.log(
+        "changedDecorations",
+        changedDecorations,
+        inlinePromptWidgets,
+      );
+      setInlinePromptWidgets(
+        changedDecorations.map((decoration) => {
+          const widget = inlinePromptWidgets.find(
+            (w) => w.id === decoration.id,
+          );
+          if (!widget) {
+            throw new Error(`Widget not found for decoration ${decoration.id}`);
+          }
+          return {
+            ...widget,
+            lineNumberStart: decoration.lineNumberStart,
+            lineNumberEnd: decoration.lineNumberEnd,
+          };
+        }),
+      );
+    },
+    codeEditor,
+    monaco,
+  });
+
+  useEffect(() => {
+    if (shouldFocus && codeEditor) {
+      const timer = setTimeout(() => {
+        codeEditor.focus();
+        setShouldFocus(false);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldFocus, codeEditor, setShouldFocus]);
 
   const enableIntellisense = () => {
     // Example table names - replace with actual table names from your schema
@@ -127,27 +184,43 @@ export const SqlEditor = () => {
       if (!editorSelection) {
         throw new Error("No editor selection.");
       }
-      // const position = codeEditor.getPosition();
-      // if (!position) return;
 
-      const newId = crypto.randomUUID();
+      const { positionLineNumber, startLineNumber, endLineNumber } =
+        editorSelection;
 
-      const domNode = document.createElement("div");
-      domNode.style.position = "absolute";
-      domNode.style.zIndex = "10";
+      // Check if any existing inlinePromptWidgets contain the current positionLineNumber
+      const existingWidget = inlinePromptWidgets.find(
+        (widget) =>
+          positionLineNumber >= widget.lineNumberStart &&
+          positionLineNumber <= widget.lineNumberEnd,
+      );
 
-      setViewZones((prev) => [
-        ...prev,
-        {
-          id: newId,
-          lineNumber: editorSelection.startLineNumber - 1,
-          domNode,
-        },
-      ]);
+      if (existingWidget) {
+        // Set shouldFocus to true for the existing widget
+        setInlinePromptWidgets(
+          inlinePromptWidgets.map((widget) =>
+            widget.id === existingWidget.id
+              ? { ...widget, shouldFocus: true }
+              : widget,
+          ),
+        );
+      } else {
+        // Create a new prompt widget
+        const newId = crypto.randomUUID();
+        setInlinePromptWidgets([
+          ...inlinePromptWidgets,
+          {
+            id: newId,
+            lineNumberStart: startLineNumber,
+            lineNumberEnd: endLineNumber,
+            text: "",
+            shouldFocus: true,
+          },
+        ]);
+      }
     },
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK : null,
     codeEditor,
-    diffEditor,
   });
 
   // Add Cmd+Enter binding to execute query
@@ -156,7 +229,6 @@ export const SqlEditor = () => {
     callback: () => executeQuery({ editorSelectionContent, editorContent }),
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
     codeEditor,
-    diffEditor,
   });
 
   // Add Cmd+L binding to simulate original keybinding
@@ -174,16 +246,7 @@ export const SqlEditor = () => {
     },
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL : null,
     codeEditor,
-    diffEditor,
   });
-
-  const handleEditorDidMount = (
-    editor: editor.IStandaloneCodeEditor,
-    monaco: Monaco,
-  ) => {
-    setCodeEditor(editor);
-    setMonaco(monaco);
-  };
 
   const handleDiffEditorDidMount = (
     editor: editor.IStandaloneDiffEditor,
@@ -195,71 +258,51 @@ export const SqlEditor = () => {
     // Override the default Cmd+L binding in the modified editor
     const modifiedEditor = editor.getModifiedEditor();
 
-    // Listen for diff updates instead of content changes
-    editor.onDidUpdateDiff(() => {
-      updateDiffWidgets(editor);
-    });
-
     modifiedEditor.onDidChangeModelContent(() => {
-      setEditorContentPending(modifiedEditor.getValue());
+      const value = modifiedEditor.getValue();
+      setEditorContent(value);
     });
 
     modifiedEditor.updateOptions({
       lineNumbers: renderSideBySide ? "on" : "off",
-    });
-
-    // Create the widgets when we first activate the diff editor
-    setTimeout(() => {
-      updateDiffWidgets(editor);
-    }, 0);
-  };
-
-  const updateDiffWidgets = (editor: editor.IStandaloneDiffEditor) => {
-    // Remove existing widgets
-    const modifiedEditor = editor.getModifiedEditor();
-    diffWidgetsRef.current.forEach((widget) => {
-      modifiedEditor.removeContentWidget(widget);
-    });
-
-    diffWidgetsRef.current = [];
-
-    // Add new widgets for each change
-    const changes = editor.getLineChanges();
-    const originalModel = editor.getModel()?.original;
-    if (!originalModel) return;
-
-    changes?.forEach((change, index) => {
-      const widget = new DiffWidget({
-        id: `${index}`,
-        originalStartLineNumber: change.originalStartLineNumber,
-        originalEndLineNumber: change.originalEndLineNumber,
-        modifiedStartLineNumber: change.modifiedStartLineNumber,
-        modifiedEndLineNumber: change.modifiedEndLineNumber,
-        diffEditor: editor,
-        onApply: (newContent: string) => {
-          setEditorContent(newContent);
-        },
-        onReject: (newContent: string) => {
-          setEditorContentPending(newContent);
-        },
-        originalLineCount: originalModel.getLineCount(),
-      });
-      editor.getModifiedEditor().addContentWidget(widget);
-      diffWidgetsRef.current.push(widget);
     });
   };
 
   const printContent = () => {
     console.log({
       editorContent,
-      editorContentPending,
+      editorContentOld,
     });
 
     console.log(diffEditor?.getLineChanges());
   };
 
+  const [previousDecorations, setPreviousDecorations] = useState<string[]>([]);
+
   const setDecorations = () => {
-    // Example: Adding decorations if needed
+    if (codeEditor && monaco) {
+      console.log("Setting decorations");
+      const lineCount = codeEditor.getModel()?.getLineCount() ?? 1;
+      const randomLine = Math.floor(Math.random() * lineCount) + 1;
+      const decorations = [
+        {
+          range: new monaco.Range(randomLine, 1, randomLine, 1),
+          options: {
+            isWholeLine: true,
+            className: "lineHighlight",
+          },
+        },
+      ];
+      // Remove previous decorations before setting new ones
+      console.log("Previous decorations", previousDecorations);
+
+      const decs = codeEditor.deltaDecorations(
+        previousDecorations,
+        decorations,
+      );
+      setPreviousDecorations(decs);
+      console.log("New decorations", decs);
+    }
   };
 
   const printDecorations = () => {
@@ -268,28 +311,16 @@ export const SqlEditor = () => {
     }
   };
 
-  const removeWidgets = () => {
-    if (diffEditor) {
-      const modifiedEditor = diffEditor.getModifiedEditor();
-      diffWidgetsRef.current.forEach((widget) => {
-        modifiedEditor.removeContentWidget(widget);
-      });
-      diffWidgetsRef.current = [];
-    }
-  };
-
   const setInitialContent = () => {
     setEditorContent("SELECT\n    1 as foo,\n    2 as bar\nFROM table_c;");
   };
 
   const startDiff = () => {
-    setEditorContentPending(
-      "SELECT\n    1 as foo,\n    3 as zam\nFROM table_c;",
-    );
+    setEditorContentOld("SELECT\n    1 as foo,\n    3 as zam\nFROM table_c;");
   };
 
   const endDiff = () => {
-    setEditorContentPending(null);
+    setEditorContentOld(null);
   };
 
   const printSelection = () => {
@@ -297,15 +328,6 @@ export const SqlEditor = () => {
       const selection = codeEditor.getSelection();
       if (selection) {
         const selectedText = codeEditor.getModel()?.getValueInRange(selection);
-        console.log("Selected text:", selectedText);
-      }
-    } else if (diffEditor) {
-      const modifiedEditor = diffEditor.getModifiedEditor();
-      const selection = modifiedEditor.getSelection();
-      if (selection) {
-        const selectedText = modifiedEditor
-          .getModel()
-          ?.getValueInRange(selection);
         console.log("Selected text:", selectedText);
       }
     }
@@ -349,29 +371,21 @@ export const SqlEditor = () => {
               <DropdownMenuItem onClick={printDecorations}>
                 Print decorations
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={removeWidgets}>
-                Remove widgets
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => diffEditor && updateDiffWidgets(diffEditor)}
-              >
-                Update diff widgets
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={enableIntellisense}>
                 Intellisense
               </DropdownMenuItem>
               <DropdownMenuItem onClick={printSelection}>
                 Print Selection
               </DropdownMenuItem>
-              {editorContentPending !== null && (
+              {editorContentOld !== null && (
                 <DropdownMenuItem
                   onClick={() => {
                     const newRenderSideBySide = !renderSideBySide;
                     setRenderSideBySide(newRenderSideBySide);
 
                     // Update line numbers when toggling view
-                    if (diffEditor) {
-                      diffEditor.getModifiedEditor().updateOptions({
+                    if (codeEditor) {
+                      codeEditor.updateOptions({
                         lineNumbers: newRenderSideBySide ? "on" : "off",
                       });
                     }
@@ -385,95 +399,60 @@ export const SqlEditor = () => {
         )}
       </div>
       <div className="min-h-0 flex-1 border-t">
-        {editorContentPending === null ? (
-          <Editor
-            height="100%"
-            className="overflow-hidden"
-            language="sql"
-            value={editorContent}
-            onChange={(value) => setEditorContent(value ?? "")}
-            onMount={handleEditorDidMount}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              automaticLayout: true,
-              scrollBeyondLastLine: true,
-            }}
-          />
-        ) : (
-          <div className="relative h-full">
-            <div className="absolute right-8 top-4 z-10 flex gap-2">
+        <div className="relative h-full">
+          {editorContentOld !== null && (
+            <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-2">
               <Button
                 onClick={() => {
-                  if (editorContentPending) {
-                    setEditorContent(editorContentPending);
-                    setEditorContentPending(null);
-                  }
+                  setEditorContentOld(editorContent);
                 }}
+                className="bg-green-600 hover:bg-green-700"
               >
                 Accept All
               </Button>
               <Button
                 onClick={() => {
-                  setEditorContentPending(null);
+                  setEditorContent(editorContentOld);
+                  setEditorContentOld(null);
                 }}
+                className="bg-red-600 hover:bg-red-700"
               >
                 Reject All
               </Button>
             </div>
-            <DiffEditor
-              height="100%"
-              className="overflow-hidden"
-              language="sql"
-              original={editorContent}
-              modified={editorContentPending}
-              onMount={handleDiffEditorDidMount}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                automaticLayout: true,
-                scrollBeyondLastLine: true,
-                renderSideBySide,
+          )}
+          <DiffEditor
+            height="100%"
+            className="overflow-hidden"
+            language="sql"
+            original={editorContentOld ?? editorContent}
+            modified={editorContent}
+            onMount={handleDiffEditorDidMount}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              automaticLayout: true,
+              scrollBeyondLastLine: true,
+              renderSideBySide,
 
-                lightbulb: {
-                  // This is actually buggy and will not disable in renderSideBySide mode
-                  // https://github.com/microsoft/monaco-editor/issues/3873
-                  enabled: editor.ShowLightbulbIconMode.Off,
-                },
+              lightbulb: {
+                // This is actually buggy and will not disable in renderSideBySide mode
+                // https://github.com/microsoft/monaco-editor/issues/3873
+                enabled: editor.ShowLightbulbIconMode.Off,
+              },
 
-                // We give this extra width so that it is the same as the regular editor
-                lineDecorationsWidth: 26,
+              // We give this extra width so that it is the same as the regular editor
+              lineDecorationsWidth: 26,
 
-                // The wider scrollbar on the right that shows green/red where diffs are
-                // We might want this back
-                renderOverviewRuler: false,
-              }}
-            />
-          </div>
-        )}
+              // The wider scrollbar on the right that shows green/red where diffs are
+              // We might want this back
+              renderOverviewRuler: false,
+            }}
+          />
+        </div>
       </div>
-      {viewZones.map((zone) => {
-        const removeZone = () => {
-          setViewZones((prev) => prev.filter((vz) => vz.id !== zone.id));
-        };
-
-        const handleHeightChange = (height: number) => {
-          setViewZones((prev) =>
-            prev.map((vz) =>
-              vz.id === zone.id ? { ...vz, heightInPx: height } : vz,
-            ),
-          );
-        };
-
-        return (
-          <ViewZonePortal key={zone.id} zone={zone}>
-            <InlinePromptWidget
-              id={zone.id}
-              onRemove={removeZone}
-              onHeightChange={handleHeightChange}
-            />
-          </ViewZonePortal>
-        );
+      {inlinePromptWidgets.map((widget) => {
+        return renderViewZone(widget.id, <InlinePromptWidget id={widget.id} />);
       })}
     </div>
   );

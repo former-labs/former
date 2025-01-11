@@ -8,19 +8,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
-import { useActiveEditor } from "../editor/editorStore";
+import { getActiveEditor } from "../editor/editorStore";
 import { ApplyCodeBlock } from "./ApplyCodeBlock";
 import { useChat, type ChatMessageType } from "./chatStore";
 import { KnowledgeSourceComponent } from "./KnowledgeSourceComponent";
 import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {
-  const { editorSelection } = useActiveEditor();
-  const { createChat, chats, setActiveChatId, activeChat } = useChat();
+  const { chats, setActiveChatId, activeChat } = useChat();
 
   return (
     <div className="flex h-full flex-col gap-4 bg-gray-200 p-3">
@@ -51,17 +49,7 @@ export const ChatSidebar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button
-            onClick={() =>
-              createChat({
-                editorSelection,
-              })
-            }
-            size="icon"
-            variant="outline"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <CreateChatButton />
         </div>
       </div>
 
@@ -72,9 +60,26 @@ export const ChatSidebar = () => {
   );
 };
 
+const CreateChatButton = () => {
+  const { createChat } = useChat();
+
+  return (
+    <Button
+      onClick={() =>
+        createChat({
+          editorSelectionContent: getActiveEditor().editorSelectionContent,
+        })
+      }
+      size="icon"
+      variant="outline"
+    >
+      <Plus className="h-4 w-4" />
+    </Button>
+  );
+};
+
 const ActiveChat = () => {
   const { activeChat, submitMessage } = useChat();
-  const { editorContent } = useActiveEditor();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -98,7 +103,7 @@ const ActiveChat = () => {
   const handleSubmit = async (message: string) => {
     await submitMessage({
       message,
-      editorContent,
+      editorContent: getActiveEditor().editorContent,
     });
   };
 
@@ -167,6 +172,11 @@ const ChatMessage = ({ message }: { message: ChatMessageType }) => {
 
   return (
     <div className="rounded-lg bg-white px-3 py-2 text-sm text-gray-800 shadow">
+      {message.editorSelectionContent && (
+        <div className="mb-2 border pr-3">
+          <StaticEditor value={message.editorSelectionContent} />
+        </div>
+      )}
       {message.content}
     </div>
   );
@@ -183,15 +193,9 @@ const ChatInputBox = ({
     shouldFocusActiveChatTextarea,
     setShouldFocusActiveChatTextarea,
   } = useChat();
-  const { editorContent } = useActiveEditor();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const selectionContent = activeChat?.pendingEditorSelection
-    ? getEditorSelectionContent({
-        editorSelection: activeChat.pendingEditorSelection,
-        editorContent,
-      })
-    : null;
+  const selectionContent = activeChat?.pendingEditorSelectionContent;
 
   const handleSubmit = () => {
     if (!value.trim()) return;
