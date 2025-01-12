@@ -8,6 +8,12 @@ export default {
     appBundleId: "com.yerve.app",
     icon: "resources/icon",
     asar: true,
+    protocols: [
+      {
+        name: "Yerve Custom Protocol",
+        schemes: ["yerve"],
+      },
+    ],
     ignore: [
       /^\/src/,
       /^\/node_modules\/(pg|postgres|@google-cloud\/bigquery)\/build\/Release/,

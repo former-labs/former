@@ -12,6 +12,23 @@ const __filename = fileURLToPath(import.meta.url);
 const currentDir = dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
+// Enhanced logging function
+function log(...args: any[]) {
+  const timestamp = new Date().toISOString();
+  const message = `[YERVE ${timestamp}] ${args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg) : arg
+  ).join(' ')}\n`;
+  process.stdout.write(message);
+}
+
+// Add startup marker
+process.stdout.write('\n\n=== YERVE APP STARTING ===\n\n');
+
+log("🚀 Starting Yerve application");
+
+// Set app name before any window creation or app startup logic
+app.name = "Yerve";
+
 if (electronSquirrelStartup) {
   app.quit();
 }
@@ -22,18 +39,45 @@ if (isDev) {
   app.commandLine.appendSwitch('remote-debugging-port', '9222');
 }
 
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient('yerve', process.execPath, [join(currentDir, '..', process.argv[1])]);
-  } else {
-    app.setAsDefaultProtocolClient('yerve');
+// Clean up database connections when app is closing
+app.on('before-quit', () => {
+  void database.disconnectAll();
+});
+
+// Add logging for process arguments
+log("📎 Process arguments:", process.argv);
+
+void app.whenReady().then(() => {
+  log("✅ Application ready");
+  log("📍 Current directory:", currentDir);
+  log("🔧 Development mode:", isDev);
+  
+  // Register protocol handler when app is ready
+  const success = app.setAsDefaultProtocolClient('yerve');
+  log('🔗 Protocol registration attempt');
+  log('🔗 Protocol registration result:', success);
+  log('🔗 Is default protocol client:', app.isDefaultProtocolClient('yerve'));
+  
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
   }
-}
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    title: "Yerve",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -100,7 +144,7 @@ ipcHandler('database:getTablesForDataset', (async (connectionId: string, dataset
 
 // Add handler for opening external URLs
 ipcMain.on('open-external', (_event, url) => {
-  console.log('open-external', url);
+  log('🌐 Opening external URL:', url);
   void shell.openExternal(url);
 });
 
@@ -117,12 +161,33 @@ function extractCodeFromUrl(url: string): string | null {
 
 // Unix machines - Linux, MacOS
 app.on('open-url', (event, url) => {
-  console.log('open-url', url);
+  event.preventDefault();
+  console.log('Received open-url event:', { url, isMainWindowNull: mainWindow === null });
   const code = extractCodeFromUrl(url);
-  if (code) {
-    mainWindow?.webContents.send('send-token', code);
+  console.log('Extracted code:', code);
+  if (code && mainWindow) {
+    console.log('Sending token to window');
+    mainWindow.webContents.send('send-token', code);
   }
 });
+
+// Also handle the open-url event during launch
+if (process.platform === 'darwin') {
+  const openUrlOnLaunch = process.argv.find(arg => arg.startsWith('yerve://'));
+  if (openUrlOnLaunch) {
+    console.log('Found protocol URL in launch args:', openUrlOnLaunch);
+    const code = extractCodeFromUrl(openUrlOnLaunch);
+    if (code) {
+      // Store the code to use after window is created
+      app.on('ready', () => {
+        if (mainWindow) {
+          console.log('Sending stored token to window');
+          mainWindow.webContents.send('send-token', code);
+        }
+      });
+    }
+  }
+}
 
 // Windows
 const gotTheLock = app.requestSingleInstanceLock();
@@ -143,24 +208,3 @@ if (!gotTheLock) {
     }
   });
 }
-
-// Clean up database connections when app is closing
-app.on('before-quit', () => {
-  void database.disconnectAll();
-});
-
-void app.whenReady().then(() => {
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
