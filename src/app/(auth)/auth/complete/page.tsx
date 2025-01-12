@@ -1,9 +1,9 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
-export default function AuthComplete() {
+function AuthCompleteContent() {
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(3);
   const [hasRedirected, setHasRedirected] = useState(false);
@@ -45,5 +45,13 @@ export default function AuthComplete() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AuthComplete() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthCompleteContent />
+    </Suspense>
   );
 }
