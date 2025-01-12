@@ -200,10 +200,12 @@ if (!gotTheLock) {
       mainWindow.focus();
 
       // On Windows, the URL will be in commandLine array
-      const url = commandLine[commandLine.length - 1];
-      const code = extractCodeFromUrl(url);
-      if (code) {
-        mainWindow.webContents.send('send-token', code);
+      const potentialUrl = commandLine[commandLine.length - 1];
+      if (potentialUrl) {
+        const code = extractCodeFromUrl(potentialUrl);
+        if (code) {
+          mainWindow.webContents.send('send-token', code);
+        }
       }
     }
   });
