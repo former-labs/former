@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
+import { env } from "@/electron/env.electron";
 import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
 import { loginWithProvider } from "@/server/auth/actions";
 import Image from "next/image";
@@ -38,7 +39,7 @@ export default function SignupPage() {
                 console.log("ELECTRON LOGIN");
                 const result = await loginWithProvider({
                   provider: "google",
-                  redirectTo: `http://localhost:3000${PATH_ELECTRON_CALLBACK}`,
+                  redirectTo: `${env.DASHBOARD_URI}${PATH_ELECTRON_CALLBACK}`,
                   isElectron: true,
                 });
                 const url = typeof result === "string" ? result : result.url;
