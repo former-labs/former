@@ -3,6 +3,13 @@
     Without a z index, highlighting text inside the line highlight will not be visible.
     There are still some rendering issues to fix when highlighting text though...
   */
-  background-color: #f5f5f5;
   z-index: -1;
+}
+
+.lineHightlightCommandK {
+  background-color: #f5f5f5;
+}
+
+.lineHightlightKnowledgeSource {
+  background-color: #fff3b3;
 }

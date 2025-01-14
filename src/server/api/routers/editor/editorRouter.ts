@@ -483,6 +483,99 @@ ${input.editorContentBeforeCursor}<REPLACE_ME>${editorContentAfterCursor}
 //       return aiResponse.completion || "";
 
     }),
+
+  getKnowledgeComparison: workspaceProtectedProcedure
+    .input(z.object({
+      newQuery: z.string(),
+      sourceQuery: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const { newQuery: newQuery, sourceQuery } = input;
+
+      // Add line numbers to queries
+      const numberedNewQuery = newQuery
+        .split('\n')
+        .map((line, i) => `${i + 1}.${line}`)
+        .join('\n');
+
+      const numberedSourceQuery = sourceQuery
+        .split('\n')
+        .map((line, i) => `${i + 1}.${line}`)
+        .join('\n');
+
+      const systemMessage: ChatCompletionMessageParam = {
+        role: "system",
+        content: `
+A new query has been written and the source query may have been used as a reference.
+You will compare two SQL queries and figure out and return how the new query was inspired by the source query.
+The new query may not have used the source query.
+
+Each query has been provided with line numbers.
+You should return the list of line numbers from the new query that appear to be inspired by the source query.
+You should also return the line numbers from the source query where this inspiration came from.
+
+<EXAMPLE>
+An example response is below:
+
+<EXAMPLE_INPUT>
+New query:
+\`\`\`sql
+1.WITH CustomerSales AS (
+2.    SELECT customer_id, SUM(amount) AS total_sales
+3.    FROM sales
+4.    GROUP BY customer_id
+5.)
+6.
+7.SELECT c.customer_id, c.name, cs.total_sales
+8.FROM customers c
+9.JOIN CustomerSales cs ON c.customer_id = cs.customer_id
+10.ORDER BY cs.total_sales DESC;
+\`\`\`
+
+Source query:
+\`\`\`sql
+1.SELECT customer_id, SUM(amount) AS total_sales
+2.FROM sales
+3.WHERE YEAR(sale_date) = 2024
+4.GROUP BY customer_id
+\`\`\`
+</EXAMPLE_INPUT>
+
+<EXAMPLE_OUTPUT>
+Explanation: The new query uses a group to select customer id and total sales amount, similar to the source query.
+
+New query lines: 2,3,4
+Source query lines: 1,2,4
+</EXAMPLE_OUTPUT>
+</EXAMPLE>
+
+The queries to compare are:
+
+New query:
+\`\`\`sql
+${numberedNewQuery}
+\`\`\`
+
+Source query:
+\`\`\`sql
+${numberedSourceQuery}
+\`\`\`
+      `
+    };
+
+    const aiResponse = await getAIChatStructuredResponse({
+      model: "gpt-4o",
+      messages: [systemMessage],
+      schemaOutput: z.object({
+        similarities: z.string().describe(`A short description of the similarities between the two queries.`),
+        newQueryLines: z.array(z.number()).describe(`The line numbers from the new query that were inspired by the source query.`),
+        sourceQueryLines: z.array(z.number()).describe(`The line numbers from the source query that were used to inspire the new query.`),
+      }),
+    });
+
+    return aiResponse;
+  }),
+
 });
 
 const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {

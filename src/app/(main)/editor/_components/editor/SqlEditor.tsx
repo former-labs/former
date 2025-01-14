@@ -76,6 +76,7 @@ export const SqlEditor = () => {
       id: widget.id,
       lineNumberStart: widget.lineNumberStart,
       lineNumberEnd: widget.lineNumberEnd,
+      className: "lineHightlightCommandK",
     })),
     onDecorationsChange: (changedDecorations) => {
       console.log(
