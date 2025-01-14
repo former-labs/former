@@ -22,6 +22,16 @@ export default function LoginPage() {
       <Card className="z-10 w-[400px] bg-white p-6 shadow-lg">
         <div className="space-y-6">
           <h1 className="text-center text-xl font-semibold">Login to Verve</h1>
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full"
+            onClick={() => {
+              window.electron.send("open-external", "www.google.com");
+            }}
+          >
+            Open External Google Link
+          </Button>
 
           <Button
             variant="outline"
