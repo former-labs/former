@@ -35,6 +35,7 @@ export default function SignupPage() {
             size="lg"
             className="w-full"
             onClick={async () => {
+              console.log("ELECTRON CONTENTS:", JSON.stringify(window?.electron));
               if (typeof window !== "undefined" && window.electron) {
                 console.log("ELECTRON LOGIN");
                 const result = await loginWithProvider({

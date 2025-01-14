@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
+import { env } from "@/electron/env.electron";
 import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
 import { loginWithProvider } from "@/server/auth/actions";
 import Image from "next/image";
@@ -27,10 +28,18 @@ export default function LoginPage() {
             size="lg"
             className="w-full"
             onClick={async () => {
+              console.log(
+                "IS ELECTRON",
+                typeof window !== "undefined" && window.electron,
+              );
+              console.log(
+                "ELECTRON CONTENTS:",
+                JSON.stringify(window?.electron),
+              );
               if (typeof window !== "undefined" && window.electron) {
                 const result = await loginWithProvider({
                   provider: "google",
-                  redirectTo: `${window.location.origin}${PATH_ELECTRON_CALLBACK}`,
+                  redirectTo: `${env.DASHBOARD_URI}${PATH_ELECTRON_CALLBACK}`,
                   isElectron: true,
                 });
                 if (result && typeof result === "object" && "url" in result) {

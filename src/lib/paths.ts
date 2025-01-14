@@ -22,5 +22,5 @@ export const PATH_INTEGRATIONS = "/integrations";
 export const PATH_KNOWLEDGE = "/knowledge";
 
 export const PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK = "/auth/callback/";
-export const PATH_ELECTRON_CALLBACK = "/auth/electron/callback";
+export const PATH_ELECTRON_CALLBACK = "/auth/electron/callback/";
 export const PATH_YERVE_ELECTRON_APP = "yerve://";

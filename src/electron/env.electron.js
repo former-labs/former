@@ -22,8 +22,8 @@ const envSchema = z.object({
 });
 
 const envDevelopment = {
-  NODE_ENV: "production",
-  DASHBOARD_URI: "https://yerve.vercel.app",
+  NODE_ENV: "development",
+  DASHBOARD_URI: "http://localhost:3000",
 };
 
 export const env = envSchema.parse(envDevelopment);
