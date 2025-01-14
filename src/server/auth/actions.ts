@@ -10,23 +10,35 @@ import { redirect } from "next/navigation";
 
 export async function loginWithProvider({
   provider,
+  redirectTo = `${env.DASHBOARD_URI}${PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK}`,
+  isElectron = false,
 }: {
   provider: Provider;
+  redirectTo?: string;
+  isElectron?: boolean;
 }) {
   const supabase = await createClient();
-  const redirectTo = `${env.DASHBOARD_URI}${PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK}`;
+
+  console.log("IS ELECTRON", isElectron);
+  console.log("LOGIN WITH PROVIDER", provider, redirectTo);
 
   const { error, data } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
       redirectTo,
+      skipBrowserRedirect: isElectron,
     },
   });
 
   if (error) {
     return error.message;
-  } else {
-    revalidatePath("/", "layout");
-    redirect(data.url);
   }
+
+  if (isElectron && data.url) {
+    console.log("SENDING OPEN EXTERNAL", data.url);
+    return { url: data.url };
+  }
+
+  revalidatePath("/", "layout");
+  redirect(data.url);
 }

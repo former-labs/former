@@ -7,22 +7,12 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { useData } from "@/contexts/DataContext";
-import dynamic from "next/dynamic";
 import { useEventListener } from "usehooks-ts";
-import { ChatSidebar } from "./_components/Chat";
-import { useChat } from "./_components/chatStore";
+import { ChatSidebar } from "./_components/chat/Chat";
+import { useChat } from "./_components/chat/chatStore";
+import { EditorSection } from "./_components/editor/EditorSection";
+import { getActiveEditor } from "./_components/editor/editorStore";
 import { QueryResultPane } from "./_components/QueryResultPane";
-
-/*
-  If this is not dynamic, hot reload seems to cause the entire page to reload.
-*/
-const SqlEditor = dynamic(
-  () => import("./_components/SqlEditor").then((mod) => mod.SqlEditor),
-  {
-    ssr: false,
-    loading: () => <div>Loading editor...</div>,
-  },
-);
 
 export default function EditorPage() {
   const { databaseMetadata } = useData();
@@ -32,7 +22,9 @@ export default function EditorPage() {
     // Check for Cmd+L (Mac) or Ctrl+L (Windows/Linux)
     if ((e.metaKey || e.ctrlKey) && e.key === "l") {
       e.preventDefault();
-      createChat();
+      createChat({
+        editorSelectionContent: getActiveEditor().editorSelectionContent,
+      });
     }
   });
 
@@ -57,10 +49,10 @@ export default function EditorPage() {
     <div className="h-full max-h-[100vh]">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={70} minSize={15}>
-          <div className="h-full pt-8">
+          <div className="h-full pt-12">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel defaultSize={70} minSize={30}>
-                <SqlEditor />
+                <EditorSection />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={15}>

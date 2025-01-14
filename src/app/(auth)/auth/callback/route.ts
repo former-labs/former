@@ -9,6 +9,8 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
 
+  console.log("CALLBACK ROUTE", JSON.stringify(request, null, 2));
+
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=missing-code`)
   }

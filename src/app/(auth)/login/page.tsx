@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoVerve } from "@/components/utils/LogoVerve";
+import { env } from "@/electron/env.electron";
+import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
 import { loginWithProvider } from "@/server/auth/actions";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,12 +22,41 @@ export default function LoginPage() {
       <Card className="z-10 w-[400px] bg-white p-6 shadow-lg">
         <div className="space-y-6">
           <h1 className="text-center text-xl font-semibold">Login to Verve</h1>
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full"
+            onClick={() => {
+              window.electron.send("open-external", "www.google.com");
+            }}
+          >
+            Open External Google Link
+          </Button>
 
           <Button
             variant="outline"
             size="lg"
             className="w-full"
             onClick={async () => {
+              console.log(
+                "IS ELECTRON",
+                typeof window !== "undefined" && window.electron,
+              );
+              console.log(
+                "ELECTRON CONTENTS:",
+                JSON.stringify(window?.electron),
+              );
+              if (typeof window !== "undefined" && window.electron) {
+                const result = await loginWithProvider({
+                  provider: "google",
+                  redirectTo: `${env.DASHBOARD_URI}${PATH_ELECTRON_CALLBACK}`,
+                  isElectron: true,
+                });
+                if (result && typeof result === "object" && "url" in result) {
+                  window.electron.send("open-external", result.url);
+                }
+                return;
+              }
               await loginWithProvider({ provider: "google" });
             }}
           >

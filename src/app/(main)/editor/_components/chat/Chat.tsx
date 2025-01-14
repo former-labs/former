@@ -1,23 +1,24 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Textarea } from "@/components/ui/textarea";
 import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
-import React, { type ReactNode, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
+import { getActiveEditor } from "../editor/editorStore";
 import { ApplyCodeBlock } from "./ApplyCodeBlock";
-import { useChat } from "./chatStore";
-import { getEditorSelectionContent, useEditor } from "./editorStore";
+import { useChat, type ChatMessageType } from "./chatStore";
+import { KnowledgeSourceComponent } from "./KnowledgeSourceComponent";
 import { StaticEditor } from "./StaticEditor";
 
 export const ChatSidebar = () => {
-  const { createChat, chats, setActiveChatId, activeChat } = useChat();
+  const { chats, setActiveChatId, activeChat } = useChat();
 
   return (
     <div className="flex h-full flex-col gap-4 bg-gray-200 p-3">
@@ -48,9 +49,7 @@ export const ChatSidebar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button onClick={createChat} size="icon" variant="outline">
-            <Plus className="h-4 w-4" />
-          </Button>
+          <CreateChatButton />
         </div>
       </div>
 
@@ -58,6 +57,24 @@ export const ChatSidebar = () => {
         <ActiveChat />
       </div>
     </div>
+  );
+};
+
+const CreateChatButton = () => {
+  const { createChat } = useChat();
+
+  return (
+    <Button
+      onClick={() =>
+        createChat({
+          editorSelectionContent: getActiveEditor().editorSelectionContent,
+        })
+      }
+      size="icon"
+      variant="outline"
+    >
+      <Plus className="h-4 w-4" />
+    </Button>
   );
 };
 
@@ -84,7 +101,10 @@ const ActiveChat = () => {
   }
 
   const handleSubmit = async (message: string) => {
-    await submitMessage({ message });
+    await submitMessage({
+      message,
+      editorContent: getActiveEditor().editorContent,
+    });
   };
 
   const lastMessage = activeChat.messages[activeChat.messages.length - 1];
@@ -96,38 +116,9 @@ const ActiveChat = () => {
       <div
         className={`space-y-2 overflow-y-auto pb-4 ${hasMessages ? "flex-1" : ""}`}
       >
-        <div className="space-y-2">
+        <div className="space-y-4">
           {activeChat.messages.map((message, i) => (
-            <div key={i}>
-              {message.type === "assistant" ? (
-                <div className="p-2">
-                  <ReactMarkdown
-                    components={{
-                      pre: CodeBlock,
-                      code: CodeInline,
-                      ul: ({ children }) => (
-                        <ul className="list-disc space-y-1 pl-6">{children}</ul>
-                      ),
-                      ol: ({ children }) => (
-                        <ol className="list-decimal space-y-1 pl-6">
-                          {children}
-                        </ol>
-                      ),
-                      li: ({ children }) => (
-                        <li className="text-gray-800">{children}</li>
-                      ),
-                    }}
-                    className="space-y-2"
-                  >
-                    {message.content}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <div className="rounded-lg bg-white p-2 text-gray-800 shadow">
-                  {message.content}
-                </div>
-              )}
-            </div>
+            <ChatMessage key={i} message={message} />
           ))}
           {showLoadingMessage && (
             <div className="flex items-center gap-2 p-2">
@@ -142,21 +133,69 @@ const ActiveChat = () => {
   );
 };
 
+const ChatMessage = ({ message }: { message: ChatMessageType }) => {
+  if (message.type === "assistant") {
+    return (
+      <div className="p-2 text-sm">
+        <ReactMarkdown
+          components={{
+            pre: CodeBlock,
+            code: CodeInline,
+            ul: ({ children }) => (
+              <ul className="list-disc space-y-1 pl-6">{children}</ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="list-decimal space-y-1 pl-6">{children}</ol>
+            ),
+            li: ({ children }) => <li className="text-gray-800">{children}</li>,
+          }}
+          className="space-y-2"
+        >
+          {message.content}
+        </ReactMarkdown>
+        {message.knowledgeSources.length > 0 && (
+          <div className="mt-4">
+            <div className="text-xs font-medium text-gray-600">Sources</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {message.knowledgeSources.map((knowledgeId) => (
+                <KnowledgeSourceComponent
+                  key={knowledgeId}
+                  knowledgeId={knowledgeId}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg bg-white px-3 py-2 text-sm text-gray-800 shadow">
+      {message.editorSelectionContent && (
+        <div className="mb-2 border pr-3">
+          <StaticEditor value={message.editorSelectionContent} />
+        </div>
+      )}
+      {message.content}
+    </div>
+  );
+};
+
 const ChatInputBox = ({
   onSubmit,
 }: {
   onSubmit: (message: string) => Promise<void>;
 }) => {
   const [value, setValue] = useState("");
-  const { activeChat } = useChat();
-  const { editorContent } = useEditor();
+  const {
+    activeChat,
+    shouldFocusActiveChatTextarea,
+    setShouldFocusActiveChatTextarea,
+  } = useChat();
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const selectionContent = activeChat?.pendingEditorSelection
-    ? getEditorSelectionContent({
-        editorSelection: activeChat.pendingEditorSelection,
-        editorContent,
-      })
-    : null;
+  const selectionContent = activeChat?.pendingEditorSelectionContent;
 
   const handleSubmit = () => {
     if (!value.trim()) return;
@@ -171,6 +210,13 @@ const ChatInputBox = ({
     }
   };
 
+  useEffect(() => {
+    if (shouldFocusActiveChatTextarea && textAreaRef.current) {
+      textAreaRef.current.focus();
+      setShouldFocusActiveChatTextarea(false);
+    }
+  }, [shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea]);
+
   return (
     <div className="space-y-2 rounded-lg border bg-white p-2">
       {selectionContent && (
@@ -179,10 +225,13 @@ const ChatInputBox = ({
         </div>
       )}
       <TextareaAutoResize
+        ref={textAreaRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Ask anything..."
+        className="border p-2 shadow-none focus-visible:ring-0"
+        rows={2}
       />
       <div className="flex justify-end">
         <Button
@@ -196,52 +245,6 @@ const ChatInputBox = ({
         </Button>
       </div>
     </div>
-  );
-};
-
-const TextareaAutoResize = ({
-  value,
-  onChange,
-  onKeyDown,
-  placeholder,
-}: {
-  value: string;
-  onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  placeholder?: string;
-}) => {
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const { shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea } =
-    useChat();
-
-  useEffect(() => {
-    if (textAreaRef.current) {
-      textAreaRef.current.style.height = "auto";
-      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
-    }
-  }, [value]);
-
-  useEffect(() => {
-    /*
-      Possibly dodgy.
-      We listen for this value to become true. When it does we consume it and focus the textarea.
-    */
-    if (shouldFocusActiveChatTextarea && textAreaRef.current) {
-      textAreaRef.current.focus();
-      setShouldFocusActiveChatTextarea(false);
-    }
-  }, [shouldFocusActiveChatTextarea, setShouldFocusActiveChatTextarea]);
-
-  return (
-    <Textarea
-      ref={textAreaRef}
-      value={value}
-      onChange={onChange}
-      onKeyDown={onKeyDown}
-      placeholder={placeholder}
-      className="h-full resize-none overflow-hidden border p-2 shadow-none focus-visible:ring-0"
-      rows={1}
-    />
   );
 };
 

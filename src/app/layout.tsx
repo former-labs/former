@@ -4,13 +4,15 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DataProvider } from "@/contexts/DataContext";
 import { TRPCReactProvider } from "@/trpc/react";
 import Script from "next/script";
-import { DataProvider } from "@/contexts/DataContext";
+import { ElectronAuthHandler } from "./(auth)/_components/ElectronAuthHandler";
 
 export const metadata: Metadata = {
   title: "Yerve",
-  description: "Yerve",
+  description:
+    "The AI SQL Editor. Built to make data analysts extraordinarily productive, Yerve is the best way to write SQL with AI.",
   icons: [{ rel: "icon", url: "/favicon.svg" }],
 };
 
@@ -53,6 +55,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {/* End Google Tag Manager (noscript) */}
           </>
         )}
+        <ElectronAuthHandler />
         <TRPCReactProvider>
           <AuthProvider>
             <DataProvider>{children}</DataProvider>
