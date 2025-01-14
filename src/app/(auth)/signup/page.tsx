@@ -35,7 +35,6 @@ export default function SignupPage() {
             size="lg"
             className="w-full"
             onClick={async () => {
-              console.log("ELECTRON CONTENTS:", JSON.stringify(window?.electron));
               if (typeof window !== "undefined" && window.electron) {
                 console.log("ELECTRON LOGIN");
                 const result = await loginWithProvider({
@@ -45,7 +44,6 @@ export default function SignupPage() {
                 });
                 const url = typeof result === "string" ? result : result.url;
                 window.electron.send("open-external", url);
-                console.log("ELECTRON LOGIN DONE");
                 return;
               } else {
                 await loginWithProvider({ provider: "google" });

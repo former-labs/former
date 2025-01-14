@@ -26,26 +26,7 @@ export default function LoginPage() {
             variant="outline"
             size="lg"
             className="w-full"
-            onClick={() => {
-              window.electron.send("open-external", "www.google.com");
-            }}
-          >
-            Open External Google Link
-          </Button>
-
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full"
             onClick={async () => {
-              console.log(
-                "IS ELECTRON",
-                typeof window !== "undefined" && window.electron,
-              );
-              console.log(
-                "ELECTRON CONTENTS:",
-                JSON.stringify(window?.electron),
-              );
               if (typeof window !== "undefined" && window.electron) {
                 const result = await loginWithProvider({
                   provider: "google",
