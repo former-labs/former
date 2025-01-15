@@ -30,7 +30,7 @@ export const env = envSchema.parse(envDevelopment);
 
 // const envProduction = {
 //   NODE_ENV: "production",
-//   DASHBOARD_URI: "https://yerve.vercel.app",
+//   DASHBOARD_URI: "https://app.formerlabs.com",
 // };
 
 // export const env = envSchema.parse(envProduction);

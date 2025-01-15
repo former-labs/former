@@ -10,9 +10,9 @@ import Script from "next/script";
 import { ElectronAuthHandler } from "./(auth)/_components/ElectronAuthHandler";
 
 export const metadata: Metadata = {
-  title: "Yerve",
+  title: "Former",
   description:
-    "The AI SQL Editor. Built to make data analysts extraordinarily productive, Yerve is the best way to write SQL with AI.",
+    "The AI SQL Editor. Built to make data analysts extraordinarily productive, Former is the best way to write SQL with AI.",
   icons: [{ rel: "icon", url: "/favicon.svg" }],
 };
 

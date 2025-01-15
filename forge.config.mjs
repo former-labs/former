@@ -3,15 +3,15 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 export default {
   packagerConfig: {
-    name: "Yerve",
-    executableName: "yerve",
-    appBundleId: "com.yerve.app",
+    name: "Former",
+    executableName: "Former",
+    appBundleId: "com.formerlabs.app",
     icon: "resources/icon",
     asar: true,
     protocols: [
       {
-        name: "Yerve Custom Protocol",
-        schemes: ["yerve"],
+        name: "Former Custom Protocol",
+        schemes: ["former"],
       },
     ],
     ignore: [
