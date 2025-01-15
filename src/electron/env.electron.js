@@ -28,16 +28,16 @@ const envSchema = z.object({
 
 // export const env = envSchema.parse(envLocal);
 
-const envDevelopment = {
-  NODE_ENV: "development",
-  DASHBOARD_URI: "https://dev.app.formerlabs.com",
-};
-
-export const env = envSchema.parse(envDevelopment);
-
-// const envProduction = {
-//   NODE_ENV: "production",
-//   DASHBOARD_URI: "https://app.formerlabs.com",
+// const envDevelopment = {
+//   NODE_ENV: "development",
+//   DASHBOARD_URI: "https://dev.app.formerlabs.com",
 // };
 
-// export const env = envSchema.parse(envProduction);
+// export const env = envSchema.parse(envDevelopment);
+
+const envProduction = {
+  NODE_ENV: "production",
+  DASHBOARD_URI: "https://app.formerlabs.com",
+};
+
+export const env = envSchema.parse(envProduction);
