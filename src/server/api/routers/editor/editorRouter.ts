@@ -601,7 +601,10 @@ ${numberedSourceQuery}
       model: "gpt-4o",
       messages: [systemMessage],
       schemaOutput: z.object({
-        similarities: z.string().describe(`A short description of the similarities between the two queries.`),
+        similarities: z.string().describe(`
+A short description of how the new query was generated from the source query "on the left".
+Phrase it as a description of the new query. Keep it relatively short, 1-2 sentences.
+        `),
         newQueryLines: z.array(z.number()).describe(`The line numbers from the new query that were inspired by the source query.`),
         sourceQueryLines: z.array(z.number()).describe(`The line numbers from the source query that were used to inspire the new query.`),
       }),

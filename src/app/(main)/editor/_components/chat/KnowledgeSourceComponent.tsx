@@ -10,7 +10,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/trpc/react";
 import { Editor, type Monaco } from "@monaco-editor/react";
-import { BookOpen, Loader2 } from "lucide-react";
+import { ArrowRight, BookOpen, Loader2 } from "lucide-react";
 import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useState } from "react";
 import { useEditorDecorations } from "../editor/useEditorDecorations";
@@ -105,32 +105,32 @@ const KnowledgeSourceDialog = ({
         <div className="mb-8 flex w-full flex-col gap-2 text-center">
           <DialogTitle className="text-2xl">Query References</DialogTitle>
           <DialogDescription className="text-base text-black">
-            See how this generated query was created The below query was
-            generated using the source query on the left.
+            See how the generated query (right) was generated using the
+            reference query (left).
           </DialogDescription>
           <Separator className="mt-4" />
         </div>
 
-        <div className="flex space-x-6">
+        <div className="flex space-x-24">
           <div className="flex flex-1 flex-col space-y-2">
             <h3 className="text-md font-semibold">{knowledge.name}</h3>
             <p className="text-sm text-gray-500">{knowledge.description}</p>
           </div>
           <div className="flex flex-1 flex-col space-y-2">
             <h3 className="text-md font-semibold">Generated Query</h3>
-            <p className="text-sm text-gray-500">
-              This is the query that was generated using the source query on the
-              left.
-            </p>
+            <p className="text-sm text-gray-500">{similarities}</p>
           </div>
         </div>
 
-        <div className="flex h-[500px] space-x-6">
+        <div className="flex h-[500px]">
           <div className="flex-1 border">
             <KnowledgeComparisonEditor
               query={knowledge.query}
               highlightedQueryLines={sourceQueryLines ?? []}
             />
+          </div>
+          <div className="flex w-24 items-center justify-center">
+            <ArrowRight className="h-12 w-12" />
           </div>
           <div className="flex-1 border">
             <KnowledgeComparisonEditor

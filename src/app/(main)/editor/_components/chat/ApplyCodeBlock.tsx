@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
-import { Check, Copy, Eye, EyeOff, ListCheck, Loader2 } from "lucide-react";
+import { Check, Copy, ListCheck, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useActiveEditor } from "../editor/editorStore";
 import { useChat } from "./chatStore";
@@ -22,7 +22,6 @@ export const ApplyCodeBlock = ({
   const { editorContent, setEditorContentDiff } = useActiveEditor();
   const { activeChat } = useChat();
   const [isCopied, setIsCopied] = useState(false);
-  const [showSources, setShowSources] = useState(false);
 
   const applyChangeMutation = api.editor.applyChange.useMutation();
 
@@ -43,8 +42,6 @@ export const ApplyCodeBlock = ({
     setEditorContentDiff(response);
   };
 
-  const toggleShowSources = () => setShowSources((prevState) => !prevState);
-
   return (
     <div>
       {/* {key && <div className="mb-1 text-sm text-gray-500">Query #{key}</div>} */}
@@ -52,24 +49,6 @@ export const ApplyCodeBlock = ({
         <StaticEditor value={codeContentClean} />
       </div>
       <div className="mt-1 flex justify-end gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={toggleShowSources}
-          className="gap-1"
-        >
-          {showSources ? (
-            <>
-              <span>Hide Sources</span>
-              <EyeOff className="h-4 w-4" />
-            </>
-          ) : (
-            <>
-              <span>View Sources</span>
-              <Eye className="h-4 w-4" />
-            </>
-          )}
-        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -98,22 +77,20 @@ export const ApplyCodeBlock = ({
           )}
         </Button>
       </div>
-      {showSources && (
-        <div className="mt-4 rounded-sm border border-gray-300 bg-gray-300 p-2">
-          <div className="text-xs font-medium text-gray-600">Sources</div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {knowledgeSources
-              .find((source) => source.key === key)
-              ?.knowledgeSourceIds.map((knowledgeId) => (
-                <KnowledgeSourceComponent
-                  key={knowledgeId}
-                  knowledgeId={knowledgeId}
-                  newQuery={codeContentClean}
-                />
-              ))}
-          </div>
+      <div className="mt-3 rounded-sm border border-gray-300 bg-gray-300 p-2">
+        <div className="text-xs font-medium text-gray-600">Sources</div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {knowledgeSources
+            .find((source) => source.key === key)
+            ?.knowledgeSourceIds.map((knowledgeId) => (
+              <KnowledgeSourceComponent
+                key={knowledgeId}
+                knowledgeId={knowledgeId}
+                newQuery={codeContentClean}
+              />
+            ))}
         </div>
-      )}
+      </div>
     </div>
   );
 };
