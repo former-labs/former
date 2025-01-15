@@ -19,7 +19,10 @@ export const editorRouter = createTRPCRouter({
         z.object({
           type: z.literal("assistant"), 
           content: z.string(),
-          knowledgeSources: z.array(z.string()),
+          knowledgeSources: z.array(z.object({
+            key: z.number(),
+            knowledgeSourceIds: z.array(z.string()),
+          })),
         })
       ])).min(1),
       editorContent: z.string(),
@@ -93,8 +96,31 @@ Respond in Markdown format.
           ...formatChatMessages(input.messages)
         ],
         schemaOutput: z.object({
-          response: z.string().describe("The response to the user's request, in Markdown format."),
-          knowledgeSources: z.array(z.string()).describe(`
+          response: z.string().describe(`
+The response to the user's request, in Markdown format.
+
+If you are responding with SQL code, you should include it in a SQL code block.
+You should also give each SQL query a unique numeric key, starting from 1 and incrementing by 1 for each query in the response.
+Include this key as a comment on the first line of the SQL code block in the same format as the example below.
+
+For example, if your response contained the following SQL code, you should include the following comment on the first line:
+\`\`\`sql
+--- key: 1
+select
+  foo,
+  bar
+from my_table;
+\`\`\`
+
+If you had another SQL block it would start with the line \`--- key: 2\`, etc.
+          `),
+          knowledgeSources: z.array(z.object({
+            key: z.number().describe(`
+The key of the SQL query.
+This is specified on the first line of the SQL code block as a comment.
+e.g. \`--- key: 1\` would give a key of 1.
+            `),
+            knowledgeSourceIds: z.array(z.string()).describe(`
 A list of UUIDs which represent the IDs of the knowledge sources that were used to generate the response.
 
 If you wrote some SQL and used some knowledge queries to help you, include them here.
@@ -103,21 +129,26 @@ For example, if you were asked for "the total revenue for each product" for an e
 to include references to knowledge queries that contained revenue calculations if you used them in your own queries.
 
 If you did not use any knowledge sources, return an empty array.
+            `)
+          })).describe(`
+The knowledge sources for each SQL query.
           `)
         }),
       });
 
       // Validate the knowledge sources from the response
-      const knowledgeSources = z.array(
-        z.string()
-         .uuid()
-         .refine(id => input.knowledge.some(knowledge => knowledge.id === id))
-      ).parse(aiResponse.knowledgeSources);
+      const knowledgeSources = z.array(z.object({
+        key: z.number(),
+        knowledgeSourceIds: z.array(z.string()
+          .uuid()
+          .refine(id => input.knowledge.some(knowledge => knowledge.id === id)))
+      })).parse(aiResponse.knowledgeSources);
 
       return {
         message: {
           type: "assistant" as const,
           content: aiResponse.response,
+          // knowledgeSources: knowledgeSources.flatMap(k => k.knowledgeSourceIds),
           knowledgeSources: knowledgeSources,
         }
       };
@@ -136,7 +167,10 @@ If you did not use any knowledge sources, return an empty array.
         z.object({
           type: z.literal("assistant"), 
           content: z.string(),
-          knowledgeSources: z.array(z.string()),
+          knowledgeSources: z.array(z.object({
+            key: z.number(),
+            knowledgeSourceIds: z.array(z.string()),
+          })),
         })
       ])).min(1),
     }))
@@ -483,6 +517,99 @@ ${input.editorContentBeforeCursor}<REPLACE_ME>${editorContentAfterCursor}
 //       return aiResponse.completion || "";
 
     }),
+
+  getKnowledgeComparison: workspaceProtectedProcedure
+    .input(z.object({
+      newQuery: z.string(),
+      sourceQuery: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const { newQuery: newQuery, sourceQuery } = input;
+
+      // Add line numbers to queries
+      const numberedNewQuery = newQuery
+        .split('\n')
+        .map((line, i) => `${i + 1}.${line}`)
+        .join('\n');
+
+      const numberedSourceQuery = sourceQuery
+        .split('\n')
+        .map((line, i) => `${i + 1}.${line}`)
+        .join('\n');
+
+      const systemMessage: ChatCompletionMessageParam = {
+        role: "system",
+        content: `
+A new query has been written and the source query may have been used as a reference.
+You will compare two SQL queries and figure out and return how the new query was inspired by the source query.
+The new query may not have used the source query.
+
+Each query has been provided with line numbers.
+You should return the list of line numbers from the new query that appear to be inspired by the source query.
+You should also return the line numbers from the source query where this inspiration came from.
+
+<EXAMPLE>
+An example response is below:
+
+<EXAMPLE_INPUT>
+New query:
+\`\`\`sql
+1.WITH CustomerSales AS (
+2.    SELECT customer_id, SUM(amount) AS total_sales
+3.    FROM sales
+4.    GROUP BY customer_id
+5.)
+6.
+7.SELECT c.customer_id, c.name, cs.total_sales
+8.FROM customers c
+9.JOIN CustomerSales cs ON c.customer_id = cs.customer_id
+10.ORDER BY cs.total_sales DESC;
+\`\`\`
+
+Source query:
+\`\`\`sql
+1.SELECT customer_id, SUM(amount) AS total_sales
+2.FROM sales
+3.WHERE YEAR(sale_date) = 2024
+4.GROUP BY customer_id
+\`\`\`
+</EXAMPLE_INPUT>
+
+<EXAMPLE_OUTPUT>
+Explanation: The new query uses a group to select customer id and total sales amount, similar to the source query.
+
+New query lines: 2,3,4
+Source query lines: 1,2,4
+</EXAMPLE_OUTPUT>
+</EXAMPLE>
+
+The queries to compare are:
+
+New query:
+\`\`\`sql
+${numberedNewQuery}
+\`\`\`
+
+Source query:
+\`\`\`sql
+${numberedSourceQuery}
+\`\`\`
+      `
+    };
+
+    const aiResponse = await getAIChatStructuredResponse({
+      model: "gpt-4o",
+      messages: [systemMessage],
+      schemaOutput: z.object({
+        similarities: z.string().describe(`A short description of the similarities between the two queries.`),
+        newQueryLines: z.array(z.number()).describe(`The line numbers from the new query that were inspired by the source query.`),
+        sourceQueryLines: z.array(z.number()).describe(`The line numbers from the source query that were used to inspire the new query.`),
+      }),
+    });
+
+    return aiResponse;
+  }),
+
 });
 
 const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
@@ -525,7 +652,10 @@ const formatChatMessages = (messages: Array<{
   type: "user" | "assistant";
   content: string;
   editorSelectionContent?: string | null;
-  knowledgeSources?: string[];
+  knowledgeSources?: Array<{
+    key: number;
+    knowledgeSourceIds: string[];
+  }>;
 }>): ChatCompletionMessageParam[] => {
   return messages.map(msg => {
     if (msg.type === "assistant") {
