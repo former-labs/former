@@ -22,8 +22,9 @@ export const useEditorDecorations = ({
     id: string;
     lineNumberStart: number;
     lineNumberEnd: number;
+    className: 'lineHightlightCommandK' | 'lineHightlightKnowledgeSource';
   }[];
-  onDecorationsChange: (changedDecorations: { id: string; lineNumberStart: number; lineNumberEnd: number; }[]) => void;
+  onDecorationsChange?: (changedDecorations: { id: string; lineNumberStart: number; lineNumberEnd: number; }[]) => void;
   codeEditor: editor.IStandaloneCodeEditor | null;
   monaco: Monaco | null;
 }) => {
@@ -42,7 +43,7 @@ export const useEditorDecorations = ({
     */
     const decorationChangeListener = codeEditor.onDidChangeModelDecorations(() => {
       const currentDecorations = codeEditor.getModel()?.getAllDecorations();
-      if (!currentDecorations) return;
+      if (!currentDecorations || !onDecorationsChange) return;
 
       const updatedDecorations: { id: string; lineNumberStart: number; lineNumberEnd: number; }[] = [];
       let hasChanges = false;
@@ -91,7 +92,7 @@ export const useEditorDecorations = ({
         range: new monaco.Range(decoration.lineNumberStart, 1, decoration.lineNumberEnd, 1),
         options: {
           isWholeLine: true,
-          className: styles.lineHighlight,
+          className: `${styles.lineHighlight} ${styles[decoration.className]}`,
         },
       });
     });

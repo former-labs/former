@@ -13,7 +13,10 @@ type UserChatMessageType = {
 type AssistantChatMessageType = {
   type: "assistant";
   content: string;
-  knowledgeSources: string[];
+  knowledgeSources: Array<{
+    key: number;
+    knowledgeSourceIds: string[];
+  }>;
 }
 
 export type ChatMessageType = UserChatMessageType | AssistantChatMessageType;
