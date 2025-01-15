@@ -33,13 +33,13 @@ function AuthCompleteContent() {
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="text-center">
         <h1 className="mb-4 text-2xl font-bold">
-          Launching the Verve desktop app
+          Launching the Former desktop app
         </h1>
         {countdown > 0 ? (
           <p className="mb-6">Redirecting in {countdown} seconds...</p>
         ) : (
           <p className="mb-6">
-            Click &apos;Open Verve&apos; to launch the desktop app. You may then
+            Click &apos;Open Former&apos; to launch the desktop app. You may then
             close this window.
           </p>
         )}

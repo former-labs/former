@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogoVerve } from "@/components/utils/LogoVerve";
+import { LogoFormer } from "@/components/utils/LogoFormer";
 import { env } from "@/electron/env.electron";
 import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
 import { loginWithProvider } from "@/server/auth/actions";
@@ -15,13 +15,13 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="z-10 mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-md">
-          <LogoVerve className="h-10 w-10" />
+          <LogoFormer className="h-10 w-10" />
         </div>
       </div>
 
       <Card className="z-10 w-[400px] bg-white p-6 shadow-lg">
         <div className="space-y-6">
-          <h1 className="text-center text-xl font-semibold">Login to Verve</h1>
+          <h1 className="text-center text-xl font-semibold">Login to Former</h1>
           <Button
             variant="outline"
             size="lg"

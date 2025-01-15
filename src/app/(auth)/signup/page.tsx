@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogoVerve } from "@/components/utils/LogoVerve";
+import { LogoFormer } from "@/components/utils/LogoFormer";
 import { env } from "@/electron/env.electron";
 import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
 import { loginWithProvider } from "@/server/auth/actions";
@@ -15,7 +15,7 @@ export default function SignupPage() {
       {/* Logo */}
       <div className="z-10 mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-md">
-          <LogoVerve className="h-10 w-10" />
+          <LogoFormer className="h-10 w-10" />
         </div>
       </div>
 
@@ -23,7 +23,7 @@ export default function SignupPage() {
         <div className="space-y-6">
           <div className="space-y-2 text-center">
             <h1 className="text-xl font-semibold text-foreground">
-              Create your Verve account
+              Create your Former account
             </h1>
             <p className="text-sm text-muted-foreground">
               Sign up with Google to get started.
@@ -72,13 +72,13 @@ export default function SignupPage() {
         By signing up, you agree to our
         <br />
         <Link
-          href="https://itsverve.com/terms-and-conditions"
+          href="https://formerlabs.com/terms-and-conditions"
           className="hover:underline"
         >
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="https://itsverve.com/privacy" className="hover:underline">
+        <Link href="https://formerlabs.com/privacy" className="hover:underline">
           Privacy Policy
         </Link>
         .

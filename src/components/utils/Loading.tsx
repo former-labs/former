@@ -22,7 +22,7 @@ export const Loading = () => {
       <div className={styles.ImageContainer}>
         <Image
           src={loadingDark}
-          alt="Verve Pay Logo"
+          alt="Former Logo"
           className={styles.LoadingDark}
           width={32}
           height={32}
@@ -30,7 +30,7 @@ export const Loading = () => {
         />
         <Image
           src={loadingLight}
-          alt="Verve Pay Logo"
+          alt="Former Logo"
           className={styles.LoadingLight}
           width={32}
           height={32}

@@ -26,13 +26,13 @@ const getErrorDetails = (error: string) => {
       return {
         title: "Authentication Failed",
         description:
-          "Failed to authenticate with service. Please try again or contact elliott@itsverve.com",
+          "Failed to authenticate with service. Please try again or contact elliott@formerlabs.com",
       };
     default:
       return {
         title: "Unknown Error",
         description:
-          "An unknown error occurred. Please try again or contact elliott@itsverve.com",
+          "An unknown error occurred. Please try again or contact elliott@formerlabs.com",
       };
   }
 };
