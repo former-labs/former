@@ -5,25 +5,47 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { api } from "@/trpc/react";
 import { Editor, type Monaco } from "@monaco-editor/react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Loader2 } from "lucide-react";
 import { type editor } from "monaco-editor/esm/vs/editor/editor.api";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useEditorDecorations } from "../editor/useEditorDecorations";
 
 export const KnowledgeSourceComponent = ({
   knowledgeId,
+  newQuery,
 }: {
   knowledgeId: string;
+  newQuery: string;
 }) => {
   const [open, setOpen] = useState(false);
-  const { data: knowledge } = api.knowledge.getKnowledge.useQuery({
-    knowledgeId,
-  });
+
+  const { data: knowledge, isLoading: knowledgeLoading } =
+    api.knowledge.getKnowledge.useQuery({
+      knowledgeId,
+    });
+
+  const { data: comparison, isLoading: comparisonLoading } =
+    api.editor.getKnowledgeComparison.useQuery(
+      {
+        newQuery: newQuery,
+        sourceQuery: knowledge?.query ?? "",
+      },
+      {
+        enabled: !!knowledge?.query,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+      },
+    );
+
+  if (knowledgeLoading || comparisonLoading) {
+    return <Loader2 className="m-1 h-4 w-4 animate-spin" />;
+  }
 
   if (!knowledge) {
     return null;
@@ -45,13 +67,8 @@ export const KnowledgeSourceComponent = ({
         open={open}
         onOpenChange={setOpen}
         knowledge={knowledge}
-        newQuery={`\
-SELECT 
-  oi.user_id, 
-  oi.order_id, 
-  SUM(oi.sale_price) AS order_value
-FROM \`bigquery-public-data.thelook_ecommerce.order_items\` AS oi
-GROUP BY oi.user_id, oi.order_id`}
+        newQuery={newQuery}
+        comparisonData={comparison ?? null}
       />
     </>
   );
@@ -62,6 +79,7 @@ const KnowledgeSourceDialog = ({
   onOpenChange,
   knowledge,
   newQuery,
+  comparisonData,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -71,40 +89,43 @@ const KnowledgeSourceDialog = ({
     query: string;
   };
   newQuery: string;
+  comparisonData: {
+    similarities: string;
+    newQueryLines: number[];
+    sourceQueryLines: number[];
+  } | null;
 }) => {
-  const [similarities, setSimilarities] = useState<string | null>(null);
-  const [newQueryLines, setNewQueryLines] = useState<number[] | null>(null);
-  const [sourceQueryLines, setSourceQueryLines] = useState<number[] | null>(
-    null,
-  );
-
-  const { mutate: fetchComparison } =
-    api.editor.getKnowledgeComparison.useMutation({
-      onSuccess: (data) => {
-        setSimilarities(data.similarities);
-        setNewQueryLines(data.newQueryLines);
-        setSourceQueryLines(data.sourceQueryLines);
-      },
-    });
-
-  useEffect(() => {
-    if (open) {
-      fetchComparison({
-        newQuery: newQuery,
-        sourceQuery: knowledge.query,
-      });
-    }
-  }, [open, fetchComparison, newQuery, knowledge.query]);
+  const similarities = comparisonData?.similarities;
+  const newQueryLines = comparisonData?.newQueryLines;
+  const sourceQueryLines = comparisonData?.sourceQueryLines;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-screen-2xl">
-        <DialogHeader>
-          <DialogTitle>{knowledge.name}</DialogTitle>
-          <DialogDescription>{knowledge.description}</DialogDescription>
-        </DialogHeader>
+        <div className="mb-8 flex w-full flex-col gap-2 text-center">
+          <DialogTitle className="text-2xl">Query References</DialogTitle>
+          <DialogDescription className="text-base text-black">
+            See how this generated query was created The below query was
+            generated using the source query on the left.
+          </DialogDescription>
+          <Separator className="mt-4" />
+        </div>
 
-        <div className="flex h-[500px] space-x-4">
+        <div className="flex space-x-6">
+          <div className="flex flex-1 flex-col space-y-2">
+            <h3 className="text-md font-semibold">{knowledge.name}</h3>
+            <p className="text-sm text-gray-500">{knowledge.description}</p>
+          </div>
+          <div className="flex flex-1 flex-col space-y-2">
+            <h3 className="text-md font-semibold">Generated Query</h3>
+            <p className="text-sm text-gray-500">
+              This is the query that was generated using the source query on the
+              left.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex h-[500px] space-x-6">
           <div className="flex-1 border">
             <KnowledgeComparisonEditor
               query={knowledge.query}
@@ -118,7 +139,8 @@ const KnowledgeSourceDialog = ({
             />
           </div>
         </div>
-        {(similarities || newQueryLines || sourceQueryLines) && (
+
+        {/* {(similarities || newQueryLines || sourceQueryLines) && (
           <div className="mt-4 border-t p-4">
             <h2 className="text-lg font-semibold">Comparison Result</h2>
             {similarities && (
@@ -138,7 +160,7 @@ const KnowledgeSourceDialog = ({
               </p>
             )}
           </div>
-        )}
+        )} */}
       </DialogContent>
     </Dialog>
   );

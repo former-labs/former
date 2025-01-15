@@ -19,7 +19,10 @@ export const editorRouter = createTRPCRouter({
         z.object({
           type: z.literal("assistant"), 
           content: z.string(),
-          knowledgeSources: z.array(z.string()),
+          knowledgeSources: z.array(z.object({
+            key: z.number(),
+            knowledgeSourceIds: z.array(z.string()),
+          })),
         })
       ])).min(1),
       editorContent: z.string(),
@@ -93,8 +96,31 @@ Respond in Markdown format.
           ...formatChatMessages(input.messages)
         ],
         schemaOutput: z.object({
-          response: z.string().describe("The response to the user's request, in Markdown format."),
-          knowledgeSources: z.array(z.string()).describe(`
+          response: z.string().describe(`
+The response to the user's request, in Markdown format.
+
+If you are responding with SQL code, you should include it in a SQL code block.
+You should also give each SQL query a unique numeric key, starting from 1 and incrementing by 1 for each query in the response.
+Include this key as a comment on the first line of the SQL code block in the same format as the example below.
+
+For example, if your response contained the following SQL code, you should include the following comment on the first line:
+\`\`\`sql
+--- key: 1
+select
+  foo,
+  bar
+from my_table;
+\`\`\`
+
+If you had another SQL block it would start with the line \`--- key: 2\`, etc.
+          `),
+          knowledgeSources: z.array(z.object({
+            key: z.number().describe(`
+The key of the SQL query.
+This is specified on the first line of the SQL code block as a comment.
+e.g. \`--- key: 1\` would give a key of 1.
+            `),
+            knowledgeSourceIds: z.array(z.string()).describe(`
 A list of UUIDs which represent the IDs of the knowledge sources that were used to generate the response.
 
 If you wrote some SQL and used some knowledge queries to help you, include them here.
@@ -103,21 +129,26 @@ For example, if you were asked for "the total revenue for each product" for an e
 to include references to knowledge queries that contained revenue calculations if you used them in your own queries.
 
 If you did not use any knowledge sources, return an empty array.
+            `)
+          })).describe(`
+The knowledge sources for each SQL query.
           `)
         }),
       });
 
       // Validate the knowledge sources from the response
-      const knowledgeSources = z.array(
-        z.string()
-         .uuid()
-         .refine(id => input.knowledge.some(knowledge => knowledge.id === id))
-      ).parse(aiResponse.knowledgeSources);
+      const knowledgeSources = z.array(z.object({
+        key: z.number(),
+        knowledgeSourceIds: z.array(z.string()
+          .uuid()
+          .refine(id => input.knowledge.some(knowledge => knowledge.id === id)))
+      })).parse(aiResponse.knowledgeSources);
 
       return {
         message: {
           type: "assistant" as const,
           content: aiResponse.response,
+          // knowledgeSources: knowledgeSources.flatMap(k => k.knowledgeSourceIds),
           knowledgeSources: knowledgeSources,
         }
       };
@@ -136,7 +167,10 @@ If you did not use any knowledge sources, return an empty array.
         z.object({
           type: z.literal("assistant"), 
           content: z.string(),
-          knowledgeSources: z.array(z.string()),
+          knowledgeSources: z.array(z.object({
+            key: z.number(),
+            knowledgeSourceIds: z.array(z.string()),
+          })),
         })
       ])).min(1),
     }))
@@ -489,7 +523,7 @@ ${input.editorContentBeforeCursor}<REPLACE_ME>${editorContentAfterCursor}
       newQuery: z.string(),
       sourceQuery: z.string(),
     }))
-    .mutation(async ({ input }) => {
+    .query(async ({ input }) => {
       const { newQuery: newQuery, sourceQuery } = input;
 
       // Add line numbers to queries
@@ -618,7 +652,10 @@ const formatChatMessages = (messages: Array<{
   type: "user" | "assistant";
   content: string;
   editorSelectionContent?: string | null;
-  knowledgeSources?: string[];
+  knowledgeSources?: Array<{
+    key: number;
+    knowledgeSourceIds: string[];
+  }>;
 }>): ChatCompletionMessageParam[] => {
   return messages.map(msg => {
     if (msg.type === "assistant") {
