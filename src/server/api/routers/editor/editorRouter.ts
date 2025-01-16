@@ -48,7 +48,7 @@ export const editorRouter = createTRPCRouter({
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",
         content: `
-You are a SQL assistant for the AI-first SQL IDE called "Yerve".
+You are a SQL assistant for the AI-first SQL IDE called "Former".
 
 The user is writing SQL code in the editor.
 They may ask you a question, or they may ask you to modify the code.

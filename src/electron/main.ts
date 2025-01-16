@@ -15,19 +15,19 @@ let mainWindow: BrowserWindow | null = null;
 // Enhanced logging function
 function log(...args: any[]) {
   const timestamp = new Date().toISOString();
-  const message = `[YERVE ${timestamp}] ${args.map(arg => 
+  const message = `[FORMER ${timestamp}] ${args.map(arg => 
     typeof arg === 'object' ? JSON.stringify(arg) : arg
   ).join(' ')}\n`;
   process.stdout.write(message);
 }
 
 // Add startup marker
-process.stdout.write('\n\n=== YERVE APP STARTING ===\n\n');
+process.stdout.write('\n\n=== FORMER APP STARTING ===\n\n');
 
-log("🚀 Starting Yerve application");
+log("🚀 Starting Former application");
 
 // Set app name before any window creation or app startup logic
-app.name = "Yerve";
+app.name = "Former";
 
 if (electronSquirrelStartup) {
   app.quit();
@@ -53,10 +53,10 @@ void app.whenReady().then(() => {
   log("🔧 Development mode:", isDev);
   
   // Register protocol handler when app is ready
-  const success = app.setAsDefaultProtocolClient('yerve');
+  const success = app.setAsDefaultProtocolClient('former');
   log('🔗 Protocol registration attempt');
   log('🔗 Protocol registration result:', success);
-  log('🔗 Is default protocol client:', app.isDefaultProtocolClient('yerve'));
+  log('🔗 Is default protocol client:', app.isDefaultProtocolClient('former'));
   
   createWindow();
 
@@ -77,7 +77,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: "Yerve",
+    title: "Former",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -173,7 +173,7 @@ app.on('open-url', (event, url) => {
 
 // Also handle the open-url event during launch
 if (process.platform === 'darwin') {
-  const openUrlOnLaunch = process.argv.find(arg => arg.startsWith('yerve://'));
+  const openUrlOnLaunch = process.argv.find(arg => arg.startsWith('former://'));
   if (openUrlOnLaunch) {
     console.log('Found protocol URL in launch args:', openUrlOnLaunch);
     const code = extractCodeFromUrl(openUrlOnLaunch);

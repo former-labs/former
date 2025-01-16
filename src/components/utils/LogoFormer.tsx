@@ -1,4 +1,4 @@
-export const LogoVerve = (props: React.ComponentProps<"svg">) => {
+export const LogoFormer = (props: React.ComponentProps<"svg">) => {
   return (
     <svg
       width="32"

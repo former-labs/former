@@ -12,13 +12,10 @@ export const env = createEnv({
       .default("development"),
     DATABASE_URL: z.string().url(),
     SUPABASE_API_KEY: z.string(),
-    VERVE_GA4_SERVICE_ACCOUNT_JSON_BASE64: z.string(),
     HELICONE_API_KEY: z.string(),
     OPENAI_API_KEY: z.string(),
-    DB_COLUMN_ENCRYPTION_SECRET: z.string(),
     GOOGLE_OAUTH_CLIENT_ID: z.string(),
     GOOGLE_OAUTH_CLIENT_SECRET: z.string(),
-    OAUTH_CALLBACK_SECRET: z.string(),
     DASHBOARD_URI: z.string(),
   },
 
@@ -44,14 +41,10 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_API_KEY: process.env.SUPABASE_API_KEY,
-    VERVE_GA4_SERVICE_ACCOUNT_JSON_BASE64:
-      process.env.VERVE_GA4_SERVICE_ACCOUNT_JSON_BASE64,
     HELICONE_API_KEY: process.env.HELICONE_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    DB_COLUMN_ENCRYPTION_SECRET: process.env.DB_COLUMN_ENCRYPTION_SECRET,
     GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    OAUTH_CALLBACK_SECRET: process.env.OAUTH_CALLBACK_SECRET,
     DASHBOARD_URI: process.env.DASHBOARD_URI,
   },
   /**
