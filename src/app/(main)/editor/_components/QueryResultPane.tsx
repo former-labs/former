@@ -72,13 +72,18 @@ const TableDataView = ({ data }: { data: ResultRow[] }) => {
       field: key,
       // filter: true,
       cellRenderer: (params: { value: ResultRow[keyof ResultRow] }) => {
+        // Add ph-no-capture class to mask the content
+        const noCapture = "ph-no-capture";
+
         // Handle rendering of custom types
         if (params.value === null) {
-          return <span className="text-gray-500">&lt;null&gt;</span>;
+          return (
+            <span className={`text-gray-500 ${noCapture}`}>&lt;null&gt;</span>
+          );
         }
         if (Array.isArray(params.value)) {
           return (
-            <span>
+            <span className={noCapture}>
               {"{"}
               {params.value
                 .map((val: unknown) => {
@@ -93,9 +98,11 @@ const TableDataView = ({ data }: { data: ResultRow[] }) => {
           );
         }
         if (typeof params.value === "object" && params.value !== null) {
-          return <span>{JSON.stringify(params.value)}</span>;
+          return (
+            <span className={noCapture}>{JSON.stringify(params.value)}</span>
+          );
         }
-        return params.value;
+        return <span className={noCapture}>{params.value}</span>;
       },
     }));
   }, [data]);
