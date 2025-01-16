@@ -4,11 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoFormer } from "@/components/utils/LogoFormer";
 import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function SignupPage() {
   const { login } = useAuth();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const handleSignup = async () => {
+    setIsAuthenticating(true);
+    await login();
+  };
 
   return (
     <div className="flex h-full flex-col items-center justify-center">
@@ -34,14 +42,19 @@ export default function SignupPage() {
             variant="outline"
             size="lg"
             className="w-full"
-            onClick={login}
+            onClick={handleSignup}
+            disabled={isAuthenticating}
           >
-            <Image
-              src="https://www.google.com/favicon.ico"
-              alt="Google"
-              width={20}
-              height={20}
-            />
+            {isAuthenticating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Image
+                src="https://www.google.com/favicon.ico"
+                alt="Google"
+                width={20}
+                height={20}
+              />
+            )}
             Continue with Google
           </Button>
 
