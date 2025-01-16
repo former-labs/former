@@ -39,8 +39,7 @@ function AuthCompleteContent() {
           <p className="mb-6">Redirecting in {countdown} seconds...</p>
         ) : (
           <p className="mb-6">
-            Click &apos;Open Former&apos; to launch the desktop app. You may then
-            close this window.
+            Desktop app launched. You may now close this window.
           </p>
         )}
       </div>

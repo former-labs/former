@@ -14,10 +14,8 @@ export const env = createEnv({
     SUPABASE_API_KEY: z.string(),
     HELICONE_API_KEY: z.string(),
     OPENAI_API_KEY: z.string(),
-    DB_COLUMN_ENCRYPTION_SECRET: z.string(),
     GOOGLE_OAUTH_CLIENT_ID: z.string(),
     GOOGLE_OAUTH_CLIENT_SECRET: z.string(),
-    OAUTH_CALLBACK_SECRET: z.string(),
     DASHBOARD_URI: z.string(),
   },
 
@@ -45,10 +43,8 @@ export const env = createEnv({
     SUPABASE_API_KEY: process.env.SUPABASE_API_KEY,
     HELICONE_API_KEY: process.env.HELICONE_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    DB_COLUMN_ENCRYPTION_SECRET: process.env.DB_COLUMN_ENCRYPTION_SECRET,
     GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    OAUTH_CALLBACK_SECRET: process.env.OAUTH_CALLBACK_SECRET,
     DASHBOARD_URI: process.env.DASHBOARD_URI,
   },
   /**

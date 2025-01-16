@@ -3,13 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoFormer } from "@/components/utils/LogoFormer";
-import { env } from "@/electron/env.electron";
-import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
-import { loginWithProvider } from "@/server/auth/actions";
+import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function LoginPage() {
+  const { login } = useAuth();
+
   return (
     <div className="flex h-full flex-col items-center justify-center">
       {/* Logo */}
@@ -26,20 +26,7 @@ export default function LoginPage() {
             variant="outline"
             size="lg"
             className="w-full"
-            onClick={async () => {
-              if (typeof window !== "undefined" && window.electron) {
-                const result = await loginWithProvider({
-                  provider: "google",
-                  redirectTo: `${env.DASHBOARD_URI}${PATH_ELECTRON_CALLBACK}`,
-                  isElectron: true,
-                });
-                if (result && typeof result === "object" && "url" in result) {
-                  window.electron.send("open-external", result.url);
-                }
-                return;
-              }
-              await loginWithProvider({ provider: "google" });
-            }}
+            onClick={login}
           >
             <Image
               src="https://www.google.com/favicon.ico"
