@@ -17,7 +17,7 @@ function AuthCompleteContent() {
       redirectUrl.searchParams.set("next", searchParams.get("next") || "/");
       window.location.href = redirectUrl.toString();
     }
-    window.close();
+    // window.close();
   }, [searchParams]);
 
   useEffect(() => {
