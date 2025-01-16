@@ -30,7 +30,7 @@
     "electron:start": "electron-forge start",
     "electron:make": "npm run electron:build && npm run package",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "npm run electron:build && electron-forge make",
     "publish": "electron-forge publish"
   },
   "dependencies": {
