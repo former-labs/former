@@ -56,11 +56,11 @@ export const KnowledgeSourceComponent = ({
       <Button
         variant="outline"
         size="sm"
-        className="h-7 gap-1.5 px-2 py-1 text-xs text-gray-600"
+        className="h-7 max-w-full gap-1.5 px-2 py-1 text-xs text-gray-600"
         onClick={() => setOpen(true)}
       >
-        <BookOpen className="h-3 w-3" />
-        {knowledge.name}
+        <BookOpen className="h-3 w-3 shrink-0" />
+        <span className="truncate">{knowledge.name}</span>
       </Button>
 
       <KnowledgeSourceDialog

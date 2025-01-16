@@ -27,6 +27,10 @@ export const ApplyCodeBlock = ({
 
   const { key, codeContentClean } = parseCodeContent(codeContent);
 
+  const knowledgeSourceIds =
+    knowledgeSources.find((source) => source.key === key)?.knowledgeSourceIds ??
+    [];
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(codeContentClean);
     setIsCopied(true);
@@ -77,20 +81,20 @@ export const ApplyCodeBlock = ({
           )}
         </Button>
       </div>
-      <div className="mt-3 rounded-sm border border-gray-300 bg-gray-300 p-2">
-        <div className="text-xs font-medium text-gray-600">Sources</div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {knowledgeSources
-            .find((source) => source.key === key)
-            ?.knowledgeSourceIds.map((knowledgeId) => (
+      {knowledgeSourceIds.length > 0 && (
+        <div className="mt-3 rounded-sm border border-gray-300 bg-gray-300 p-2">
+          <div className="text-xs font-medium text-gray-600">Sources</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {knowledgeSourceIds.map((knowledgeId) => (
               <KnowledgeSourceComponent
                 key={knowledgeId}
                 knowledgeId={knowledgeId}
                 newQuery={codeContentClean}
               />
             ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
