@@ -45,6 +45,8 @@ export const editorRouter = createTRPCRouter({
       console.log("Database metadata received:", input.databaseMetadata);
       console.log("Knowledge base items received:", input.knowledge);
 
+      const { formattedPrompt: knowledgePrompt, knowledgeLookup } = formatKnowledge(input.knowledge);
+
       const systemMessage: ChatCompletionMessageParam = {
         role: "system",
         content: `
@@ -70,20 +72,20 @@ ${formatDatabaseMetadata(input.databaseMetadata)}
 As a reference, the user has provided some example queries that have been used in the past on the same schema.
 You should refer to these when writing your own SQL code.
 
-${formatKnowledge(input.knowledge)}
+${knowledgePrompt}
 
 The user's current SQL code in their editor is below:
 \`\`\`sql
 ${input.editorContent}
 \`\`\`
 
-${input.editorSelectionContent && `
+${input.editorSelectionContent ? `
 The user has also highlighted a section of the code in their editor.
 The request they are making is likely related to this highlighted code, so you should take this into account.
 \`\`\`sql
 ${input.editorSelectionContent}
 \`\`\`
-`}
+` : ''}
 
 Respond in Markdown format.
         `
@@ -120,8 +122,9 @@ The key of the SQL query.
 This is specified on the first line of the SQL code block as a comment.
 e.g. \`--- key: 1\` would give a key of 1.
             `),
-            knowledgeSourceIds: z.array(z.string()).describe(`
-A list of UUIDs which represent the IDs of the knowledge sources that were used to generate the response.
+            knowledgeSourceIds: z.array(z.number()).describe(`
+A list of IDs which represent the IDs of the knowledge queries that were used to generate the response.
+e.g. If EXAMPLE_QUERY_1 was relevant, you would include 1 in the list.
 
 If you wrote some SQL and used some knowledge queries to help you, include them here.
 
@@ -137,12 +140,10 @@ The knowledge sources for each SQL query.
       });
 
       // Validate the knowledge sources from the response
-      const knowledgeSources = z.array(z.object({
-        key: z.number(),
-        knowledgeSourceIds: z.array(z.string()
-          .uuid()
-          .refine(id => input.knowledge.some(knowledge => knowledge.id === id)))
-      })).parse(aiResponse.knowledgeSources);
+      const knowledgeSources = aiResponse.knowledgeSources.map(source => ({
+        key: source.key,
+        knowledgeSourceIds: source.knowledgeSourceIds.map(id => knowledgeLookup(id))
+      }));
 
       return {
         message: {
@@ -300,7 +301,7 @@ ${formatDatabaseMetadata(input.databaseMetadata)}
 As a reference, the user has provided some example queries that have been used in the past on the same schema.
 You should refer to these when writing your own SQL code.
 
-${formatKnowledge(input.knowledge)}
+${formatKnowledge(input.knowledge).formattedPrompt}
 
 <EXAMPLE_1>
 An example of how you might apply the user's request is below.
@@ -633,12 +634,15 @@ const formatKnowledge = (knowledge: Array<{
   workspaceId: string;
   createdAt: Date;
   updatedAt: Date;
-}>): string => {
-  return `\
+}>): {
+  formattedPrompt: string;
+  knowledgeLookup: (key: number) => string
+} => {
+  const formattedPrompt = `\
 <EXAMPLE_QUERIES>
 ${knowledge.map((knowledge, index) => `
-<EXAMPLE_QUERY_${index + 1} id="${knowledge.id}">
-ID: ${knowledge.id}
+<EXAMPLE_QUERY_${index + 1}>
+ID: ${index + 1}
 Title: ${knowledge.name}
 Description: ${knowledge.description}
 
@@ -646,9 +650,19 @@ Description: ${knowledge.description}
 ${knowledge.query}
 \`\`\`
 </EXAMPLE_QUERY_${index + 1}>
-`).join("\n")}
+`).join("")}
 </EXAMPLE_QUERIES>\
 `;
+
+  const knowledgeLookup = (key: number): string => {
+    const foundKnowledge = knowledge[key - 1];
+    if (!foundKnowledge) {
+      throw new Error(`Knowledge with index ${key} not found.`);
+    }
+    return foundKnowledge.id;
+  };
+
+  return { formattedPrompt, knowledgeLookup };
 };
 
 const formatChatMessages = (messages: Array<{
