@@ -20,7 +20,7 @@ export default {
     ],
     osxSign: {},
     osxNotarize: {
-      keychainProfile: "Yerve-Keychain-Profile",
+      keychainProfile: "FormerLabs-Keychain-Profile",
     },
   },
   rebuildConfig: {},

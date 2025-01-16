@@ -1,10 +1,10 @@
 {
-  "name": "yerve",
+  "name": "Former Labs",
   "version": "0.1.1",
-  "description": "The AI SQL Editor. Built to make data analysts extraordinarily productive, Yerve is the best way to write SQL with AI.",
+  "description": "The AI SQL Editor. Built to make data analysts extraordinarily productive, Former Labs is the best way to write SQL with AI.",
   "author": {
-    "name": "Yerve",
-    "email": "elliott.lovell88@gmail.com"
+    "name": "Former Labs",
+    "email": "elliott@formerlabs.com"
   },
   "private": true,
   "type": "module",

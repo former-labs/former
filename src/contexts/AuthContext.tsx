@@ -1,7 +1,12 @@
 "use client";
 
+import { useToast } from "@/hooks/use-toast";
 import { PATH_LOGIN } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/client";
+import {
+  loginWithProvider,
+  loginWithProviderElectron,
+} from "@/server/auth/actions";
 import {
   type ROLE_VALUES,
   type RoleSelectWithRelations,
@@ -29,6 +34,7 @@ type AuthContextType = {
     React.SetStateAction<RoleSelectWithRelations | null>
   >;
   handleWorkspaceSwitch: (role: RoleSelectWithRelations) => Promise<void>;
+  login: () => Promise<void>;
   logout: () => Promise<void>;
   authError: string | null;
   setAuthError: React.Dispatch<React.SetStateAction<string | null>>;
@@ -44,6 +50,7 @@ export const AuthContext = createContext<AuthContextType>({
   isWorkspaceLoading: true,
   setActiveRole: () => null,
   handleWorkspaceSwitch: () => Promise.resolve(),
+  login: () => Promise.resolve(),
   logout: () => Promise.resolve(),
   authError: null,
   setAuthError: () => null,
@@ -52,6 +59,7 @@ export const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
+  const { toast } = useToast();
   const router = useRouter();
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -61,21 +69,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     null,
   );
   const setActiveRoleMutation = api.user.setActiveRole.useMutation();
-
-  const handleWorkspaceSwitch = async (role: RoleSelectWithRelations) => {
-    setActiveRole(role);
-    if (role?.workspaceId) {
-      await setActiveRoleMutation.mutateAsync({
-        workspaceId: role.workspaceId,
-        roleId: role.id,
-      });
-    }
-  };
+  const [isElectron, setIsElectron] = useState(false);
 
   const { data: roles = [], isLoading: isWorkspaceLoading } =
     api.user.getRoles.useQuery(undefined, {
       enabled: !!authUser,
     });
+
+  useEffect(() => {
+    // Initial check
+    const isElectronAvailable =
+      typeof window !== "undefined" && window.electron !== undefined;
+    setIsElectron(isElectronAvailable);
+
+    // Only start polling if electron is not already available
+    if (!isElectronAvailable) {
+      const startTime = Date.now();
+      const checkInterval = setInterval(() => {
+        if (typeof window !== "undefined" && window.electron !== undefined) {
+          setIsElectron(true);
+          clearInterval(checkInterval);
+        } else if (Date.now() - startTime > 2000) {
+          // 2 second timeout
+          clearInterval(checkInterval);
+        }
+      }, 100);
+
+      return () => clearInterval(checkInterval);
+    }
+  }, []);
 
   useEffect(() => {
     const initializeAuth = async (rolesList: RoleSelectWithRelations[]) => {
@@ -128,9 +150,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  const handleWorkspaceSwitch = async (role: RoleSelectWithRelations) => {
+    setActiveRole(role);
+    if (role?.workspaceId) {
+      await setActiveRoleMutation.mutateAsync({
+        workspaceId: role.workspaceId,
+        roleId: role.id,
+      });
+    }
+  };
+
   const fetchAuthUser = async () => {
     const { data } = await supabase.auth.getUser();
     setAuthUser(data?.user ?? null);
+  };
+
+  const login = async () => {
+    if (isElectron) {
+      const result = await loginWithProviderElectron({
+        provider: "google",
+      });
+      if (!result.url) {
+        toast({
+          title: "Error",
+          description: result.error ?? "Failed to authenticate with service",
+          variant: "destructive",
+        });
+      } else {
+        window.electron.send("open-external", result.url);
+      }
+    } else {
+      await loginWithProvider({ provider: "google" });
+    }
   };
 
   const logout = async () => {
@@ -157,6 +208,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         handleWorkspaceSwitch,
         isWorkspaceLoading,
         authError,
+        login,
         logout,
         setAuthError,
         resetAuthState,

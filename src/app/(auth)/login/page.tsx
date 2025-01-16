@@ -2,51 +2,51 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogoVerve } from "@/components/utils/LogoVerve";
-import { env } from "@/electron/env.electron";
-import { PATH_ELECTRON_CALLBACK } from "@/lib/paths";
-import { loginWithProvider } from "@/server/auth/actions";
+import { LogoFormer } from "@/components/utils/LogoFormer";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const { login } = useAuth();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const handleLogin = async () => {
+    setIsAuthenticating(true);
+    await login();
+  };
+
   return (
     <div className="flex h-full flex-col items-center justify-center">
       {/* Logo */}
       <div className="z-10 mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-md">
-          <LogoVerve className="h-10 w-10" />
+          <LogoFormer className="h-10 w-10" />
         </div>
       </div>
 
       <Card className="z-10 w-[400px] bg-white p-6 shadow-lg">
         <div className="space-y-6">
-          <h1 className="text-center text-xl font-semibold">Login to Verve</h1>
+          <h1 className="text-center text-xl font-semibold">Login to Former</h1>
           <Button
             variant="outline"
             size="lg"
             className="w-full"
-            onClick={async () => {
-              if (typeof window !== "undefined" && window.electron) {
-                const result = await loginWithProvider({
-                  provider: "google",
-                  redirectTo: `${env.DASHBOARD_URI}${PATH_ELECTRON_CALLBACK}`,
-                  isElectron: true,
-                });
-                if (result && typeof result === "object" && "url" in result) {
-                  window.electron.send("open-external", result.url);
-                }
-                return;
-              }
-              await loginWithProvider({ provider: "google" });
-            }}
+            onClick={handleLogin}
+            disabled={isAuthenticating}
           >
-            <Image
-              src="https://www.google.com/favicon.ico"
-              alt="Google"
-              width={20}
-              height={20}
-            />
+            {isAuthenticating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Image
+                src="https://www.google.com/favicon.ico"
+                alt="Google"
+                width={20}
+                height={20}
+              />
+            )}
             Continue with Google
           </Button>
 
