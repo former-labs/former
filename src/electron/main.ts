@@ -47,13 +47,26 @@ app.on('before-quit', () => {
 // Add logging for process arguments
 log("📎 Process arguments:", process.argv);
 
+// Register protocol handler when app is ready
+const registerProtocolHandler = () => {
+  if (process.platform === 'win32') {
+    // Windows needs the extra arguments
+    return app.setAsDefaultProtocolClient('former', process.execPath, [
+      '--protocol-launcher'
+    ]);
+  } else {
+    // macOS and Linux can use the simple version
+    return app.setAsDefaultProtocolClient('former');
+  }
+};
+
 void app.whenReady().then(() => {
   log("✅ Application ready");
   log("📍 Current directory:", currentDir);
   log("🔧 Development mode:", isDev);
   
   // Register protocol handler when app is ready
-  const success = app.setAsDefaultProtocolClient('former');
+  const success = registerProtocolHandler();
   log('🔗 Protocol registration attempt');
   log('🔗 Protocol registration result:', success);
   log('🔗 Is default protocol client:', app.isDefaultProtocolClient('former'));
