@@ -1,6 +1,6 @@
 "use client";
 
-import { type Driver } from "@/electron/drivers/clients";
+import { type Driver } from "@/electron/drivers/driver";
 import { type DatabaseMetadata, type Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 

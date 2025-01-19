@@ -1,5 +1,7 @@
 import type { BigQueryCredentials, Integration, PostgresCredentials } from "../types/connections.js";
-import { BigQueryDriver, type Driver, PostgresDriver } from "./drivers/clients.js";
+import { BigQueryDriver } from "./drivers/bigQueryDriver.js";
+import { type Driver } from "./drivers/driver.js";
+import { PostgresDriver } from "./drivers/postgresDriver.js";
 
 const connections = new Map<string, Driver>();
 
