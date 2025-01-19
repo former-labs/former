@@ -50,23 +50,24 @@ export const useQueryResult = () => {
     store.setResultError(null);
     store.setQueryStartTime(new Date());
     
-    try {
-      // Use pending content if available, otherwise use current content
-      const query = editorSelectionContent ?? editorContent;
-      console.log("Executing query", [query]);
-      const rawResult = await executeQuery(query);
-      // console.log("rawResult", rawResult);
-      const validatedResult = resultRowSchema.parse(rawResult);
+    // Use pending content if available, otherwise use current content
+    const query = editorSelectionContent ?? editorContent;
+    console.log("Executing query", [query]);
+    const result = await executeQuery(query);
+    console.log("result", result);
+
+    if ("error" in result) {
+      console.log("Failed to execute query:", result.error);
+      store.setResultError(result.error);
+      store.setResult(null);
+    } else {
+      const validatedResult = resultRowSchema.parse(result.result);
       store.setResult(validatedResult);
       console.log("Execute result", validatedResult);
-    } catch (error) {
-      console.error("Failed to execute query:", error);
-      store.setResultError((error as Error).message);
-      store.setResult(null);
-    } finally {
-      store.setResultLoading(false);
-      store.setQueryStartTime(null);
     }
+
+    store.setResultLoading(false);
+    store.setQueryStartTime(null);
   };
 
   return {

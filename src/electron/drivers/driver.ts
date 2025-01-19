@@ -10,7 +10,11 @@ export abstract class Driver {
 
   abstract connect(): Promise<void>;
   abstract disconnect(): Promise<void>;
-  abstract executeQuery(query: string): Promise<any[]>;
+  abstract executeQuery(query: string): Promise<{
+    result: any[];
+  } | {
+    error: string;
+  }>;
   abstract getProjectId(): string;
   abstract getProjectName(): string;
   abstract fetchProjectsAndDatasets(): Promise<{

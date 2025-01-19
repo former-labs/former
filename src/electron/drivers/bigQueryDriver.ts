@@ -1,4 +1,4 @@
-import { BigQuery, type TableField } from "@google-cloud/bigquery";
+import { BigQuery, type JobCallback, type TableField } from "@google-cloud/bigquery";
 import type { BigQueryCredentials, Field, Project, Table } from "../../types/connections.js";
 import { Driver } from "./driver.js";
 
@@ -86,21 +86,49 @@ export class BigQueryDriver extends Driver {
     };
   }
 
-  async executeQuery(query: string): Promise<any[]> {
+  async executeQuery(query: string): Promise<{
+    result: any[]
+  } | {
+    error: string;
+  }> {
     try {
-      const [job] = await this.client.createQueryJob({
-        query,
-        useLegacySql: false,
+      const { job, err } = await new Promise<{
+        job: Parameters<JobCallback>[1];
+        err: null;
+      } | {
+        job: Parameters<JobCallback>[1];
+        err: Parameters<JobCallback>[0];
+      }>((resolve) => {
+        this.client.createQueryJob({
+          query,
+          useLegacySql: false,
+        }, (err, job) => {
+          if (err) {
+            resolve({ err, job });
+          } else {
+            // Assert job exists when no error
+            if (!job) {
+              throw new Error("Job does not exist while error does not exist");
+            }
+            resolve({ job, err: null });
+          }
+        });
       });
 
-      const [rows] = await job.getQueryResults();
-      return rows.map(row => {
+      if (err) {
+        return { error: err.message };
+      }
+
+      const [rows] = await job!.getQueryResults();
+      const result = rows.map(row => {
         const parsedRow: any = {};
         for (const key in row) {
           parsedRow[key] = this.parseValue(row[key]);
         }
         return parsedRow;
       });
+      return { result };
+
     } catch (error) {
       console.error('Error executing BigQuery query:', error);
       throw error;

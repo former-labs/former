@@ -4,7 +4,11 @@ export interface IElectronAPI {
   database: {
     connect: (integration: Integration) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
-    execute: (connectionId: string, query: string) => Promise<unknown[]>;
+    execute: (connectionId: string, query: string) => Promise<{
+      result: any[];
+    } | {
+      error: string;
+    }>;
     getProjectsAndDatasets: (connectionId: string) => Promise<{
       projects: Project[];
     }>;

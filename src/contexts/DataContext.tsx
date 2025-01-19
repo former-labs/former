@@ -25,7 +25,14 @@ interface DataContextType {
     updates: Omit<Integration, "id" | "createdAt">,
   ) => void;
   removeIntegration: (id: string) => void;
-  executeQuery: (query: string) => Promise<unknown[]>;
+  executeQuery: (query: string) => Promise<
+    | {
+        result: any[];
+      }
+    | {
+        error: string;
+      }
+  >;
   loadedDatasets: Set<string>;
   setTableIncludedInAIContext: (params: {
     projectId: string;

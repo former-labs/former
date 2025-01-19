@@ -121,8 +121,16 @@ export class PostgresDriver extends Driver {
     };
   }
 
-  async executeQuery(query: string): Promise<any[]> {
-    const result = await this.client.query(query);
-    return result.rows;
+  async executeQuery(query: string): Promise<{
+    result: any[]
+  } | {
+    error: string;
+  }> {
+    try {
+      const result = await this.client.query(query);
+      return { result: result.rows };
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
   }
 }
