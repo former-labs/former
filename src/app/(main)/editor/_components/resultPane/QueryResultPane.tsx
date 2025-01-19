@@ -7,6 +7,7 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useEffect, useMemo, useState } from "react";
+import { QueryResultError } from "./QueryResultError";
 import { QueryResultHeader } from "./QueryResultHeader";
 import { type ResultRow, useQueryResult } from "./queryResultStore";
 
@@ -24,11 +25,7 @@ export const QueryResultPane = () => {
   }
 
   if (resultError) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-red-500">{resultError}</div>
-      </div>
-    );
+    return <QueryResultError resultError={resultError} />;
   }
 
   if (!result) {
