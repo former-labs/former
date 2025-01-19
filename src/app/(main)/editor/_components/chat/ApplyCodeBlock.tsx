@@ -24,6 +24,8 @@ export const ApplyCodeBlock = ({
   const [isCopied, setIsCopied] = useState(false);
 
   const applyChangeMutation = api.editor.applyChange.useMutation();
+  const { data: instructions, isLoading: instructionsLoading } =
+    api.instructions.getInstructions.useQuery();
 
   const { key, codeContentClean } = parseCodeContent(codeContent);
 
@@ -38,10 +40,13 @@ export const ApplyCodeBlock = ({
   };
 
   const handleApply = async () => {
+    if (instructionsLoading) return;
+
     const response = await applyChangeMutation.mutateAsync({
       editorContent,
       applyContent: codeContentClean,
       messages: activeChat?.messages ?? [],
+      instructions: instructions ?? "",
     });
     setEditorContentDiff(response);
   };

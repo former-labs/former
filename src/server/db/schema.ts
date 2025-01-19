@@ -22,7 +22,6 @@ const workspaceIdField = uuid("workspace_id")
     .references(() => workspaceTable.id)
     .notNull();
 
-
 // User
 export const userTable = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -132,6 +131,14 @@ export const knowledgeTable = pgTable("knowledge", {
   query: text("query").notNull(),
 });
 
+export const instructionsTable = pgTable("instructions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  workspaceId: workspaceIdField.unique(),
+  instructions: text("instructions").notNull(),
+});
+
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type MessageItemSelect = typeof messageItemsTable.$inferSelect;
@@ -143,3 +150,4 @@ export type RoleSelectWithRelations = RoleSelect & {
   workspace: WorkspaceSelect;
 };
 export type KnowledgeSelect = typeof knowledgeTable.$inferSelect;
+export type InstructionsSelect = typeof instructionsTable.$inferSelect;

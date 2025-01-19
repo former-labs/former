@@ -70,6 +70,7 @@ export const useChat = () => {
 
   const submitMessageMutation = api.editor.submitMessage.useMutation();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
+  const { data: instructions, isLoading: instructionsLoading } = api.instructions.getInstructions.useQuery();
 
   const createChat = ({
     editorSelectionContent
@@ -105,6 +106,7 @@ export const useChat = () => {
     editorContent: string;
   }) => {
     if (!chatStore.activeChatId || !activeChat || !databaseMetadata) return;
+    if (instructionsLoading) return;
 
     const newMessage: UserChatMessageType = {
       type: "user",
@@ -122,6 +124,7 @@ export const useChat = () => {
       editorSelectionContent: activeChat.pendingEditorSelectionContent,
       databaseMetadata: filteredDatabaseMetadata,
       knowledge: knowledgeList,
+      instructions: instructions ?? "",
     });
 
     // Clear the pending editor selection content after creating the message
