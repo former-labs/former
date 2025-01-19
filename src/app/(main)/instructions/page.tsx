@@ -50,7 +50,8 @@ export default function Page() {
               AI Instructions
             </h1>
             <p className="text-[14px] text-muted-foreground">
-              Edit the instructions for the AI to follow.
+              Use this to provide extra instructions and context to the AI. e.g.
+              Style guides, domain knowledge, etc.
             </p>
           </div>
           <Button
