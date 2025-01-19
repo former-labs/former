@@ -1,6 +1,7 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { editorRouter } from "./routers/editor/editorRouter";
 import { evalRouter } from "./routers/eval/evalRouter";
+import { instructionsRouter } from "./routers/instructions/instructionsRouter";
 import { knowledgeRouter } from "./routers/knowledge/knowledgeRouter";
 import { onboardingRouter } from "./routers/onboardingRouter";
 import { userRouter } from "./routers/userRouter";
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   user: userRouter,
   editor: editorRouter,
   knowledge: knowledgeRouter,
+  instructions: instructionsRouter,
   eval: evalRouter,
 });
 
