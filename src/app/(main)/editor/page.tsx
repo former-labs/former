@@ -12,7 +12,7 @@ import { ChatSidebar } from "./_components/chat/Chat";
 import { useChat } from "./_components/chat/chatStore";
 import { EditorSection } from "./_components/editor/EditorSection";
 import { getActiveEditor } from "./_components/editor/editorStore";
-import { QueryResultPane } from "./_components/QueryResultPane";
+import { QueryResultPane } from "./_components/resultPane/QueryResultPane";
 
 export default function EditorPage() {
   const { databaseMetadata } = useData();

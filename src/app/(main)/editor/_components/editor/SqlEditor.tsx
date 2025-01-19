@@ -12,7 +12,7 @@ import { DiffEditor, type Monaco } from "@monaco-editor/react";
 import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useMemo, useState } from "react";
-import { useQueryResult } from "../queryResultStore";
+import { useQueryResult } from "../resultPane/queryResultStore";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useEditorAutocomplete } from "./useEditorAutocomplete";
