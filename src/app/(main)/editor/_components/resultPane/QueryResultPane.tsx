@@ -39,9 +39,11 @@ export const QueryResultPane = () => {
   }
 
   return (
-    <div className="h-full bg-gray-100 p-0">
+    <div className="flex h-full flex-col bg-gray-100 p-0">
       <QueryResultHeader data={result} />
-      <TableDataView data={result} />
+      <div className="flex-grow">
+        <TableDataView data={result} />
+      </div>
     </div>
   );
 };
