@@ -15,7 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryResult } from "../resultPane/queryResultStore";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
-import { useEditorAutocomplete } from "./useEditorAutocomplete";
 import { useEditorDecorations } from "./useEditorDecorations";
 import { useEditorDiffWidgets } from "./useEditorDiffWidgets";
 import { useEditorKeybind } from "./useEditorKeybind";
@@ -65,7 +64,7 @@ export const SqlEditor = () => {
     setEditorContent,
   });
 
-  useEditorAutocomplete(monaco);
+  // useEditorAutocomplete(monaco);
 
   useEditorSelection({
     codeEditor,
