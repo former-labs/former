@@ -177,6 +177,7 @@ The knowledge sources for each SQL query.
           })),
         })
       ])).min(1),
+      instructions: z.string(),
     }))
     .mutation(async ({ input }) => {
       const initialSystemMessage: ChatCompletionMessageParam = {
@@ -192,6 +193,8 @@ and modify only the relevant part of the code.
 
 Feel free to use SQL comments to act as shorthand for sections of the code you are not modifying.
 e.g. -- Existing query that does X goes here
+
+${formatInstructions({ instructions: input.instructions })}
 
 <EXAMPLE>
 An example of how you should apply the changes is below:
@@ -268,7 +271,8 @@ ${input.applyContent}
         workspaceId: z.string(),
         createdAt: z.date(),
         updatedAt: z.date(),
-      }))
+      })),
+      instructions: z.string(),
     }))
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
@@ -292,6 +296,8 @@ If the change does not make sense, you can ignore it and just return the entire 
 
 When generating SQL code, you should copy the code style in their editor.
 It should appear like a natural modification to the existing editor SQL.
+
+${formatInstructions({ instructions: input.instructions })}
 
 To help you write queries, you must adhere to the below database schema.
 Do not generate SQL code that is not for the provided database schema.
