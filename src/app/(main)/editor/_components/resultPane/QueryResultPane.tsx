@@ -7,24 +7,8 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useEffect, useMemo, useState } from "react";
+import { QueryResultHeader } from "./QueryResultHeader";
 import { type ResultRow, useQueryResult } from "./queryResultStore";
-
-const QueryTimer = ({ startTime }: { startTime: Date }) => {
-  const [elapsedTime, setElapsedTime] = useState("0s");
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const seconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
-      setElapsedTime(`${seconds}s`);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [startTime]);
-
-  return (
-    <div className="mt-2 text-sm text-gray-500">Running for {elapsedTime}</div>
-  );
-};
 
 export const QueryResultPane = () => {
   const { result, resultLoading, resultError, queryStartTime } =
@@ -58,11 +42,30 @@ export const QueryResultPane = () => {
   }
 
   return (
-    <div className="h-full bg-gray-50 p-0">
+    <div className="h-full bg-gray-100 p-0">
+      <QueryResultHeader data={result} />
       <TableDataView data={result} />
     </div>
   );
 };
+
+const QueryTimer = ({ startTime }: { startTime: Date }) => {
+  const [elapsedTime, setElapsedTime] = useState("0s");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const seconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+      setElapsedTime(`${seconds}s`);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  return (
+    <div className="mt-2 text-sm text-gray-500">Running for {elapsedTime}</div>
+  );
+};
+
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const TableDataView = ({ data }: { data: ResultRow[] }) => {
