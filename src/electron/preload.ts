@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld(
         ipcRenderer.invoke('database:disconnect', connectionId),
       execute: (connectionId: string, query: string) => 
         ipcRenderer.invoke('database:execute', connectionId, query),
+      cancelJob: (connectionId: string, jobId: string) => 
+        ipcRenderer.invoke('database:cancelJob', connectionId, jobId),
+      getJobResult: (connectionId: string, jobId: string) => 
+        ipcRenderer.invoke('database:getJobResult', connectionId, jobId),
       getProjectsAndDatasets: (connectionId: string) => 
         ipcRenderer.invoke('database:getProjectsAndDatasets', connectionId),
       getTablesForDataset: (connectionId: string, datasetId: string, pageToken?: string) => 

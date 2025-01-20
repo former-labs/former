@@ -31,7 +31,7 @@ export const QueryResultError = ({ resultError }: { resultError: string }) => {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4">
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-8">
       <div className="text-red-500">{resultError}</div>
       <Button onClick={handleFixWithAI} loading={inlineEditMutation.isPending}>
         Fix with AI

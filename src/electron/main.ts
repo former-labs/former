@@ -131,6 +131,14 @@ ipcHandler('database:execute', (async (connectionId: string, query: string) => {
   return await database.execute(connectionId, query);
 }) as IElectronAPI['database']['execute']);
 
+ipcHandler('database:cancelJob', (async (connectionId: string, jobId: string) => {
+  await database.cancelJob(connectionId, jobId);
+}) as IElectronAPI['database']['cancelJob']);
+
+ipcHandler('database:getJobResult', (async (connectionId: string, jobId: string) => {
+  return await database.getJobResult(connectionId, jobId);
+}) as IElectronAPI['database']['getJobResult']);
+
 ipcHandler('store:getIntegrations', (async () => {
   return storeUtils.getIntegrations();
 }) as IElectronAPI['store']['getIntegrations']);

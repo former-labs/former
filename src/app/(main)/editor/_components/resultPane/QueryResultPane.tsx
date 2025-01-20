@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   type ColDef,
   AllCommunityModule,
@@ -12,7 +13,7 @@ import { QueryResultHeader } from "./QueryResultHeader";
 import { type ResultRow, useQueryResult } from "./queryResultStore";
 
 export const QueryResultPane = () => {
-  const { result, resultLoading, resultError, queryStartTime } =
+  const { result, resultLoading, resultError, queryStartTime, cancelQuery } =
     useQueryResult();
 
   if (resultLoading) {
@@ -20,6 +21,14 @@ export const QueryResultPane = () => {
       <div className="flex h-full flex-col items-center justify-center">
         <div className="text-gray-500">Loading query results...</div>
         {queryStartTime && <QueryTimer startTime={queryStartTime} />}
+        {cancelQuery && (
+          <Button
+            onClick={() => cancelQuery()}
+            className="mt-4 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+          >
+            Cancel Query
+          </Button>
+        )}
       </div>
     );
   }
