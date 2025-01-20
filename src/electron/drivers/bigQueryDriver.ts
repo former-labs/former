@@ -6,8 +6,7 @@ export class BigQueryDriver extends Driver {
   private client: BigQuery;
   private projectId: string;
   private jobs: Map<string, {
-    complete: boolean;
-    job: Job;
+    status: "complete" | "error" | "canceled" | "running";
     error?: string;
   }>;
 
@@ -92,95 +91,6 @@ export class BigQueryDriver extends Driver {
     };
   }
 
-  async executeQuery(query: string): Promise<{
-    jobId: string;
-  }> {
-    try {
-      const { job, err } = await new Promise<{
-        job: Job;
-        err: null;
-      } | {
-        job: Job;
-        err: NonNullable<Parameters<JobCallback>[0]>;
-      }>((resolve) => {
-        this.client.createQueryJob({
-          query,
-          useLegacySql: false,
-        }, (err, job) => {
-          // Assert job exists when no error
-          if (!job) {
-            throw new Error("Job does not exist");
-          }
-
-          if (err) {
-            resolve({ err, job });
-          } else {
-            resolve({ job, err: null });
-          }
-        });
-      });
-
-      const jobId = job.id;
-      if (!jobId) {
-        throw new Error("Job ID is undefined");
-      }
-
-      if (err) {
-        this.jobs.set(jobId, {
-          complete: true,
-          job,
-          error: err.message
-        });
-      } else {
-        this.jobs.set(jobId, {
-          complete: false,
-          job,
-          error: undefined,
-        });
-      }
-
-      return { jobId };
-
-    } catch (error) {
-      console.error('Error executing BigQuery query:', error);
-      throw error;
-    }
-  }
-
-  async cancelJob(jobId: string): Promise<void> {
-    const jobInfo = this.jobs.get(jobId);
-    if (!jobInfo) {
-      throw new Error(`Job ${jobId} not found`);
-    }
-    await jobInfo.job.cancel();
-  }
-
-  async getJobResult(jobId: string): Promise<{
-    result: any[];
-  } | {
-    error: string;
-  }> {
-    const jobInfo = this.jobs.get(jobId);
-    if (!jobInfo) {
-      return { error: `Job ${jobId} not found` };
-    }
-
-    if (jobInfo.error) {
-      return { error: jobInfo.error };
-    }
-
-    const [rows] = await jobInfo.job.getQueryResults();
-    const result = rows.map(row => {
-      const parsedRow: any = {};
-      for (const key in row) {
-        parsedRow[key] = this.parseValue(row[key]);
-      }
-      return parsedRow;
-    });
-    jobInfo.complete = true;
-    return { result };
-  }
-
   private parseValue(value: any): any {
     if (typeof value === "object" && value?.hasOwnProperty("value")) {
       return value.value.toString();
@@ -244,6 +154,118 @@ export class BigQueryDriver extends Driver {
     }
 
     return { projects };
+  }
+
+  async executeQuery(query: string): Promise<{
+    jobId: string;
+  }> {
+    try {
+      const { job, err } = await new Promise<{
+        job: Job;
+        err: null;
+      } | {
+        job: Job;
+        err: NonNullable<Parameters<JobCallback>[0]>;
+      }>((resolve) => {
+        this.client.createQueryJob({
+          query,
+          useLegacySql: false,
+        }, (err, job) => {
+          // Assert job exists when no error
+          if (!job) {
+            throw new Error("Job does not exist");
+          }
+
+          if (err) {
+            resolve({ err, job });
+          } else {
+            resolve({ job, err: null });
+          }
+        });
+      });
+
+      const jobId = job.id;
+      if (!jobId) {
+        throw new Error("Job ID is undefined");
+      }
+
+      if (err) {
+        this.jobs.set(jobId, {
+          status: "error",
+          error: err.message
+        });
+      } else {
+        this.jobs.set(jobId, {
+          status: "running",
+          error: undefined,
+        });
+      }
+
+      return { jobId };
+
+    } catch (error) {
+      console.error('Error executing BigQuery query:', error);
+      throw error;
+    }
+  }
+
+  async cancelJob(jobId: string): Promise<void> {
+    const jobInfo = this.jobs.get(jobId);
+    if (!jobInfo) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+    const job = this.client.job(jobId);
+    await job.cancel();
+    jobInfo.status = "canceled";
+  }
+
+  async getJobResult(jobId: string): Promise<{
+    status: "complete";
+    result: any[];
+  } | {
+    status: "error";
+    error: string;
+  } | {
+    status: "canceled";
+  }> {
+    const jobInfo = this.jobs.get(jobId);
+    if (!jobInfo) {
+      throw new Error(`Job ${jobId} not found`);
+      // return { error: `Job ${jobId} not found` };
+    }
+
+    if (jobInfo.status === "error") {
+      return {
+        status: "error",
+        error: jobInfo.error!
+      };
+    }
+
+    const job = this.client.job(jobId);
+
+    const [rows] = await job.getQueryResults();
+    const result = rows.map(row => {
+      const parsedRow: any = {};
+      for (const key in row) {
+        parsedRow[key] = this.parseValue(row[key]);
+      }
+      return parsedRow;
+    });
+
+    // Ideally the above code does not run when we cancel
+    // But for some reason even if you cancel, the job will still continue processing
+    if (jobInfo.status === "canceled") {
+      console.log("Returning cancelled status.");
+      return {
+        status: "canceled"
+      };
+    }
+
+    jobInfo.status = "complete";
+    return {
+      status: "complete",
+      result,
+    };
   }
 }
 

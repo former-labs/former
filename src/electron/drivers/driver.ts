@@ -15,9 +15,13 @@ export abstract class Driver {
   }>;
   abstract cancelJob(jobId: string): Promise<void>;
   abstract getJobResult(jobId: string): Promise<{
+    status: "complete";
     result: any[];
   } | {
+    status: "error";
     error: string;
+  } | {
+    status: "canceled";
   }>;
   abstract getProjectId(): string;
   abstract getProjectName(): string;

@@ -65,14 +65,17 @@ export const useQueryResult = () => {
 
     const result = await getQueryResult(jobId);
 
-    if ("error" in result) {
+    if (result.status === "error") {
       console.log("Failed to execute query:", result.error);
       store.setResultError(result.error);
       store.setResult(null);
-    } else {
+    } else if (result.status === "complete") {
       const validatedResult = resultRowSchema.parse(result.result);
       store.setResult(validatedResult);
       console.log("Execute result", validatedResult);
+    } else if (result.status === "canceled") {
+      console.log("Query canceled");
+      store.setResult(null);
     }
 
     store.setResultLoading(false);
@@ -81,7 +84,6 @@ export const useQueryResult = () => {
   };
 
   const handleCancelQuery = async () => {
-    console.log("cancelQuery", store.currentJobId);
     if (store.currentJobId) {
       await cancelQuery(store.currentJobId);
       store.setCurrentJobId(null);

@@ -31,10 +31,15 @@ interface DataContextType {
   cancelQuery: (jobId: string) => Promise<void>;
   getQueryResult: (jobId: string) => Promise<
     | {
+        status: "complete";
         result: any[];
       }
     | {
+        status: "error";
         error: string;
+      }
+    | {
+        status: "canceled";
       }
   >;
   loadedDatasets: Set<string>;
@@ -68,7 +73,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const checkStore = () => {
       if (window.electron?.store) {
         setIsStoreReady(true);
-        console.log("store is ready");
       } else {
         setTimeout(checkStore, 100);
       }

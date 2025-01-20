@@ -9,9 +9,13 @@ export interface IElectronAPI {
     }>;
     cancelJob: (connectionId: string, jobId: string) => Promise<void>;
     getJobResult: (connectionId: string, jobId: string) => Promise<{
+      status: "complete";
       result: any[];
     } | {
+      status: "error";
       error: string;
+    } | {
+      status: "canceled";
     }>;
     getProjectsAndDatasets: (connectionId: string) => Promise<{
       projects: Project[];
