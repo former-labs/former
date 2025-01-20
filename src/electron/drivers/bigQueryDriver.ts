@@ -1,10 +1,15 @@
-import { BigQuery, type JobCallback, type TableField } from "@google-cloud/bigquery";
+import { BigQuery, type Job, type JobCallback, type TableField } from "@google-cloud/bigquery";
 import type { BigQueryCredentials, Field, Project, Table } from "../../types/connections.js";
 import { Driver } from "./driver.js";
 
 export class BigQueryDriver extends Driver {
   private client: BigQuery;
   private projectId: string;
+  private jobs: Map<string, {
+    complete: boolean;
+    job: Job;
+    error?: string;
+  }>;
 
   constructor(credentials: BigQueryCredentials, projectId: string) {
     super(credentials);
@@ -13,6 +18,7 @@ export class BigQueryDriver extends Driver {
       credentials: keysToSnakeCase(credentials, {}),
       projectId,
     });
+    this.jobs = new Map();
   }
 
   async connect(): Promise<void> {
@@ -87,52 +93,92 @@ export class BigQueryDriver extends Driver {
   }
 
   async executeQuery(query: string): Promise<{
-    result: any[]
-  } | {
-    error: string;
+    jobId: string;
   }> {
     try {
       const { job, err } = await new Promise<{
-        job: Parameters<JobCallback>[1];
+        job: Job;
         err: null;
       } | {
-        job: Parameters<JobCallback>[1];
-        err: Parameters<JobCallback>[0];
+        job: Job;
+        err: NonNullable<Parameters<JobCallback>[0]>;
       }>((resolve) => {
         this.client.createQueryJob({
           query,
           useLegacySql: false,
         }, (err, job) => {
+          // Assert job exists when no error
+          if (!job) {
+            throw new Error("Job does not exist");
+          }
+
           if (err) {
             resolve({ err, job });
           } else {
-            // Assert job exists when no error
-            if (!job) {
-              throw new Error("Job does not exist while error does not exist");
-            }
             resolve({ job, err: null });
           }
         });
       });
 
-      if (err) {
-        return { error: err.message };
+      const jobId = job.id;
+      if (!jobId) {
+        throw new Error("Job ID is undefined");
       }
 
-      const [rows] = await job!.getQueryResults();
-      const result = rows.map(row => {
-        const parsedRow: any = {};
-        for (const key in row) {
-          parsedRow[key] = this.parseValue(row[key]);
-        }
-        return parsedRow;
-      });
-      return { result };
+      if (err) {
+        this.jobs.set(jobId, {
+          complete: true,
+          job,
+          error: err.message
+        });
+      } else {
+        this.jobs.set(jobId, {
+          complete: false,
+          job,
+          error: undefined,
+        });
+      }
+
+      return { jobId };
 
     } catch (error) {
       console.error('Error executing BigQuery query:', error);
       throw error;
     }
+  }
+
+  async cancelJob(jobId: string): Promise<void> {
+    const jobInfo = this.jobs.get(jobId);
+    if (!jobInfo) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+    await jobInfo.job.cancel();
+  }
+
+  async getJobResult(jobId: string): Promise<{
+    result: any[];
+  } | {
+    error: string;
+  }> {
+    const jobInfo = this.jobs.get(jobId);
+    if (!jobInfo) {
+      return { error: `Job ${jobId} not found` };
+    }
+
+    if (jobInfo.error) {
+      return { error: jobInfo.error };
+    }
+
+    const [rows] = await jobInfo.job.getQueryResults();
+    const result = rows.map(row => {
+      const parsedRow: any = {};
+      for (const key in row) {
+        parsedRow[key] = this.parseValue(row[key]);
+      }
+      return parsedRow;
+    });
+    jobInfo.complete = true;
+    return { result };
   }
 
   private parseValue(value: any): any {

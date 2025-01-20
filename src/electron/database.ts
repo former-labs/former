@@ -1,11 +1,12 @@
 import type { BigQueryCredentials, Integration, PostgresCredentials } from "../types/connections.js";
+import { IElectronAPI } from "../types/electron.js";
 import { BigQueryDriver } from "./drivers/bigQueryDriver.js";
 import { type Driver } from "./drivers/driver.js";
 import { PostgresDriver } from "./drivers/postgresDriver.js";
 
 const connections = new Map<string, Driver>();
 
-export const database = {
+export const database: IElectronAPI['database'] = {
   async connect(integration: Integration) {
     try {
       let driver: Driver;
@@ -44,6 +45,18 @@ export const database = {
     const connection = connections.get(connectionId);
     if (!connection) throw new Error(`Connection not found: ${connectionId}`);
     return connection.executeQuery(query);
+  },
+
+  async cancelJob(connectionId: string, jobId: string) {
+    const connection = connections.get(connectionId);
+    if (!connection) throw new Error(`Connection not found: ${connectionId}`);
+    return connection.cancelJob(jobId);
+  },
+
+  async getJobResult(connectionId: string, jobId: string) {
+    const connection = connections.get(connectionId);
+    if (!connection) throw new Error(`Connection not found: ${connectionId}`);
+    return connection.getJobResult(jobId);
   },
 
   async getProjectsAndDatasets(connectionId: string) {

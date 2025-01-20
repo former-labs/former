@@ -5,6 +5,10 @@ export interface IElectronAPI {
     connect: (integration: Integration) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
     execute: (connectionId: string, query: string) => Promise<{
+      jobId: string;
+    }>;
+    cancelJob: (connectionId: string, jobId: string) => Promise<void>;
+    getJobResult: (connectionId: string, jobId: string) => Promise<{
       result: any[];
     } | {
       error: string;
@@ -16,6 +20,7 @@ export interface IElectronAPI {
       tables: Table[];
       nextPageToken?: string;
     }>;
+    disconnectAll: () => Promise<void>;
   };
   send: (channel: string, data: unknown) => void;
   receive: (channel: string, func: (...args: unknown[]) => void) => void;

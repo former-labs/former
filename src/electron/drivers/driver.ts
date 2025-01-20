@@ -11,6 +11,10 @@ export abstract class Driver {
   abstract connect(): Promise<void>;
   abstract disconnect(): Promise<void>;
   abstract executeQuery(query: string): Promise<{
+    jobId: string;
+  }>;
+  abstract cancelJob(jobId: string): Promise<void>;
+  abstract getJobResult(jobId: string): Promise<{
     result: any[];
   } | {
     error: string;

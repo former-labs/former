@@ -25,7 +25,11 @@ interface DataContextType {
     updates: Omit<Integration, "id" | "createdAt">,
   ) => void;
   removeIntegration: (id: string) => void;
-  executeQuery: (query: string) => Promise<
+  executeQuery: (query: string) => Promise<{
+    jobId: string;
+  }>;
+  cancelQuery: (jobId: string) => Promise<void>;
+  getQueryResult: (jobId: string) => Promise<
     | {
         result: any[];
       }
@@ -320,6 +324,27 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const cancelQuery = async (jobId: string) => {
+    if (!activeIntegration?.id) {
+      throw new Error("No active integration");
+    }
+
+    await window.electron.database.cancelJob(activeIntegration.id, jobId);
+  };
+
+  const getQueryResult = async (jobId: string) => {
+    if (!activeIntegration?.id) {
+      throw new Error("No active integration");
+    }
+
+    console.log("database", window.electron.database);
+    const result = await window.electron.database.getJobResult(
+      activeIntegration.id,
+      jobId,
+    );
+    return result;
+  };
+
   const setTableIncludedInAIContext = ({
     projectId,
     datasetId,
@@ -376,6 +401,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         editIntegration,
         removeIntegration,
         executeQuery,
+        cancelQuery,
+        getQueryResult,
         setTableIncludedInAIContext,
       }}
     >
