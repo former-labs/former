@@ -4,13 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { SidebarGroup, SidebarGroupLabel } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -21,15 +14,14 @@ import {
 import { useData } from "@/contexts/DataContext";
 import type { Dataset, Field, Project, Table } from "@/types/connections";
 import {
-  ArrowRight,
   ChevronDown,
   ChevronRight,
   Database,
   Search,
   Table as TableIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { staticDatabaseMetadata } from "./databaseMetadata";
 
 // Type augmentations for search functionality
 type TableExtended = Table & {
@@ -50,14 +42,6 @@ type FieldExtended = Field;
 
 // Main component
 export function MetadataTree() {
-  const router = useRouter();
-  const {
-    databaseMetadata,
-    isFetchingMetadata,
-    activeIntegration,
-    integrations,
-    setActiveIntegration,
-  } = useData();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set(),
   );
@@ -69,14 +53,14 @@ export function MetadataTree() {
 
   useEffect(() => {
     // Initialize with all project IDs expanded
-    if (!isFetchingMetadata && databaseMetadata?.projects) {
+    if (staticDatabaseMetadata?.projects) {
       const projectIds = new Set<string>();
-      databaseMetadata.projects.forEach((project) => {
+      staticDatabaseMetadata.projects.forEach((project) => {
         if (project.id) projectIds.add(project.id);
       });
       setExpandedProjects(projectIds);
     }
-  }, [isFetchingMetadata, databaseMetadata]);
+  }, []);
 
   const toggleProject = (projectId: string) => {
     setExpandedProjects((prev) => {
@@ -122,9 +106,9 @@ export function MetadataTree() {
       tables: Set<string>;
     };
   }>(() => {
-    if (!databaseMetadata?.projects || !searchQuery)
+    if (!staticDatabaseMetadata?.projects || !searchQuery)
       return {
-        filteredProjects: (databaseMetadata?.projects ??
+        filteredProjects: (staticDatabaseMetadata?.projects ??
           []) as ProjectExtended[],
         expandedFromSearch: {
           projects: new Set<string>(),
@@ -140,7 +124,7 @@ export function MetadataTree() {
       tables: new Set<string>(),
     };
 
-    const filtered = databaseMetadata.projects
+    const filtered = staticDatabaseMetadata.projects
       .map((project): ProjectExtended | null => {
         if (!project) return null;
 
@@ -225,7 +209,7 @@ export function MetadataTree() {
       );
 
     return { filteredProjects: filtered, expandedFromSearch: toExpand };
-  }, [databaseMetadata?.projects, searchQuery]);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -250,94 +234,43 @@ export function MetadataTree() {
   return (
     <TooltipProvider>
       <SidebarGroup className="flex h-full flex-col">
-        <SidebarGroupLabel>Active Integration</SidebarGroupLabel>
+        <SidebarGroupLabel>Schema</SidebarGroupLabel>
 
         <div className="mb-1 px-2">
-          {integrations.length > 0 ? (
-            <div>
-              <Select
-                value={activeIntegration?.id ?? ""}
-                onValueChange={(value) => {
-                  const integration = integrations.find((i) => i.id === value);
-                  if (integration) setActiveIntegration(integration);
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select integration">
-                    {activeIntegration?.name ?? "Select integration"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {integrations.map((integration) => (
-                    <SelectItem
-                      key={integration.id}
-                      value={integration.id ?? ""}
-                    >
-                      {integration.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-muted-foreground"
-                size="sm"
-                onClick={() => router.push("/integrations")}
-              >
-                <span className="truncate">Configure integrations</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
 
-        {activeIntegration && (
-          <>
-            <div className="mb-1 px-2">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+        <div className="flex-1 space-y-0.5 overflow-y-auto">
+          {!staticDatabaseMetadata ? (
+            <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
+              <div className="text-center text-sm text-muted-foreground">
+                No metadata found
               </div>
             </div>
-
-            <div className="flex-1 space-y-0.5 overflow-y-auto">
-              {isFetchingMetadata ? (
-                <div className="flex h-32 items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
-                </div>
-              ) : !databaseMetadata && activeIntegration ? (
-                <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
-                  <div className="text-center text-sm text-muted-foreground">
-                    No metadata found for{" "}
-                    <strong>{activeIntegration.name}</strong>
-                  </div>
-                </div>
-              ) : (
-                filteredProjects?.map((project) => (
-                  <ProjectItem
-                    key={project.id}
-                    project={project}
-                    searchQuery={searchQuery}
-                    isExpanded={expandedProjects.has(project.id)}
-                    onToggle={() => toggleProject(project.id)}
-                    expandedDatasets={expandedDatasets}
-                    toggleDataset={toggleDataset}
-                    expandedTables={expandedTables}
-                    toggleTable={toggleTable}
-                  />
-                ))
-              )}
-            </div>
-          </>
-        )}
+          ) : (
+            filteredProjects?.map((project) => (
+              <ProjectItem
+                key={project.id}
+                project={project}
+                searchQuery={searchQuery}
+                isExpanded={expandedProjects.has(project.id)}
+                onToggle={() => toggleProject(project.id)}
+                expandedDatasets={expandedDatasets}
+                toggleDataset={toggleDataset}
+                expandedTables={expandedTables}
+                toggleTable={toggleTable}
+              />
+            ))
+          )}
+        </div>
       </SidebarGroup>
     </TooltipProvider>
   );
@@ -453,25 +386,13 @@ function DatasetItem({
   expandedTables: Set<string>;
   toggleTable: (id: string) => void;
 }) {
-  const { activeIntegration, fetchTablesForDataset, loadingDatasets } =
-    useData();
-
-  const handleToggle = async () => {
-    onToggle();
-    if (!isExpanded && activeIntegration?.id) {
-      await fetchTablesForDataset(activeIntegration.id, dataset.id);
-    }
-  };
-
-  const isLoading = loadingDatasets.has(dataset.id);
-
   return (
     <div className="space-y-0.5">
       <Button
         variant="ghost"
         size="sm"
         className="h-8 w-full justify-start gap-2"
-        onClick={handleToggle}
+        onClick={onToggle}
       >
         <Tooltip>
           <TooltipTrigger asChild>
@@ -523,26 +444,17 @@ function DatasetItem({
       </Button>
       {isExpanded && (
         <div className="pl-4">
-          {isLoading ? (
-            <div className="flex items-center gap-2 py-2 pl-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-gray-900" />
-              <span className="text-sm text-muted-foreground">
-                Loading tables...
-              </span>
-            </div>
-          ) : (
-            dataset.tables.map((table) => (
-              <TableItem
-                key={table.id}
-                projectId={projectId}
-                datasetId={dataset.id}
-                table={table}
-                searchQuery={searchQuery}
-                isExpanded={expandedTables.has(table.id)}
-                onToggle={() => toggleTable(table.id)}
-              />
-            ))
-          )}
+          {dataset.tables.map((table) => (
+            <TableItem
+              key={table.id}
+              projectId={projectId}
+              datasetId={dataset.id}
+              table={table}
+              searchQuery={searchQuery}
+              isExpanded={expandedTables.has(table.id)}
+              onToggle={() => toggleTable(table.id)}
+            />
+          ))}
         </div>
       )}
     </div>

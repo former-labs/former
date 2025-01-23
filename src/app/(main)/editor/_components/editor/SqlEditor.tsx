@@ -9,10 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { env } from "@/env";
 import { DiffEditor, type Monaco } from "@monaco-editor/react";
-import { Loader2, Play } from "lucide-react";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
 import { useEffect, useMemo, useState } from "react";
-import { useQueryResult } from "../resultPane/queryResultStore";
 import { useActiveEditor } from "./editorStore";
 import { InlinePromptWidget } from "./InlinePromptWidget";
 import { useEditorDecorations } from "./useEditorDecorations";
@@ -35,7 +33,7 @@ export const SqlEditor = () => {
     setShouldFocus,
   } = useActiveEditor();
 
-  const { executeQuery, resultLoading } = useQueryResult();
+  // const { executeQuery, resultLoading } = useQueryResult();
 
   const [monaco, setMonaco] = useState<Monaco | null>(null);
 
@@ -223,13 +221,13 @@ export const SqlEditor = () => {
     codeEditor,
   });
 
-  // Add Cmd+Enter binding to execute query
-  useEditorKeybind({
-    id: "execute-query",
-    callback: () => executeQuery({ editorSelectionContent, editorContent }),
-    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
-    codeEditor,
-  });
+  // // Add Cmd+Enter binding to execute query
+  // useEditorKeybind({
+  //   id: "execute-query",
+  //   callback: () => executeQuery({ editorSelectionContent, editorContent }),
+  //   keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
+  //   codeEditor,
+  // });
 
   // Add Cmd+L binding to simulate original keybinding
   useEditorKeybind({
@@ -336,7 +334,7 @@ export const SqlEditor = () => {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex flex-shrink-0 gap-2 overflow-x-auto bg-gray-50 px-2 py-1">
-        <Button
+        {/* <Button
           variant="ghost"
           onClick={() =>
             executeQuery({ editorSelectionContent, editorContent })
@@ -348,7 +346,7 @@ export const SqlEditor = () => {
           ) : (
             <Play className="h-4 w-4" />
           )}
-        </Button>
+        </Button> */}
         {env.NEXT_PUBLIC_NODE_ENV === "development" && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
