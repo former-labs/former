@@ -152,11 +152,6 @@ const data = {
       icon: Code,
     },
     {
-      name: "Schema",
-      url: PATH_SCHEMA,
-      icon: Plug,
-    },
-    {
       name: "AI Instructions",
       url: PATH_INSTRUCTIONS,
       icon: FileText,
