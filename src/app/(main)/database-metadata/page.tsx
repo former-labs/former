@@ -2,12 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
-import { Editor } from "@monaco-editor/react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { JSONEditor } from "./JSONEditor";
+import { ParseDatabaseMetadataDialog } from "./ParseDatabaseMetadataDialog";
 
 export default function Page() {
   const [metadata, setMetadata] = useState("");
+  const [parseDialogOpen, setParseDialogOpen] = useState(false);
   const utils = api.useUtils();
 
   const { data: existingMetadata, isLoading } =
@@ -36,6 +38,12 @@ export default function Page() {
     }
   };
 
+  const handleReset = () => {
+    if (existingMetadata) {
+      setMetadata(JSON.stringify(existingMetadata, null, 2));
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -57,56 +65,127 @@ export default function Page() {
               Database Metadata
             </h1>
             <p className="text-[14px] text-muted-foreground">
-              Database schema and metadata in JSON format
+              Set your database schema here in JSON form. Use the &apos;Load
+              schema with AI&apos; button to load your schema in with AI from a
+              description or unstructured format.
             </p>
           </div>
-          <Button
-            onClick={handleSave}
-            loading={saveMetadataMutation.isPending}
-            disabled={!hasChanges || saveMetadataMutation.isPending}
-          >
-            Save Changes
-          </Button>
+          <div className="flex gap-4">
+            <Button variant="outline" onClick={() => setParseDialogOpen(true)}>
+              Load schema with AI
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={!hasChanges}
+            >
+              Reset Changes
+            </Button>
+            <Button
+              onClick={handleSave}
+              loading={saveMetadataMutation.isPending}
+              disabled={!hasChanges || saveMetadataMutation.isPending}
+            >
+              Save Changes
+            </Button>
+          </div>
         </div>
 
         <JSONEditor value={metadata} onChange={setMetadata} />
+
+        <ExampleDatabaseMetadata />
       </div>
+
+      <ParseDatabaseMetadataDialog
+        open={parseDialogOpen}
+        onOpenChange={setParseDialogOpen}
+        onParsed={setMetadata}
+      />
     </div>
   );
 }
 
-const JSONEditor = ({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) => {
+const ExampleDatabaseMetadata = () => {
   return (
-    <div className="h-[800px] border">
-      <div className="h-full">
-        <Editor
-          height="100%"
-          className="overflow-hidden"
-          language="json"
-          value={value}
-          onChange={(value) => onChange(value ?? "")}
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            lineNumbers: "off",
-            lineDecorationsWidth: 0,
-            padding: { top: 8, bottom: 8 },
-            scrollbar: {
-              ignoreHorizontalScrollbarInContentHeight: true,
-              alwaysConsumeMouseWheel: false,
+    <details className="mt-2">
+      <summary className="cursor-pointer text-sm text-muted-foreground">
+        View example schema format
+      </summary>
+      <div className="mt-2 rounded-lg border p-4">
+        <p className="mb-2 text-sm text-muted-foreground">
+          This is an example of the expected schema format:
+        </p>
+        <pre className="whitespace-pre-wrap font-mono text-sm">
+          {JSON.stringify(
+            {
+              projects: [
+                {
+                  id: "example-project",
+                  name: "Example Project",
+                  datasets: [
+                    {
+                      id: "example-dataset",
+                      name: "Example Dataset",
+                      tables: [
+                        {
+                          id: "table1",
+                          name: "Table 1",
+                          fields: [
+                            {
+                              name: "field1",
+                              type: "STRING",
+                              description: "First field in the table",
+                            },
+                            {
+                              name: "field2",
+                              type: "INTEGER",
+                              description: "Second field in the table",
+                            },
+                            {
+                              name: "field3",
+                              type: "BOOLEAN",
+                              description: "Third field in the table",
+                            },
+                          ],
+                          description: "First table example",
+                        },
+                        {
+                          id: "table2",
+                          name: "Table 2",
+                          fields: [
+                            {
+                              name: "field1",
+                              type: "FLOAT",
+                              description: "First field in the table",
+                            },
+                            {
+                              name: "field2",
+                              type: "DATE",
+                              description: "Second field in the table",
+                            },
+                            {
+                              name: "field3",
+                              type: "STRING",
+                              description: "Third field in the table",
+                            },
+                          ],
+                          description: "Second table example",
+                        },
+                      ],
+                      tableCount: 2,
+                      description:
+                        "A dataset containing two tables with three fields each",
+                    },
+                  ],
+                  description: "A project to demonstrate schema parsing",
+                },
+              ],
             },
-            renderLineHighlight: "none",
-          }}
-        />
+            null,
+            2,
+          )}
+        </pre>
       </div>
-    </div>
+    </details>
   );
 };
