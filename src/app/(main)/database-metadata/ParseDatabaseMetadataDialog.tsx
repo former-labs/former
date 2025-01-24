@@ -65,7 +65,8 @@ export const ParseDatabaseMetadataDialog = ({
           <DialogDescription>
             Describe your database schema in any form and let AI convert it to
             structured metadata JSON. You can paste a CREATE TABLE script here,
-            or any other kind of database schema export.
+            or any other kind of database schema export. This may take up to a
+            minute.
           </DialogDescription>
         </DialogHeader>
 
