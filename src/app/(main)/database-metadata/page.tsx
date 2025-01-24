@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ export default function Page() {
   const [metadata, setMetadata] = useState("");
   const [parseDialogOpen, setParseDialogOpen] = useState(false);
   const utils = api.useUtils();
+  const { toast } = useToast();
 
   const { data: existingMetadata, isLoading } =
     api.databaseMetadata.getDatabaseMetadata.useQuery();
@@ -33,8 +35,12 @@ export default function Page() {
       const parsedMetadata = JSON.parse(metadata);
       saveMetadataMutation.mutate({ databaseMetadata: parsedMetadata });
     } catch (e) {
-      // TODO: Show error toast
-      console.error("Invalid JSON", e);
+      toast({
+        variant: "destructive",
+        title: "Invalid JSON",
+        description: "Please ensure your JSON is properly formatted.",
+      });
+      // console.error("Invalid JSON", e);
     }
   };
 

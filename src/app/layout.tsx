@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/contexts/DataContext";
 import { TRPCReactProvider } from "@/trpc/react";
@@ -60,6 +61,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <AuthProvider>
             <DataProvider>{children}</DataProvider>
           </AuthProvider>
+          <Toaster />
         </TRPCReactProvider>
       </body>
     </html>
