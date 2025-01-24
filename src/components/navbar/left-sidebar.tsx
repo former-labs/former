@@ -31,6 +31,7 @@ import {
   PATH_INSTRUCTIONS,
   PATH_INTEGRATIONS,
   PATH_KNOWLEDGE,
+  PATH_SCHEMA,
 } from "@/lib/paths";
 
 // This is sample data.
@@ -151,8 +152,8 @@ const data = {
       icon: Code,
     },
     {
-      name: "Integrations",
-      url: PATH_INTEGRATIONS,
+      name: "Schema",
+      url: PATH_SCHEMA,
       icon: Plug,
     },
     {

@@ -16,9 +16,9 @@ export const PATH_CONVERSATION_SINGLE = (conversationId: string) =>
 
 export const PATH_ONBOARDING = "/onboarding";
 
-
 export const PATH_EDITOR = "/editor";
 export const PATH_INTEGRATIONS = "/integrations";
+export const PATH_SCHEMA = "/schema";
 export const PATH_KNOWLEDGE = "/knowledge";
 export const PATH_INSTRUCTIONS = "/instructions";
 

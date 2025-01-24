@@ -1,12 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useData } from "@/contexts/DataContext";
 import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/chat/Chat";
 import { useChat } from "./_components/chat/chatStore";
@@ -14,7 +12,6 @@ import { EditorSection } from "./_components/editor/EditorSection";
 import { getActiveEditor } from "./_components/editor/editorStore";
 
 export default function EditorPage() {
-  const { databaseMetadata } = useData();
   const { createChat } = useChat();
 
   useEventListener("keydown", (e) => {
@@ -26,23 +23,6 @@ export default function EditorPage() {
       });
     }
   });
-
-  if (!databaseMetadata) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center">
-        <div className="text-lg text-gray-500">
-          Please connect a database to continue
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => (window.location.href = "/integrations")}
-          className="mt-4"
-        >
-          Connect Database
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="h-full max-h-[100vh]">
