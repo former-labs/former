@@ -10,6 +10,7 @@ import {
   FileText,
   GalleryVerticalEnd,
   Plug,
+  ScrollText,
   Settings2,
   SquareTerminal,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import {
+  PATH_DATABASE_METADATA,
   PATH_EDITOR,
   PATH_INSTRUCTIONS,
   PATH_INTEGRATIONS,
@@ -163,6 +165,11 @@ const data = {
     {
       name: "AI Knowledge",
       url: PATH_KNOWLEDGE,
+      icon: ScrollText,
+    },
+    {
+      name: "Database Schema",
+      url: PATH_DATABASE_METADATA,
       icon: Database,
     },
   ],

@@ -47,7 +47,7 @@ export const fieldSchema: z.ZodType<{
   fields?: Array<Field>;
 }> = z.object({
   name: z.string(),
-  type: z.string(),
+  type: z.enum(["INTEGER", "STRING", "FLOAT"]),
   description: z.string().nullable(),
   fields: z.lazy(() => z.array(fieldSchema)).optional()
 });

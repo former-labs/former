@@ -1,7 +1,7 @@
 "use client";
 
-import { staticDatabaseMetadata } from "@/components/navbar/metadata-tree/databaseMetadata";
 import { type Driver } from "@/electron/drivers/driver";
+import { api } from "@/trpc/react";
 import { type DatabaseMetadata, type Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -421,8 +421,14 @@ export const useData = () => {
   if (context === undefined) {
     throw new Error("useData must be used within a DataProvider");
   }
+
+  const { data: databaseMetadata, isLoading } =
+    api.databaseMetadata.getDatabaseMetadata.useQuery();
+
   return {
     ...context,
-    databaseMetadata: staticDatabaseMetadata,
+    // databaseMetadata: staticDatabaseMetadata,
+    databaseMetadata,
+    isFetchingMetadata: isLoading,
   };
 };
