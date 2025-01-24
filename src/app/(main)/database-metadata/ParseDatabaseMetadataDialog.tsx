@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -37,6 +38,7 @@ export const ParseDatabaseMetadataDialog = ({
   onOpenChange: (open: boolean) => void;
   onParsed: (metadata: string) => void;
 }) => {
+  const { toast } = useToast();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -51,6 +53,13 @@ export const ParseDatabaseMetadataDialog = ({
         onOpenChange(false);
         form.reset();
       },
+      onError: (error) => {
+        toast({
+          variant: "destructive",
+          title: "Error parsing metadata",
+          description: error.message,
+        });
+      },
     });
 
   const onSubmit = (values: FormValues) => {
@@ -63,13 +72,17 @@ export const ParseDatabaseMetadataDialog = ({
         <DialogHeader>
           <DialogTitle>Parse Database Metadata</DialogTitle>
           <DialogDescription>
-            Describe your database schema in any form and let AI convert it to
-            structured metadata JSON. You can paste a CREATE TABLE script here,
-            or any other kind of database schema export. This may take up to a
-            minute.
+            <div>
+              Describe your database schema in any form and let AI convert it to
+              structured metadata JSON. You can paste a CREATE TABLE script
+              here, or any other kind of database schema export.
+            </div>
           </DialogDescription>
         </DialogHeader>
 
+        <div className="font-bold text-blue-700">
+          This may a while for large databases.
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField

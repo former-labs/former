@@ -163,6 +163,24 @@ Do NOT surround the JSON with \`\`\` or anything else. It should be raw json. St
         messages: [systemMessage]
       });
 
-      return databaseMetadataSchema.parse(JSON.parse(aiResponse));
+      const parsedResponse = JSON.parse(aiResponse);
+      const databaseMetadata = databaseMetadataSchema.parse(parsedResponse);
+
+      // Set includedInAIContext to true for all tables
+      const metadataWithAIContext = {
+        ...databaseMetadata,
+        projects: databaseMetadata.projects.map(project => ({
+          ...project,
+          datasets: project.datasets.map(dataset => ({
+            ...dataset,
+            tables: dataset.tables.map(table => ({
+              ...table,
+              includedInAIContext: true
+            }))
+          }))
+        }))
+      };
+
+      return metadataWithAIContext;
     }),
 });
