@@ -21,7 +21,6 @@ import {
   Table as TableIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { staticDatabaseMetadata } from "./databaseMetadata";
 
 // Type augmentations for search functionality
 type TableExtended = Table & {
@@ -50,17 +49,18 @@ export function MetadataTree() {
   );
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const { databaseMetadata } = useData();
 
   useEffect(() => {
     // Initialize with all project IDs expanded
-    if (staticDatabaseMetadata?.projects) {
+    if (databaseMetadata?.projects) {
       const projectIds = new Set<string>();
-      staticDatabaseMetadata.projects.forEach((project) => {
+      databaseMetadata.projects.forEach((project) => {
         if (project.id) projectIds.add(project.id);
       });
       setExpandedProjects(projectIds);
     }
-  }, []);
+  }, [databaseMetadata]);
 
   const toggleProject = (projectId: string) => {
     setExpandedProjects((prev) => {
@@ -106,9 +106,9 @@ export function MetadataTree() {
       tables: Set<string>;
     };
   }>(() => {
-    if (!staticDatabaseMetadata?.projects || !searchQuery)
+    if (!databaseMetadata?.projects || !searchQuery)
       return {
-        filteredProjects: (staticDatabaseMetadata?.projects ??
+        filteredProjects: (databaseMetadata?.projects ??
           []) as ProjectExtended[],
         expandedFromSearch: {
           projects: new Set<string>(),
@@ -124,7 +124,7 @@ export function MetadataTree() {
       tables: new Set<string>(),
     };
 
-    const filtered = staticDatabaseMetadata.projects
+    const filtered = databaseMetadata.projects
       .map((project): ProjectExtended | null => {
         if (!project) return null;
 
@@ -209,7 +209,7 @@ export function MetadataTree() {
       );
 
     return { filteredProjects: filtered, expandedFromSearch: toExpand };
-  }, [searchQuery]);
+  }, [searchQuery, databaseMetadata]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -249,7 +249,7 @@ export function MetadataTree() {
         </div>
 
         <div className="flex-1 space-y-0.5 overflow-y-auto">
-          {!staticDatabaseMetadata ? (
+          {!databaseMetadata ? (
             <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
               <div className="text-center text-sm text-muted-foreground">
                 No metadata found

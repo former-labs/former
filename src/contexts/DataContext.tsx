@@ -1,5 +1,6 @@
 "use client";
 
+import { staticDatabaseMetadata } from "@/components/navbar/metadata-tree/databaseMetadata";
 import { type Driver } from "@/electron/drivers/driver";
 import { type DatabaseMetadata, type Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -420,5 +421,8 @@ export const useData = () => {
   if (context === undefined) {
     throw new Error("useData must be used within a DataProvider");
   }
-  return context;
+  return {
+    ...context,
+    databaseMetadata: staticDatabaseMetadata,
+  };
 };
