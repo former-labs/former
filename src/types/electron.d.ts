@@ -4,7 +4,19 @@ export interface IElectronAPI {
   database: {
     connect: (integration: Integration) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
-    execute: (connectionId: string, query: string) => Promise<unknown[]>;
+    execute: (connectionId: string, query: string) => Promise<{
+      jobId: string;
+    }>;
+    cancelJob: (connectionId: string, jobId: string) => Promise<void>;
+    getJobResult: (connectionId: string, jobId: string) => Promise<{
+      status: "complete";
+      result: any[];
+    } | {
+      status: "error";
+      error: string;
+    } | {
+      status: "canceled";
+    }>;
     getProjectsAndDatasets: (connectionId: string) => Promise<{
       projects: Project[];
     }>;
@@ -12,6 +24,7 @@ export interface IElectronAPI {
       tables: Table[];
       nextPageToken?: string;
     }>;
+    disconnectAll: () => Promise<void>;
   };
   send: (channel: string, data: unknown) => void;
   receive: (channel: string, func: (...args: unknown[]) => void) => void;

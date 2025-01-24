@@ -1,6 +1,7 @@
 "use client";
 
-import { type Driver } from "@/electron/drivers/clients";
+import { type Driver } from "@/electron/drivers/driver";
+import { api } from "@/trpc/react";
 import { type DatabaseMetadata, type Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -25,7 +26,23 @@ interface DataContextType {
     updates: Omit<Integration, "id" | "createdAt">,
   ) => void;
   removeIntegration: (id: string) => void;
-  executeQuery: (query: string) => Promise<unknown[]>;
+  executeQuery: (query: string) => Promise<{
+    jobId: string;
+  }>;
+  cancelQuery: (jobId: string) => Promise<void>;
+  getQueryResult: (jobId: string) => Promise<
+    | {
+        status: "complete";
+        result: any[];
+      }
+    | {
+        status: "error";
+        error: string;
+      }
+    | {
+        status: "canceled";
+      }
+  >;
   loadedDatasets: Set<string>;
   setTableIncludedInAIContext: (params: {
     projectId: string;
@@ -57,7 +74,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const checkStore = () => {
       if (window.electron?.store) {
         setIsStoreReady(true);
-        console.log("store is ready");
       } else {
         setTimeout(checkStore, 100);
       }
@@ -313,6 +329,27 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const cancelQuery = async (jobId: string) => {
+    if (!activeIntegration?.id) {
+      throw new Error("No active integration");
+    }
+
+    await window.electron.database.cancelJob(activeIntegration.id, jobId);
+  };
+
+  const getQueryResult = async (jobId: string) => {
+    if (!activeIntegration?.id) {
+      throw new Error("No active integration");
+    }
+
+    console.log("database", window.electron.database);
+    const result = await window.electron.database.getJobResult(
+      activeIntegration.id,
+      jobId,
+    );
+    return result;
+  };
+
   const setTableIncludedInAIContext = ({
     projectId,
     datasetId,
@@ -369,6 +406,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         editIntegration,
         removeIntegration,
         executeQuery,
+        cancelQuery,
+        getQueryResult,
         setTableIncludedInAIContext,
       }}
     >
@@ -382,5 +421,69 @@ export const useData = () => {
   if (context === undefined) {
     throw new Error("useData must be used within a DataProvider");
   }
-  return context;
+
+  const utils = api.useUtils();
+  const { data: databaseMetadata, isLoading } =
+    api.databaseMetadata.getDatabaseMetadata.useQuery();
+
+  const { mutate: setDatabaseMetadataMutation } =
+    api.databaseMetadata.setDatabaseMetadata.useMutation({
+      onSuccess: () => {
+        // void utils.databaseMetadata.getDatabaseMetadata.invalidate();
+      },
+    });
+
+  const setTableIncludedInAIContext = ({
+    projectId,
+    datasetId,
+    tableId,
+    value,
+  }: {
+    projectId: string;
+    datasetId: string;
+    tableId: string;
+    value: boolean;
+  }) => {
+    if (!databaseMetadata) return;
+
+    const updatedMetadata = {
+      projects: databaseMetadata.projects.map((project) => {
+        if (project.id !== projectId) return project;
+        return {
+          ...project,
+          datasets: project.datasets.map((dataset) => {
+            if (dataset.id !== datasetId) return dataset;
+            return {
+              ...dataset,
+              tables: dataset.tables.map((table) => {
+                if (table.id !== tableId) return table;
+                return {
+                  ...table,
+                  includedInAIContext: value,
+                };
+              }),
+            };
+          }),
+        };
+      }),
+    };
+
+    // Optimistically update the cache
+    void utils.databaseMetadata.getDatabaseMetadata.cancel();
+    utils.databaseMetadata.getDatabaseMetadata.setData(
+      undefined,
+      updatedMetadata,
+    );
+
+    setDatabaseMetadataMutation({
+      databaseMetadata: updatedMetadata,
+    });
+  };
+
+  return {
+    ...context,
+    databaseMetadata,
+    isFetchingMetadata: isLoading,
+    setTableIncludedInAIContext,
+  };
 };

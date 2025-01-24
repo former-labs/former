@@ -18,10 +18,12 @@ interface QueryResultStore {
   resultLoading: boolean;
   resultError: string | null;
   queryStartTime: Date | null;
+  currentJobId: string | null;
   setResult: (result: ResultRow[] | null) => void;
   setResultLoading: (resultLoading: boolean) => void;
   setResultError: (resultError: string | null) => void;
   setQueryStartTime: (time: Date | null) => void;
+  setCurrentJobId: (jobId: string | null) => void;
 }
 
 const useQueryResultStore = create<QueryResultStore>((set) => ({
@@ -29,15 +31,17 @@ const useQueryResultStore = create<QueryResultStore>((set) => ({
   resultLoading: false,
   resultError: null,
   queryStartTime: null,
+  currentJobId: null,
   setResult: (result) => set({ result }),
   setResultLoading: (resultLoading) => set({ resultLoading }),
   setResultError: (resultError) => set({ resultError }),
   setQueryStartTime: (time) => set({ queryStartTime: time }),
+  setCurrentJobId: (jobId) => set({ currentJobId: jobId }),
 }));
 
 export const useQueryResult = () => {
   const store = useQueryResultStore();
-  const { executeQuery } = useData();
+  const { executeQuery, cancelQuery, getQueryResult } = useData();
 
   const handleExecuteQuery = async ({
     editorSelectionContent,
@@ -46,26 +50,46 @@ export const useQueryResult = () => {
     editorSelectionContent: string | null;
     editorContent: string;
   }) => {
+    store.setResult(null);
     store.setResultLoading(true);
     store.setResultError(null);
     store.setQueryStartTime(new Date());
     
-    try {
-      // Use pending content if available, otherwise use current content
-      const query = editorSelectionContent ?? editorContent;
-      console.log("Executing query", [query]);
-      const rawResult = await executeQuery(query);
-      // console.log("rawResult", rawResult);
-      const validatedResult = resultRowSchema.parse(rawResult);
+    // Use pending content if available, otherwise use current content
+    const query = editorSelectionContent ?? editorContent;
+    console.log("Executing query", [query]);
+    
+    const { jobId } = await executeQuery(query);
+    console.log("jobId", jobId);
+    store.setCurrentJobId(jobId);
+
+    const result = await getQueryResult(jobId);
+
+    if (result.status === "error") {
+      console.log("Failed to execute query:", result.error);
+      store.setResultError(result.error);
+      store.setResult(null);
+    } else if (result.status === "complete") {
+      const validatedResult = resultRowSchema.parse(result.result);
       store.setResult(validatedResult);
       console.log("Execute result", validatedResult);
-    } catch (error) {
-      console.error("Failed to execute query:", error);
-      store.setResultError((error as Error).message);
+    } else if (result.status === "canceled") {
+      console.log("Query canceled");
       store.setResult(null);
-    } finally {
+    }
+
+    store.setResultLoading(false);
+    store.setQueryStartTime(null);
+    store.setCurrentJobId(null);
+  };
+
+  const handleCancelQuery = async () => {
+    if (store.currentJobId) {
+      await cancelQuery(store.currentJobId);
+      store.setCurrentJobId(null);
       store.setResultLoading(false);
       store.setQueryStartTime(null);
+      store.setResult(null);
     }
   };
 
@@ -75,5 +99,6 @@ export const useQueryResult = () => {
     resultError: store.resultError,
     queryStartTime: store.queryStartTime,
     executeQuery: handleExecuteQuery,
+    cancelQuery: store.resultLoading ? handleCancelQuery : null,
   };
 };

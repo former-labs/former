@@ -1,5 +1,6 @@
+import { type DatabaseMetadata } from "@/types/connections";
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // /**
 //  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -21,7 +22,6 @@ const updatedAtField = timestamp("updated_at", { withTimezone: true })
 const workspaceIdField = uuid("workspace_id")
     .references(() => workspaceTable.id)
     .notNull();
-
 
 // User
 export const userTable = pgTable("user", {
@@ -132,6 +132,22 @@ export const knowledgeTable = pgTable("knowledge", {
   query: text("query").notNull(),
 });
 
+export const instructionsTable = pgTable("instructions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  workspaceId: workspaceIdField.unique(),
+  instructions: text("instructions").notNull(),
+});
+
+export const databaseMetadataTable = pgTable("database_metadata", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: createdAtField,
+  updatedAt: updatedAtField,
+  workspaceId: workspaceIdField.unique(),
+  databaseMetadata: jsonb("database_metadata").$type<DatabaseMetadata>().notNull(),
+});
+
 export type ConversationSelect = typeof conversationTable.$inferSelect;
 export type MessageSelect = typeof messageTable.$inferSelect;
 export type MessageItemSelect = typeof messageItemsTable.$inferSelect;
@@ -143,3 +159,4 @@ export type RoleSelectWithRelations = RoleSelect & {
   workspace: WorkspaceSelect;
 };
 export type KnowledgeSelect = typeof knowledgeTable.$inferSelect;
+export type InstructionsSelect = typeof instructionsTable.$inferSelect;

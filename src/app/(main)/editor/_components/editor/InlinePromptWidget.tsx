@@ -8,6 +8,7 @@ import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useEventListener } from "usehooks-ts";
+import { filterDatabaseMetadataContext } from "../chat/chatStore";
 import {
   useActiveEditor,
   useActiveEditorInlinePromptWidget,
@@ -33,6 +34,8 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
 
   const { databaseMetadata } = useData();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
+  const { data: instructions, isLoading: instructionsLoading } =
+    api.instructions.getInstructions.useQuery();
 
   const inlineEditMutation = api.editor.inlineEdit.useMutation();
 
@@ -69,7 +72,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
   useEventListener("keydown", handleKeyDown);
 
   const handleSubmit = async () => {
-    if (!text.trim() || !databaseMetadata) return;
+    if (!text.trim() || !databaseMetadata || instructionsLoading) return;
 
     const response = await inlineEditMutation.mutateAsync({
       userMessage: text,
@@ -78,8 +81,9 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
         startLineNumber: lineNumberStart,
         endLineNumber: lineNumberEnd,
       },
-      databaseMetadata,
+      databaseMetadata: filterDatabaseMetadataContext(databaseMetadata),
       knowledge: knowledgeList,
+      instructions: instructions ?? "",
     });
 
     const updatedEditorContent = [

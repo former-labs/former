@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   type ColDef,
   AllCommunityModule,
@@ -7,7 +8,54 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useEffect, useMemo, useState } from "react";
+import { QueryResultError } from "./QueryResultError";
+import { QueryResultHeader } from "./QueryResultHeader";
 import { type ResultRow, useQueryResult } from "./queryResultStore";
+
+export const QueryResultPane = () => {
+  const { result, resultLoading, resultError, queryStartTime, cancelQuery } =
+    useQueryResult();
+
+  if (resultLoading) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center">
+        <div className="text-gray-500">Loading query results...</div>
+        {queryStartTime && <QueryTimer startTime={queryStartTime} />}
+        {cancelQuery && (
+          <Button
+            onClick={() => cancelQuery()}
+            className="mt-4 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+          >
+            Cancel Query
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  if (resultError) {
+    return <QueryResultError resultError={resultError} />;
+  }
+
+  if (!result) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-gray-500">
+          No results yet. Execute a query to see results.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col bg-gray-100 p-0">
+      <QueryResultHeader data={result} />
+      <div className="flex-grow">
+        <TableDataView data={result} />
+      </div>
+    </div>
+  );
+};
 
 const QueryTimer = ({ startTime }: { startTime: Date }) => {
   const [elapsedTime, setElapsedTime] = useState("0s");
@@ -26,43 +74,6 @@ const QueryTimer = ({ startTime }: { startTime: Date }) => {
   );
 };
 
-export const QueryResultPane = () => {
-  const { result, resultLoading, resultError, queryStartTime } =
-    useQueryResult();
-
-  if (resultLoading) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center">
-        <div className="text-gray-500">Loading query results...</div>
-        {queryStartTime && <QueryTimer startTime={queryStartTime} />}
-      </div>
-    );
-  }
-
-  if (resultError) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-red-500">{resultError}</div>
-      </div>
-    );
-  }
-
-  if (!result) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-gray-500">
-          No results yet. Execute a query to see results.
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-full bg-gray-50 p-0">
-      <TableDataView data={result} />
-    </div>
-  );
-};
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const TableDataView = ({ data }: { data: ResultRow[] }) => {

@@ -1,6 +1,5 @@
 "use client";
 
-import { IntegrationSwitcher } from "@/app/(main)/integrations/_components/integration-switcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,9 +39,9 @@ export default function AdminEvalPage() {
         <h1 className="text-3xl font-bold">SQL Eval</h1>
       </div>
 
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <IntegrationSwitcher />
-      </div>
+      </div> */}
 
       <Card className="p-4">
         <div className="mb-4">

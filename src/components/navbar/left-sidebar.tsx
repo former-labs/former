@@ -7,8 +7,9 @@ import {
   Code,
   Command,
   Database,
+  FileText,
   GalleryVerticalEnd,
-  Plug,
+  ScrollText,
   Settings2,
   SquareTerminal,
 } from "lucide-react";
@@ -25,7 +26,12 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { PATH_EDITOR, PATH_INTEGRATIONS, PATH_KNOWLEDGE } from "@/lib/paths";
+import {
+  PATH_DATABASE_METADATA,
+  PATH_EDITOR,
+  PATH_INSTRUCTIONS,
+  PATH_KNOWLEDGE,
+} from "@/lib/paths";
 
 // This is sample data.
 const data = {
@@ -145,13 +151,18 @@ const data = {
       icon: Code,
     },
     {
-      name: "Integrations",
-      url: PATH_INTEGRATIONS,
-      icon: Plug,
+      name: "AI Instructions",
+      url: PATH_INSTRUCTIONS,
+      icon: FileText,
     },
     {
       name: "AI Knowledge",
       url: PATH_KNOWLEDGE,
+      icon: ScrollText,
+    },
+    {
+      name: "Database Schema",
+      url: PATH_DATABASE_METADATA,
       icon: Database,
     },
   ],

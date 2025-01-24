@@ -36,7 +36,8 @@ export const editorRouter = createTRPCRouter({
         workspaceId: z.string(),
         createdAt: z.date(),
         updatedAt: z.date(),
-      }))
+      })),
+      instructions: z.string(),
     }))
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
@@ -56,6 +57,10 @@ The user is writing SQL code in the editor.
 They may ask you a question, or they may ask you to modify the code.
 Please respond appropriately based on the user's request.
 
+When generating SQL code, you should copy their code style.
+
+${formatInstructions({ instructions: input.instructions })}
+
 To help you write queries, you must adhere to the below database schema.
 Do not generate SQL code that is not for the provided database schema.
 
@@ -64,8 +69,6 @@ suggest that they should check it is included in the AI schema context using the
 
 If they persist and ask you to write it regardless, you can generate it, however you should include
 comments in places where you are unsure of the schema.
-
-When generating SQL code, you should copy their code style.
 
 ${formatDatabaseMetadata(input.databaseMetadata)}
 
@@ -174,6 +177,7 @@ The knowledge sources for each SQL query.
           })),
         })
       ])).min(1),
+      instructions: z.string(),
     }))
     .mutation(async ({ input }) => {
       const initialSystemMessage: ChatCompletionMessageParam = {
@@ -189,6 +193,8 @@ and modify only the relevant part of the code.
 
 Feel free to use SQL comments to act as shorthand for sections of the code you are not modifying.
 e.g. -- Existing query that does X goes here
+
+${formatInstructions({ instructions: input.instructions })}
 
 <EXAMPLE>
 An example of how you should apply the changes is below:
@@ -265,7 +271,8 @@ ${input.applyContent}
         workspaceId: z.string(),
         createdAt: z.date(),
         updatedAt: z.date(),
-      }))
+      })),
+      instructions: z.string(),
     }))
     .mutation(async ({ input }) => {
       // For now, just log the editor content and database metadata
@@ -289,6 +296,8 @@ If the change does not make sense, you can ignore it and just return the entire 
 
 When generating SQL code, you should copy the code style in their editor.
 It should appear like a natural modification to the existing editor SQL.
+
+${formatInstructions({ instructions: input.instructions })}
 
 To help you write queries, you must adhere to the below database schema.
 Do not generate SQL code that is not for the provided database schema.
@@ -704,4 +713,20 @@ ${msg.content}`
       }
     }
   });
+};
+
+const formatInstructions = ({
+  instructions
+}: {
+  instructions: string;
+}): string => {
+  if (!instructions) return "";
+
+  return `\
+<GUIDANCE>
+The user has provided the following extra guidance/instructions.
+Please ensure you take into account these instructions or context when responding:
+
+${instructions}
+</GUIDANCE>`;
 };
