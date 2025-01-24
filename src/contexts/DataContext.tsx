@@ -422,13 +422,68 @@ export const useData = () => {
     throw new Error("useData must be used within a DataProvider");
   }
 
+  const utils = api.useUtils();
   const { data: databaseMetadata, isLoading } =
     api.databaseMetadata.getDatabaseMetadata.useQuery();
 
+  const { mutate: setDatabaseMetadataMutation } =
+    api.databaseMetadata.setDatabaseMetadata.useMutation({
+      onSuccess: () => {
+        // void utils.databaseMetadata.getDatabaseMetadata.invalidate();
+      },
+    });
+
+  const setTableIncludedInAIContext = ({
+    projectId,
+    datasetId,
+    tableId,
+    value,
+  }: {
+    projectId: string;
+    datasetId: string;
+    tableId: string;
+    value: boolean;
+  }) => {
+    if (!databaseMetadata) return;
+
+    const updatedMetadata = {
+      projects: databaseMetadata.projects.map((project) => {
+        if (project.id !== projectId) return project;
+        return {
+          ...project,
+          datasets: project.datasets.map((dataset) => {
+            if (dataset.id !== datasetId) return dataset;
+            return {
+              ...dataset,
+              tables: dataset.tables.map((table) => {
+                if (table.id !== tableId) return table;
+                return {
+                  ...table,
+                  includedInAIContext: value,
+                };
+              }),
+            };
+          }),
+        };
+      }),
+    };
+
+    // Optimistically update the cache
+    void utils.databaseMetadata.getDatabaseMetadata.cancel();
+    utils.databaseMetadata.getDatabaseMetadata.setData(
+      undefined,
+      updatedMetadata,
+    );
+
+    setDatabaseMetadataMutation({
+      databaseMetadata: updatedMetadata,
+    });
+  };
+
   return {
     ...context,
-    // databaseMetadata: staticDatabaseMetadata,
     databaseMetadata,
     isFetchingMetadata: isLoading,
+    setTableIncludedInAIContext,
   };
 };
