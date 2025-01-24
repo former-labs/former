@@ -9,7 +9,6 @@ import {
   Database,
   FileText,
   GalleryVerticalEnd,
-  Plug,
   ScrollText,
   Settings2,
   SquareTerminal,
@@ -31,9 +30,7 @@ import {
   PATH_DATABASE_METADATA,
   PATH_EDITOR,
   PATH_INSTRUCTIONS,
-  PATH_INTEGRATIONS,
   PATH_KNOWLEDGE,
-  PATH_SCHEMA,
 } from "@/lib/paths";
 
 // This is sample data.
