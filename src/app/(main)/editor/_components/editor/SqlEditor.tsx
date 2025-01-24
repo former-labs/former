@@ -25,7 +25,6 @@ export const SqlEditor = () => {
     editorContentOld,
     setEditorContent,
     setEditorContentOld,
-    editorSelectionContent,
     editorSelection,
     inlinePromptWidgets,
     setInlinePromptWidgets,
