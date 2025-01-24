@@ -12,14 +12,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
+import { PATH_DATABASE_METADATA } from "@/lib/paths";
 import type { Dataset, Field, Project, Table } from "@/types/connections";
 import {
+  ArrowRight,
   ChevronDown,
   ChevronRight,
   Database,
   Search,
   Table as TableIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 // Type augmentations for search functionality
@@ -49,7 +52,8 @@ export function MetadataTree() {
   );
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const { databaseMetadata } = useData();
+  const { databaseMetadata, isFetchingMetadata } = useData();
+  const router = useRouter();
 
   useEffect(() => {
     // Initialize with all project IDs expanded
@@ -248,13 +252,22 @@ export function MetadataTree() {
           </div>
         </div>
 
-        <div className="flex-1 space-y-0.5 overflow-y-auto">
-          {!databaseMetadata ? (
-            <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
-              <div className="text-center text-sm text-muted-foreground">
-                No metadata found
-              </div>
+        <div className="flex-1 space-y-0.5 overflow-y-auto px-2 pt-2">
+          {isFetchingMetadata ? (
+            <div className="flex h-32 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
             </div>
+          ) : databaseMetadata ? (
+            <Button
+              variant="destructive"
+              className="w-full justify-start p-8"
+              onClick={() => router.push(PATH_DATABASE_METADATA)}
+            >
+              <span className="text-wrap">
+                No database schema found. Upload schema
+              </span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           ) : (
             filteredProjects?.map((project) => (
               <ProjectItem
