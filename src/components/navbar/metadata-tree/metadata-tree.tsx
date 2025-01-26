@@ -19,34 +19,22 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
-import type { Dataset, Field, Project, Table } from "@/types/connections";
 import {
   ArrowRight,
   ChevronDown,
   ChevronRight,
   Database,
   Search,
-  Table as TableIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-
-// Type augmentations for search functionality
-type TableExtended = Table & {
-  _originalFieldCount?: number;
-};
-
-type DatasetExtended = Omit<Dataset, "tables"> & {
-  _originalTableCount?: number;
-  tables: TableExtended[];
-};
-
-type ProjectExtended = Omit<Project, "datasets"> & {
-  _originalDatasetCount?: number;
-  datasets: DatasetExtended[];
-};
-
-type FieldExtended = Field;
+import {
+  type DatasetExtended,
+  HighlightedText,
+  type ProjectExtended,
+  type TableExtended,
+} from "./common";
+import { TableItem } from "./TableItem";
 
 // Main component
 export function MetadataTree() {
@@ -66,6 +54,7 @@ export function MetadataTree() {
   );
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [hideEmptyDatabases, setHideEmptyDatabases] = useState(true);
 
   useEffect(() => {
     // Initialize with all project IDs expanded
@@ -306,6 +295,21 @@ export function MetadataTree() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <div className="my-4 flex items-center space-x-2">
+                <Checkbox
+                  id="hide-empty"
+                  checked={hideEmptyDatabases}
+                  onCheckedChange={(checked) =>
+                    setHideEmptyDatabases(checked as boolean)
+                  }
+                />
+                <label
+                  htmlFor="hide-empty"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Hide databases with no tables
+                </label>
+              </div>
             </div>
 
             <div className="flex-1 space-y-0.5 overflow-y-auto">
@@ -332,6 +336,7 @@ export function MetadataTree() {
                     toggleDataset={toggleDataset}
                     expandedTables={expandedTables}
                     toggleTable={toggleTable}
+                    hideEmptyDatabases={hideEmptyDatabases}
                   />
                 ))
               )}
@@ -353,6 +358,7 @@ function ProjectItem({
   toggleDataset,
   expandedTables,
   toggleTable,
+  hideEmptyDatabases,
 }: {
   project: ProjectExtended;
   searchQuery: string;
@@ -362,6 +368,7 @@ function ProjectItem({
   toggleDataset: (id: string) => void;
   expandedTables: Set<string>;
   toggleTable: (id: string) => void;
+  hideEmptyDatabases: boolean;
 }) {
   return (
     <div className="space-y-0.5">
@@ -427,6 +434,7 @@ function ProjectItem({
               onToggle={() => toggleDataset(dataset.id)}
               expandedTables={expandedTables}
               toggleTable={toggleTable}
+              hideEmptyDatabases={hideEmptyDatabases}
             />
           ))}
         </div>
@@ -444,6 +452,7 @@ function DatasetItem({
   onToggle,
   expandedTables,
   toggleTable,
+  hideEmptyDatabases,
 }: {
   projectId: string;
   dataset: DatasetExtended;
@@ -452,6 +461,7 @@ function DatasetItem({
   onToggle: () => void;
   expandedTables: Set<string>;
   toggleTable: (id: string) => void;
+  hideEmptyDatabases: boolean;
 }) {
   const { activeIntegration, fetchTablesForDataset, loadingDatasets } =
     useData();
@@ -464,6 +474,15 @@ function DatasetItem({
   };
 
   const isLoading = loadingDatasets.has(dataset.id);
+
+  if (
+    hideEmptyDatabases &&
+    (dataset.tableCount ??
+      dataset._originalTableCount ??
+      dataset.tables.length) === 0
+  ) {
+    return null;
+  }
 
   return (
     <div className="space-y-0.5">
@@ -546,218 +565,5 @@ function DatasetItem({
         </div>
       )}
     </div>
-  );
-}
-
-// Component for table items
-function TableItem({
-  projectId,
-  datasetId,
-  table,
-  searchQuery,
-  isExpanded,
-  onToggle,
-}: {
-  projectId: string;
-  datasetId: string;
-  table: TableExtended;
-  searchQuery: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  const { setTableIncludedInAIContext } = useData();
-
-  return (
-    <div className="space-y-0.5">
-      <div className="flex w-full items-center">
-        <Checkbox
-          checked={table.includedInAIContext}
-          onClick={(e) => {
-            e.stopPropagation();
-            setTableIncludedInAIContext({
-              projectId,
-              datasetId,
-              tableId: table.id,
-              value: !table.includedInAIContext,
-            });
-          }}
-          className="ml-2"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-full justify-start gap-2"
-          onClick={onToggle}
-        >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex w-full items-center gap-2">
-                <TableIcon className="h-4 w-4" />
-                <span className="truncate">
-                  <HighlightedText text={table.name} query={searchQuery} />
-                </span>
-                <span className="ml-auto flex items-center gap-2">
-                  <Badge variant="secondary">
-                    {table._originalFieldCount ?? table.fields?.length ?? 0}
-                  </Badge>
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">
-                    <HighlightedText text={table.name} query={searchQuery} />
-                  </span>
-                  <Badge variant="secondary">
-                    {table._originalFieldCount ?? table.fields?.length ?? 0}{" "}
-                    fields
-                  </Badge>
-                </div>
-                <div>
-                  {table?.description ? (
-                    <HighlightedText
-                      text={table.description}
-                      query={searchQuery}
-                    />
-                  ) : (
-                    "No description available"
-                  )}
-                </div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </Button>
-      </div>
-      {isExpanded && (
-        <div className="pl-4">
-          {table.fields?.map((field) => (
-            <FieldItem
-              key={field.name}
-              projectId={projectId}
-              datasetId={datasetId}
-              tableId={table.id}
-              field={field}
-              searchQuery={searchQuery}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Component for field items
-function FieldItem({
-  projectId,
-  datasetId,
-  tableId,
-  field,
-  searchQuery,
-  level = 0,
-}: {
-  projectId: string;
-  datasetId: string;
-  tableId: string;
-  field: FieldExtended;
-  searchQuery: string;
-  level?: number;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasNestedFields = field.fields && field.fields.length > 0;
-
-  return (
-    <div className="space-y-0.5">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-full justify-start gap-2"
-        onClick={() => hasNestedFields && setIsExpanded(!isExpanded)}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex w-full items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                {hasNestedFields &&
-                  (isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  ))}
-                <span className="flex-grow truncate text-left">
-                  <HighlightedText text={field.name} query={searchQuery} />
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="ml-auto truncate bg-blue-100"
-              >
-                {field.type}
-                {hasNestedFields && ` (${field.fields?.length})`}
-              </Badge>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-x-2">
-                <div className="font-semibold">
-                  <HighlightedText text={field.name} query={searchQuery} />
-                </div>
-                <Badge variant="secondary">
-                  {field.type}
-                  {hasNestedFields && ` (${field.fields?.length})`}
-                </Badge>
-              </div>
-              <div>
-                {field.description ? (
-                  <HighlightedText
-                    text={field.description}
-                    query={searchQuery}
-                  />
-                ) : (
-                  "No description available"
-                )}
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </Button>
-      {isExpanded && hasNestedFields && (
-        <div className={`space-y-0.5 pl-${level > 0 ? "4" : "6"}`}>
-          {field.fields?.map((nestedField) => (
-            <FieldItem
-              key={nestedField.name}
-              projectId={projectId}
-              datasetId={datasetId}
-              tableId={tableId}
-              field={nestedField}
-              searchQuery={searchQuery}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Helper component for highlighting search matches
-function HighlightedText({ text, query }: { text: string; query: string }) {
-  if (!query) return text;
-  const index = text.toLowerCase().indexOf(query.toLowerCase());
-  if (index === -1) return text;
-  return (
-    <>
-      {text.slice(0, index)}
-      <span className="bg-yellow-200">
-        {text.slice(index, index + query.length)}
-      </span>
-      {text.slice(index + query.length)}
-    </>
   );
 }

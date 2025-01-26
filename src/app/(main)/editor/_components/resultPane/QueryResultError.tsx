@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useData } from "@/contexts/DataContext";
 import { api } from "@/trpc/react";
+import { filterDatabaseMetadataContext } from "../chat/chatStore";
 import { useActiveEditor } from "../editor/editorStore";
 
 export const QueryResultError = ({ resultError }: { resultError: string }) => {
@@ -22,7 +23,7 @@ export const QueryResultError = ({ resultError }: { resultError: string }) => {
         startLineNumber: 1,
         endLineNumber: editorContent.split("\n").length,
       },
-      databaseMetadata,
+      databaseMetadata: filterDatabaseMetadataContext(databaseMetadata),
       knowledge: knowledgeList,
       instructions: instructions ?? "",
     });
