@@ -375,7 +375,7 @@ The request they are making should only apply to this highlighted code, so you s
 ${getEditorSelectionContent({
   editorSelection: input.editorSelection,
   editorContent: input.editorContent
-})}
+}) ?? ""}
 </EDITOR_SELECTION>
 </USER_REQUEST>
 
