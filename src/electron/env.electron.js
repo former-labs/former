@@ -37,7 +37,8 @@ export const env = envSchema.parse(envLocal);
 
 // const envProduction = {
 //   NODE_ENV: "production",
-//   DASHBOARD_URI: "https://desktop.formerlabs.com",
+//   DASHBOARD_URI:
+//     "https://desktop.formerlabs.com?_vercel_share=xOJj7LJ0KbQgyt5InDXNwF9YCN0lsgoa",
 // };
 
 // export const env = envSchema.parse(envProduction);
