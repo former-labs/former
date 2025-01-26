@@ -8,6 +8,7 @@ import { api } from "@/trpc/react";
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useEventListener } from "usehooks-ts";
+import { filterDatabaseMetadataContext } from "../chat/chatStore";
 import {
   useActiveEditor,
   useActiveEditorInlinePromptWidget,
@@ -80,7 +81,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
         startLineNumber: lineNumberStart,
         endLineNumber: lineNumberEnd,
       },
-      databaseMetadata,
+      databaseMetadata: filterDatabaseMetadataContext(databaseMetadata),
       knowledge: knowledgeList,
       instructions: instructions ?? "",
     });
