@@ -19,7 +19,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
-import type { Dataset, Field, Project, Table } from "@/types/connections";
 import {
   ArrowRight,
   ChevronDown,
@@ -30,23 +29,13 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-
-// Type augmentations for search functionality
-type TableExtended = Table & {
-  _originalFieldCount?: number;
-};
-
-type DatasetExtended = Omit<Dataset, "tables"> & {
-  _originalTableCount?: number;
-  tables: TableExtended[];
-};
-
-type ProjectExtended = Omit<Project, "datasets"> & {
-  _originalDatasetCount?: number;
-  datasets: DatasetExtended[];
-};
-
-type FieldExtended = Field;
+import { FieldItem } from "./FieldItem";
+import {
+  type DatasetExtended,
+  HighlightedText,
+  type ProjectExtended,
+  type TableExtended,
+} from "./common";
 
 // Main component
 export function MetadataTree() {
@@ -649,115 +638,5 @@ function TableItem({
         </div>
       )}
     </div>
-  );
-}
-
-// Component for field items
-function FieldItem({
-  projectId,
-  datasetId,
-  tableId,
-  field,
-  searchQuery,
-  level = 0,
-}: {
-  projectId: string;
-  datasetId: string;
-  tableId: string;
-  field: FieldExtended;
-  searchQuery: string;
-  level?: number;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasNestedFields = field.fields && field.fields.length > 0;
-
-  return (
-    <div className="space-y-0.5">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-full justify-start gap-2"
-        onClick={() => hasNestedFields && setIsExpanded(!isExpanded)}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex w-full items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                {hasNestedFields &&
-                  (isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  ))}
-                <span className="flex-grow truncate text-left">
-                  <HighlightedText text={field.name} query={searchQuery} />
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="ml-auto truncate bg-blue-100"
-              >
-                {field.type}
-                {hasNestedFields && ` (${field.fields?.length})`}
-              </Badge>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-x-2">
-                <div className="font-semibold">
-                  <HighlightedText text={field.name} query={searchQuery} />
-                </div>
-                <Badge variant="secondary">
-                  {field.type}
-                  {hasNestedFields && ` (${field.fields?.length})`}
-                </Badge>
-              </div>
-              <div>
-                {field.description ? (
-                  <HighlightedText
-                    text={field.description}
-                    query={searchQuery}
-                  />
-                ) : (
-                  "No description available"
-                )}
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </Button>
-      {isExpanded && hasNestedFields && (
-        <div className={`space-y-0.5 pl-${level > 0 ? "4" : "6"}`}>
-          {field.fields?.map((nestedField) => (
-            <FieldItem
-              key={nestedField.name}
-              projectId={projectId}
-              datasetId={datasetId}
-              tableId={tableId}
-              field={nestedField}
-              searchQuery={searchQuery}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Helper component for highlighting search matches
-function HighlightedText({ text, query }: { text: string; query: string }) {
-  if (!query) return text;
-  const index = text.toLowerCase().indexOf(query.toLowerCase());
-  if (index === -1) return text;
-  return (
-    <>
-      {text.slice(0, index)}
-      <span className="bg-yellow-200">
-        {text.slice(index, index + query.length)}
-      </span>
-      {text.slice(index + query.length)}
-    </>
   );
 }
