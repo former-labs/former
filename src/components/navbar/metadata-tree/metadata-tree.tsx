@@ -54,7 +54,7 @@ export function MetadataTree() {
   );
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const [hideEmptyDatabases, setHideEmptyDatabases] = useState(false);
+  const [hideEmptyDatabases, setHideEmptyDatabases] = useState(true);
 
   useEffect(() => {
     // Initialize with all project IDs expanded
