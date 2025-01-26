@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -53,6 +54,7 @@ export function MetadataTree() {
   );
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [hideEmptyDatabases, setHideEmptyDatabases] = useState(false);
 
   useEffect(() => {
     // Initialize with all project IDs expanded
@@ -293,6 +295,21 @@ export function MetadataTree() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <div className="my-4 flex items-center space-x-2">
+                <Checkbox
+                  id="hide-empty"
+                  checked={hideEmptyDatabases}
+                  onCheckedChange={(checked) =>
+                    setHideEmptyDatabases(checked as boolean)
+                  }
+                />
+                <label
+                  htmlFor="hide-empty"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Hide databases with no tables
+                </label>
+              </div>
             </div>
 
             <div className="flex-1 space-y-0.5 overflow-y-auto">
@@ -319,6 +336,7 @@ export function MetadataTree() {
                     toggleDataset={toggleDataset}
                     expandedTables={expandedTables}
                     toggleTable={toggleTable}
+                    hideEmptyDatabases={hideEmptyDatabases}
                   />
                 ))
               )}
@@ -340,6 +358,7 @@ function ProjectItem({
   toggleDataset,
   expandedTables,
   toggleTable,
+  hideEmptyDatabases,
 }: {
   project: ProjectExtended;
   searchQuery: string;
@@ -349,6 +368,7 @@ function ProjectItem({
   toggleDataset: (id: string) => void;
   expandedTables: Set<string>;
   toggleTable: (id: string) => void;
+  hideEmptyDatabases: boolean;
 }) {
   return (
     <div className="space-y-0.5">
@@ -414,6 +434,7 @@ function ProjectItem({
               onToggle={() => toggleDataset(dataset.id)}
               expandedTables={expandedTables}
               toggleTable={toggleTable}
+              hideEmptyDatabases={hideEmptyDatabases}
             />
           ))}
         </div>
@@ -431,6 +452,7 @@ function DatasetItem({
   onToggle,
   expandedTables,
   toggleTable,
+  hideEmptyDatabases,
 }: {
   projectId: string;
   dataset: DatasetExtended;
@@ -439,6 +461,7 @@ function DatasetItem({
   onToggle: () => void;
   expandedTables: Set<string>;
   toggleTable: (id: string) => void;
+  hideEmptyDatabases: boolean;
 }) {
   const { activeIntegration, fetchTablesForDataset, loadingDatasets } =
     useData();
@@ -451,6 +474,15 @@ function DatasetItem({
   };
 
   const isLoading = loadingDatasets.has(dataset.id);
+
+  if (
+    hideEmptyDatabases &&
+    (dataset.tableCount ??
+      dataset._originalTableCount ??
+      dataset.tables.length) === 0
+  ) {
+    return null;
+  }
 
   return (
     <div className="space-y-0.5">
