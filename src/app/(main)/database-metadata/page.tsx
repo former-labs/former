@@ -8,7 +8,7 @@ import type { DatabaseMetadata } from "@/types/connections";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { JSONEditor } from "./_components/JSONEditor";
-import { MetadataCSVUpload } from "./_components/metadata-csv-upload";
+import { MetadataCSVUpload } from "./_components/MetadataCSVUpload";
 import { ParseDatabaseMetadata } from "./_components/ParseDatabaseMetadata";
 
 export default function Page() {
