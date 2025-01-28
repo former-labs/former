@@ -123,9 +123,10 @@ export default function Page() {
           </h1>
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>
-              <span className="font-medium">1. CSV Upload:</span> Upload a CSV
-              with your schema details (tables, fields, types). We'll help map
-              the columns to the required format.
+              <span className="font-medium">1. CSV Upload:</span> We will give
+              you instructions on how to format and upload a CSV file with your
+              schema details (tables, fields, types). We'll help map the columns
+              to the required format.
             </p>
             <p>
               <span className="font-medium">2. AI-Powered Parsing:</span> Paste
@@ -137,7 +138,7 @@ export default function Page() {
 
         <Tabs defaultValue="csv" className="w-full">
           <TabsList>
-            <TabsTrigger value="csv">CSV Upload</TabsTrigger>
+            <TabsTrigger value="csv">CSV Upload (Recommended)</TabsTrigger>
             <TabsTrigger value="ai">Parse with AI</TabsTrigger>
           </TabsList>
           <TabsContent value="csv">

@@ -71,7 +71,10 @@ type FormValues = z.infer<typeof formSchema>;
 type ColumnMappingKey = keyof DatabaseInstructions["columnMappings"];
 
 interface MetadataCSVUploadProps {
-  onSubmitAction: (metadata: DatabaseMetadata, databaseType: DatabaseType) => void;
+  onSubmitAction: (
+    metadata: DatabaseMetadata,
+    databaseType: DatabaseType,
+  ) => void;
 }
 
 // Register AG Grid modules
@@ -337,47 +340,37 @@ export function MetadataCSVUpload({ onSubmitAction }: MetadataCSVUploadProps) {
 
   useEffect(() => {
     if (csvColumns.length > 0) {
-      const findMatch = (pattern: RegExp) =>
-        csvColumns.find((col) => pattern.test(col)) || "";
-
-      const mappingKeys: ColumnMappingKey[] = [
-        "projectId",
-        "datasetId",
-        "tableName",
-        "tableDescription",
-        "columnName",
-        "columnType",
-        "columnDescription",
-      ];
-
-      const newMappings: FormValues["columnMappings"] = {
-        projectId: "",
-        datasetId: "",
-        tableName: "",
-        columnName: "",
-        columnType: "",
-        tableDescription: "",
-        columnDescription: "",
+      const findMatch = (pattern: RegExp, columns: string[]) => {
+        for (const col of columns) {
+          if (pattern.test(col.toLowerCase())) return col;
+        }
+        return "";
       };
 
-      mappingKeys.forEach((key) => {
-        const patterns: Record<ColumnMappingKey, RegExp> = {
-          projectId: /proj/i,
-          datasetId: /dataset|schema/i,
-          tableName: /table.*name/i,
-          tableDescription: /table.*desc/i,
-          columnName: /col.*name/i,
-          columnType: /type/i,
-          columnDescription: /col.*desc/i,
-        };
+      const patterns: Record<ColumnMappingKey, RegExp> = {
+        projectId: /^project_id$/i,
+        datasetId: /^dataset_id$/i,
+        tableName: /^table_name$/i,
+        tableDescription: /^table_description$/i,
+        columnName: /^column_name$/i,
+        columnType: /^data_type$/i,
+        columnDescription: /^column_description$/i,
+      };
 
-        const match = findMatch(patterns[key]);
+      // Set each field individually
+      Object.entries(patterns).forEach(([key, pattern]) => {
+        const match = findMatch(pattern, csvColumns);
         if (match) {
-          newMappings[key] = match;
+          form.setValue(`columnMappings.${key}`, match, {
+            shouldValidate: true,
+            shouldDirty: true,
+            shouldTouch: true,
+          });
         }
       });
 
-      form.setValue("columnMappings", newMappings);
+      // Force a form validation after all values are set
+      form.trigger();
     }
   }, [csvColumns, form]);
 
