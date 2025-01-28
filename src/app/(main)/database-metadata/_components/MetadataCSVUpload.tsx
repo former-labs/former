@@ -69,10 +69,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 type ColumnMappingKey = keyof DatabaseInstructions["columnMappings"];
-type ColumnMappingPath = `columnMappings.${ColumnMappingKey}`;
 
 interface MetadataCSVUploadProps {
-  onSubmit: (metadata: DatabaseMetadata, databaseType: DatabaseType) => void;
+  onSubmitAction: (metadata: DatabaseMetadata, databaseType: DatabaseType) => void;
 }
 
 // Register AG Grid modules
@@ -308,7 +307,7 @@ function ColumnMappingForm({
   );
 }
 
-export function MetadataCSVUpload({ onSubmit }: MetadataCSVUploadProps) {
+export function MetadataCSVUpload({ onSubmitAction }: MetadataCSVUploadProps) {
   const { toast } = useToast();
   const [uploadedFile, setUploadedFile] = useState<{
     name: string;
@@ -436,7 +435,7 @@ export function MetadataCSVUpload({ onSubmit }: MetadataCSVUploadProps) {
 
     try {
       const metadata = transformToMetadata(csvData, values.columnMappings);
-      onSubmit(metadata, values.databaseType);
+      onSubmitAction(metadata, values.databaseType);
       toast({
         title: "Success",
         description: "Metadata has been processed successfully",

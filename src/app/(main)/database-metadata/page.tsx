@@ -142,7 +142,7 @@ export default function Page() {
             <TabsTrigger value="ai">Parse with AI</TabsTrigger>
           </TabsList>
           <TabsContent value="csv">
-            <MetadataCSVUpload onSubmit={handleMetadataUpdate} />
+            <MetadataCSVUpload onSubmitAction={handleMetadataUpdate} />
           </TabsContent>
           <TabsContent value="ai">
             <ParseDatabaseMetadata onParsed={handleMetadataUpdate} />
