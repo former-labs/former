@@ -13,7 +13,6 @@ import { ParseDatabaseMetadata } from "./_components/ParseDatabaseMetadata";
 
 export default function Page() {
   const [metadata, setMetadata] = useState("");
-  const [parseDialogOpen, setParseDialogOpen] = useState(false);
   const utils = api.useUtils();
   const { toast } = useToast();
 
