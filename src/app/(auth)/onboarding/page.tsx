@@ -56,6 +56,7 @@ export default function OnboardingPage() {
   });
 
   const createWorkspace = api.onboarding.createWorkspace.useMutation();
+  const createUser = api.user.createUser.useMutation();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -81,19 +82,27 @@ export default function OnboardingPage() {
     setError("");
     setIsLoading(true);
 
-    const { role } = await createWorkspace.mutateAsync({
-      workspaceName: values.workspaceName,
-    });
+    try {
+      // Ensure user exists first
+      await createUser.mutateAsync();
 
-    if (!role) {
-      setError("Failed to create workspace");
-      setIsLoading(false);
-      return;
-    } else {
+      const { role } = await createWorkspace.mutateAsync({
+        workspaceName: values.workspaceName,
+      });
+
+      if (!role) {
+        setError("Failed to create workspace");
+        return;
+      }
+
       await handleWorkspaceSwitch(role);
+      router.push("/");
+    } catch (error) {
+      console.error("Onboarding error:", error);
+      setError("Failed to complete onboarding");
+    } finally {
+      setIsLoading(false);
     }
-
-    router.push("/");
   };
 
   return (
