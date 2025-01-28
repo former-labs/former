@@ -1,14 +1,8 @@
 "use client";
 
+import { TableDataView } from "@/app/(main)/editor/_components/resultPane/QueryResultPane";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -17,125 +11,277 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { DATABASE_INSTRUCTIONS } from "@/lib/databaseInstructions";
 import { cn } from "@/lib/utils";
-import type { BigQueryCredentials, Integration } from "@/types/connections";
+import type {
+  DatabaseInstructions,
+  DatabaseMetadata,
+  DatabaseType,
+  Dataset,
+  Project,
+  Table,
+} from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ClientSideRowModelModule, ModuleRegistry } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
 import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
+import Papa from "papaparse";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+const DATABASE_TYPES: DatabaseType[] = [
+  "bigquery",
+  "postgres",
+  "mysql",
+  "sqlserver",
+  "snowflake",
+  "databricks",
+];
+
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  projectId: z.string().min(1, "Project ID is required"),
-  credentials: z.string().min(1, "Service account credentials are required"),
+  databaseType: z.enum([
+    "bigquery",
+    "postgres",
+    "mysql",
+    "sqlserver",
+    "snowflake",
+    "databricks",
+  ] as const),
+  columnMappings: z.object({
+    projectId: z.string().min(1, "Project ID mapping is required"),
+    datasetId: z.string().min(1, "Dataset ID mapping is required"),
+    tableName: z.string().min(1, "Table Name mapping is required"),
+    tableDescription: z.string().optional(),
+    columnName: z.string().min(1, "Column Name mapping is required"),
+    columnType: z.string().min(1, "Column Type mapping is required"),
+    columnDescription: z.string().optional(),
+  }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type ColumnMappingKey = keyof DatabaseInstructions["columnMappings"];
+type ColumnMappingPath = `columnMappings.${ColumnMappingKey}`;
 
-export interface BigQueryConnectModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  integration?: Integration;
-  onSubmit: (params: {
-    id: string | null;
-    integration: Omit<Integration, "id" | "createdAt">;
-  }) => void;
+interface MetadataCSVUploadProps {
+  onSubmit: (metadata: DatabaseMetadata, databaseType: DatabaseType) => void;
 }
 
-export function BigQueryConnectModal({
-  open,
-  onOpenChange,
-  integration,
-  onSubmit,
-}: BigQueryConnectModalProps) {
+// Register AG Grid modules
+ModuleRegistry.registerModules([ClientSideRowModelModule]);
+
+export function MetadataCSVUpload({ onSubmit }: MetadataCSVUploadProps) {
   const { toast } = useToast();
   const [uploadedFile, setUploadedFile] = useState<{
     name: string;
     size: number;
   } | null>(null);
+  const [csvData, setCSVData] = useState<any[]>([]);
+  const [csvColumns, setCSVColumns] = useState<string[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      projectId: "",
-      credentials: "",
+      databaseType: "" as DatabaseType,
+      columnMappings: {
+        projectId: "",
+        datasetId: "",
+        tableName: "",
+        columnName: "",
+        columnType: "",
+        tableDescription: "",
+        columnDescription: "",
+      },
     },
   });
 
-  // Update form values when integration changes
-  useEffect(() => {
-    if (integration) {
-      form.reset({
-        name: integration.name,
-        projectId: (integration.credentials as BigQueryCredentials).project_id,
-        credentials: JSON.stringify(integration.credentials, null, 2),
-      });
-    }
-  }, [integration, form]);
+  const selectedDatabaseType = form.watch("databaseType");
+  const databaseInstructions = DATABASE_INSTRUCTIONS[selectedDatabaseType];
 
-  // Reset form when modal closes
   useEffect(() => {
-    if (!open) {
-      form.reset({
-        name: "",
+    if (csvColumns.length > 0) {
+      const findMatch = (pattern: RegExp) =>
+        csvColumns.find((col) => pattern.test(col)) || "";
+
+      const mappingKeys: ColumnMappingKey[] = [
+        "projectId",
+        "datasetId",
+        "tableName",
+        "tableDescription",
+        "columnName",
+        "columnType",
+        "columnDescription",
+      ];
+
+      const newMappings: FormValues["columnMappings"] = {
         projectId: "",
-        credentials: "",
-      });
-      setUploadedFile(null);
-    }
-  }, [open, form]);
+        datasetId: "",
+        tableName: "",
+        columnName: "",
+        columnType: "",
+        tableDescription: "",
+        columnDescription: "",
+      };
 
-  const updateProjectIdFromCredentials = (jsonString: string) => {
-    try {
-      const credentials = JSON.parse(jsonString);
-      if (credentials.project_id && !form.getValues("projectId")) {
-        form.setValue("projectId", credentials.project_id, {
-          shouldValidate: true,
+      mappingKeys.forEach((key) => {
+        const patterns: Record<ColumnMappingKey, RegExp> = {
+          projectId: /proj/i,
+          datasetId: /dataset|schema/i,
+          tableName: /table.*name/i,
+          tableDescription: /table.*desc/i,
+          columnName: /col.*name/i,
+          columnType: /type/i,
+          columnDescription: /col.*desc/i,
+        };
+
+        const match = findMatch(patterns[key]);
+        if (match) {
+          newMappings[key] = match;
+        }
+      });
+
+      form.setValue("columnMappings", newMappings);
+    }
+  }, [csvColumns, form]);
+
+  const transformToMetadata = (
+    data: any[],
+    mappings: FormValues["columnMappings"],
+  ): DatabaseMetadata => {
+    const projectMap = new Map<string, Project>();
+
+    data.forEach((row) => {
+      const projectId = row[mappings.projectId] || "default";
+      const datasetId = row[mappings.datasetId] || "default";
+      const tableId = row[mappings.tableName];
+
+      if (!tableId) return;
+
+      if (!projectMap.has(projectId)) {
+        projectMap.set(projectId, {
+          id: projectId,
+          name: projectId,
+          description: null,
+          datasets: [],
         });
       }
-    } catch (error) {
-      console.error(error);
-    }
+
+      const project = projectMap.get(projectId)!;
+      let dataset = project.datasets.find((d: Dataset) => d.id === datasetId);
+
+      if (!dataset) {
+        dataset = {
+          id: datasetId,
+          name: datasetId,
+          description: null,
+          tableCount: 0,
+          tables: [],
+        };
+        project.datasets.push(dataset);
+      }
+
+      let table = dataset.tables.find((t: Table) => t.id === tableId);
+
+      if (!table) {
+        const tableDescription =
+          mappings.tableDescription && row[mappings.tableDescription];
+        table = {
+          id: tableId,
+          name: tableId,
+          description: tableDescription || null,
+          fields: [],
+          includedInAIContext: true,
+        };
+        dataset.tables.push(table);
+        dataset.tableCount++;
+      }
+
+      const columnName = row[mappings.columnName];
+      const columnType = row[mappings.columnType];
+      const columnDescription =
+        mappings.columnDescription && row[mappings.columnDescription];
+
+      if (!columnName || !columnType) return;
+
+      table.fields.push({
+        name: columnName,
+        type: columnType,
+        description: columnDescription || null,
+      });
+    });
+
+    return {
+      projects: Array.from(projectMap.values()),
+    };
   };
 
-  const handleConnect = (values: FormValues) => {
-    try {
-      // Validate JSON
-      const credentials = JSON.parse(values.credentials);
-
-      onSubmit({
-        id: integration?.id ?? null,
-        integration: {
-          type: "bigquery",
-          credentials,
-          name: values.name,
-          config: {
-            projectId: values.projectId,
-          },
-        },
-      });
-
+  const handleSubmit = (values: FormValues) => {
+    if (!csvData.length) {
       toast({
-        title: integration ? "Updated successfully" : "Connected successfully",
-        description: integration
-          ? "BigQuery integration has been updated."
-          : "BigQuery integration has been set up.",
+        title: "Error",
+        description: "Please upload a CSV file first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const requiredMappings = Object.entries(
+      databaseInstructions.columnMappings,
+    ).filter(
+      ([key]) =>
+        !values.columnMappings[key as keyof FormValues["columnMappings"]],
+    );
+
+    if (requiredMappings.length > 0) {
+      toast({
+        title: "Error",
+        description: `Missing column mappings: ${requiredMappings.map(([key]) => key).join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const metadata = transformToMetadata(csvData, values.columnMappings);
+      onSubmit(metadata, values.databaseType);
+      toast({
+        title: "Success",
+        description: "Metadata has been processed successfully",
+        variant: "default",
       });
     } catch (error) {
       console.error(error);
       toast({
         title: "Error",
-        description: "Invalid JSON credentials",
+        description: "Failed to process metadata",
         variant: "destructive",
       });
     }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setCSVData([]);
+    setCSVColumns([]);
+    form.setValue("columnMappings", {
+      projectId: "",
+      datasetId: "",
+      tableName: "",
+      columnName: "",
+      columnType: "",
+      tableDescription: "",
+      columnDescription: "",
+    });
   };
 
   const onDrop = useCallback(
@@ -143,50 +289,45 @@ export function BigQueryConnectModal({
       const file = acceptedFiles[0];
       if (!file) return;
 
-      try {
-        const text = await file.text();
-        // Validate JSON
-        JSON.parse(text);
-        form.setValue("credentials", text, { shouldValidate: true });
-        updateProjectIdFromCredentials(text);
-        setUploadedFile({
-          name: file.name,
-          size: file.size,
-        });
-      } catch (error) {
-        console.error(error);
-        toast({
-          title: "Invalid JSON file",
-          description: "Please upload a valid service account JSON file",
-          variant: "destructive",
-        });
-      }
+      Papa.parse(file, {
+        complete: (results) => {
+          if (!Array.isArray(results.data) || results.data.length === 0) {
+            toast({
+              title: "Error",
+              description: "Invalid or empty CSV file",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // With header: true, results.data is an array of objects
+          // Get headers from the keys of the first row
+          const headers = Object.keys(
+            results.data[0] as Record<string, unknown>,
+          );
+
+          setCSVColumns(headers);
+          setCSVData(results.data);
+          setUploadedFile({
+            name: file.name,
+            size: file.size,
+          });
+        },
+        header: true,
+        skipEmptyLines: true,
+      });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [form, toast],
+    [toast],
   );
-
-  const handleRemoveFile = () => {
-    setUploadedFile(null);
-    form.setValue("credentials", "");
-    if (!form.getValues("projectId")) {
-      form.setValue("projectId", "");
-    }
-  };
-
-  const handleCredentialsChange = (value: string) => {
-    form.setValue("credentials", value, { shouldValidate: true });
-    updateProjectIdFromCredentials(value);
-  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
-      void onDrop(acceptedFiles);
+      onDrop(acceptedFiles).catch(console.error);
     },
     accept: {
-      "application/json": [".json"],
+      "text/csv": [".csv"],
     },
-    maxSize: 1024 * 1024, // 1MB
+    maxSize: 10 * 1024 * 1024, // 10MB
     multiple: false,
   });
 
@@ -199,145 +340,175 @@ export function BigQueryConnectModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>
-            {integration ? "Edit BigQuery Connection" : "Connect BigQuery"}
-          </DialogTitle>
-          <DialogDescription>
-            {integration
-              ? "Update your BigQuery connection details."
-              : "Connect to BigQuery by providing your project ID and service account credentials."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Separator className="my-4" />
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleConnect)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
+    <div className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="databaseType"
+            render={({ field }) => (
+              <FormItem className="max-w-[300px]">
+                <FormLabel>Database Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input placeholder="My BigQuery Integration" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a database type" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {DATABASE_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="your-project-id" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {selectedDatabaseType && (
+            <>
+              {/* Database Instructions */}
+              <Card className="p-4">
+                <h3 className="mb-2 font-medium">Instructions</h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  {databaseInstructions.description}
+                </p>
+                <div className="rounded-md bg-muted p-4">
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {databaseInstructions.query}
+                  </pre>
+                </div>
+              </Card>
 
-            <FormField
-              control={form.control}
-              name="credentials"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Service Account JSON</FormLabel>
-                  <FormControl>
-                    <div className="space-y-4">
-                      {!uploadedFile ? (
-                        <Card
-                          {...getRootProps()}
-                          className={cn(
-                            "relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors",
-                            isDragActive
-                              ? "border-primary bg-muted/30"
-                              : "border-muted-foreground/25",
-                          )}
-                        >
-                          <input {...getInputProps()} />
-                          <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                          <p className="mt-2 text-sm font-medium">
-                            <span className="text-primary">
-                              Click to upload
-                            </span>{" "}
-                            or drag and drop
-                          </p>
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            JSON file only (max. 1MB)
-                          </p>
-                        </Card>
-                      ) : (
-                        <Card className="relative flex items-center justify-between p-4">
-                          <div className="flex items-center space-x-4">
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {uploadedFile.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFileSize(uploadedFile.size)}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleRemoveFile}
-                            className="text-destructive hover:text-destructive/90"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </Card>
-                      )}
-
-                      <div className="relative py-2">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-background px-2 text-muted-foreground">
-                            Or paste credentials
-                          </span>
-                        </div>
+              <div className="space-y-4">
+                {!uploadedFile ? (
+                  <Card
+                    {...getRootProps()}
+                    className={cn(
+                      "relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors",
+                      isDragActive
+                        ? "border-primary bg-muted/30"
+                        : "border-muted-foreground/25",
+                    )}
+                  >
+                    <input {...getInputProps()} />
+                    <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                    <p className="mt-2 text-sm font-medium">
+                      <span className="text-primary">Click to upload</span> or
+                      drag and drop
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      CSV file only (max. 10MB)
+                    </p>
+                  </Card>
+                ) : (
+                  <Card className="relative flex items-center justify-between p-4">
+                    <div className="flex items-center space-x-4">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium">
+                          {uploadedFile.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatFileSize(uploadedFile.size)}
+                        </p>
                       </div>
-
-                      <Textarea
-                        placeholder="Paste your service account JSON here..."
-                        className="min-h-[200px]"
-                        {...field}
-                        onChange={(e) =>
-                          handleCredentialsChange(e.target.value)
-                        }
-                      />
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveFile}
+                      className="text-destructive hover:text-destructive/90"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </Card>
+                )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={!form.formState.isValid}
-            >
-              {integration ? "Save Changes" : "Connect BigQuery"}
-            </Button>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                {csvData.length > 0 && (
+                  <div style={{ height: "400px", width: "100%" }}>
+                    <TableDataView data={csvData} />
+                  </div>
+                )}
+
+                {csvColumns.length > 0 && (
+                  <Card className="p-4">
+                    <h3 className="mb-2 font-medium">Column Mappings</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(databaseInstructions.columnMappings).map(
+                        ([key, expectedColumn]) => {
+                          const fieldPath = `columnMappings.${key}` as const;
+                          return (
+                            <FormField
+                              key={key}
+                              control={form.control}
+                              name={fieldPath}
+                              render={({ field }) => (
+                                <FormItem className="space-y-1">
+                                  <FormLabel
+                                    className={cn(
+                                      "text-xs",
+                                      !field.value && "text-destructive",
+                                    )}
+                                  >
+                                    {key
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) =>
+                                        str.toUpperCase(),
+                                      )}{" "}
+                                    <span className="text-xs text-muted-foreground">
+                                      ({expectedColumn})
+                                    </span>
+                                  </FormLabel>
+                                  <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value || ""}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger
+                                        className={cn(
+                                          "h-8",
+                                          !field.value && "bg-destructive",
+                                        )}
+                                      >
+                                        <SelectValue placeholder="Select a column" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {csvColumns.map((column) => (
+                                        <SelectItem key={column} value={column}>
+                                          {column}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          );
+                        },
+                      )}
+                    </div>
+                  </Card>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!csvData.length || !form.formState.isValid}
+              >
+                Process Metadata
+              </Button>
+            </>
+          )}
+        </form>
+      </Form>
+    </div>
   );
 }
