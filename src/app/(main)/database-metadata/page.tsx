@@ -5,8 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { JSONEditor } from "./JSONEditor";
-import { ParseDatabaseMetadataDialog } from "./ParseDatabaseMetadataDialog";
+import { JSONEditor } from "./_components/JSONEditor";
+import { ParseDatabaseMetadataDialog } from "./_components/ParseDatabaseMetadataDialog";
 
 export default function Page() {
   const [metadata, setMetadata] = useState("");
