@@ -31,38 +31,46 @@ export const databaseMetadataRouter = createTRPCRouter({
       databaseMetadata: databaseMetadataSchema
     }))
     .mutation(async ({ input, ctx }) => {
-      const [updatedMetadata] = await db
-        .update(databaseMetadataTable)
-        .set({
-          databaseMetadata: input.databaseMetadata,
-        })
-        .where(eq(databaseMetadataTable.workspaceId, ctx.activeWorkspaceId))
-        .returning({
-          id: databaseMetadataTable.id
-        });
-
-      if (!updatedMetadata) {
-        const [newMetadata] = await db
-          .insert(databaseMetadataTable)
-          .values({
+      try {
+        const [updatedMetadata] = await db
+          .update(databaseMetadataTable)
+          .set({
             databaseMetadata: input.databaseMetadata,
-            workspaceId: ctx.activeWorkspaceId
           })
+          .where(eq(databaseMetadataTable.workspaceId, ctx.activeWorkspaceId))
           .returning({
-            id: databaseMetadataTable.id
+            id: databaseMetadataTable.id,
           });
 
-        if (!newMetadata) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to set database metadata'
-          });
+        if (!updatedMetadata) {
+          const [newMetadata] = await db
+            .insert(databaseMetadataTable)
+            .values({
+              databaseMetadata: input.databaseMetadata,
+              workspaceId: ctx.activeWorkspaceId,
+            })
+            .returning({
+              id: databaseMetadataTable.id,
+            });
+
+          if (!newMetadata) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to set database metadata",
+            });
+          }
+
+          return newMetadata;
         }
 
-        return newMetadata;
+        return updatedMetadata;
+      } catch (error) {
+        console.error("Error setting database metadata:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to set database metadata",
+        });
       }
-
-      return updatedMetadata;
     }),
 
   parseDatabaseMetadataWithAI: workspaceProtectedProcedure

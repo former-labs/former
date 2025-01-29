@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-import { MetadataTree } from "@/components/navbar/metadata-tree/metadata-tree";
+import { MetadataTree } from "@/components/navbar/metadata-tree/MetadataTree";
 import { NavPages } from "@/components/navbar/nav-pages";
 import { NavUser } from "@/components/navbar/nav-user";
 import { WorkspaceSwitcher } from "@/components/navbar/workspace-switcher";

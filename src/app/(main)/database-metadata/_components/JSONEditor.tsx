@@ -10,7 +10,7 @@ export const JSONEditor = ({
   onChange: (value: string) => void;
 }) => {
   return (
-    <div className="h-[800px] border">
+    <div className="h-[400px] border">
       <div className="h-full">
         <Editor
           height="100%"

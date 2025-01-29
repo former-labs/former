@@ -1,6 +1,6 @@
 "use client";
 
-import { BigQueryConnectModal } from "@/app/(main)/integrations/_components/big-query-connect-modal";
+import { BigQueryConnectModal } from "@/app/(main)/integrations/_components/BigQueryConnectModal";
 import { ExistingIntegrations } from "@/app/(main)/integrations/_components/existing-integrations";
 import { IntegrationCard } from "@/app/(main)/integrations/_components/integration-card";
 import { PostgresConnectModal } from "@/app/(main)/integrations/_components/postgres-connect-modal";

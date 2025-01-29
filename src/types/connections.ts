@@ -23,7 +23,22 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export type DatabaseType = 'bigquery' | 'postgres';
+export type DatabaseType = 'bigquery' | 'postgres' | 'mysql' | 'sqlserver' | 'snowflake' | 'databricks';
+
+export interface DatabaseInstructions {
+  type: DatabaseType;
+  query: string;
+  description: string;
+  columnMappings: {
+    projectId: string;
+    datasetId: string;
+    tableName: string;
+    tableDescription: string;
+    columnName: string;
+    columnType: string;
+    columnDescription: string;
+  };
+}
 
 export type Integration = {
   id: string;

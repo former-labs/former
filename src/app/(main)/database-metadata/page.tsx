@@ -1,16 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
+import type { DatabaseMetadata } from "@/types/connections";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { JSONEditor } from "./JSONEditor";
-import { ParseDatabaseMetadataDialog } from "./ParseDatabaseMetadataDialog";
+import { JSONEditor } from "./_components/JSONEditor";
+import { MetadataCSVUpload } from "./_components/MetadataCSVUpload";
+import { ParseDatabaseMetadata } from "./_components/ParseDatabaseMetadata";
 
 export default function Page() {
   const [metadata, setMetadata] = useState("");
-  const [parseDialogOpen, setParseDialogOpen] = useState(false);
   const utils = api.useUtils();
   const { toast } = useToast();
 
@@ -19,7 +21,7 @@ export default function Page() {
 
   useEffect(() => {
     if (existingMetadata) {
-      setMetadata(JSON.stringify(existingMetadata, null, 2));
+      setMetadata(JSON.stringify(existingMetadata || {}, null, 2));
     }
   }, [existingMetadata]);
 
@@ -27,27 +29,46 @@ export default function Page() {
     api.databaseMetadata.setDatabaseMetadata.useMutation({
       onSuccess: () => {
         void utils.databaseMetadata.getDatabaseMetadata.invalidate();
+        toast({
+          title: "Success",
+          description: "Database metadata has been saved successfully",
+          variant: "default",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to save database metadata",
+          variant: "destructive",
+        });
       },
     });
 
   const handleSave = () => {
     try {
       const parsedMetadata = JSON.parse(metadata);
-      saveMetadataMutation.mutate({ databaseMetadata: parsedMetadata });
+      saveMetadataMutation.mutate({
+        databaseMetadata: parsedMetadata,
+      });
     } catch (e) {
+      console.error(e);
       toast({
         variant: "destructive",
         title: "Invalid JSON",
         description: "Please ensure your JSON is properly formatted.",
       });
-      // console.error("Invalid JSON", e);
     }
   };
 
   const handleReset = () => {
     if (existingMetadata) {
-      setMetadata(JSON.stringify(existingMetadata, null, 2));
+      setMetadata(JSON.stringify(existingMetadata || {}, null, 2));
     }
+  };
+
+  const handleMetadataUpdate = (metadata: DatabaseMetadata) => {
+    setMetadata(JSON.stringify(metadata, null, 2));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (isLoading) {
@@ -65,48 +86,69 @@ export default function Page() {
   return (
     <div className="mx-auto max-w-screen-xl px-6 py-24">
       <div className="flex flex-col gap-6">
-        <div className="flex items-end justify-between">
-          <div>
-            <h1 className="mb-1 text-[22px] font-semibold leading-7">
-              Database Metadata
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h1 className="text-[22px] font-semibold leading-7">
+              Current Database Schema
             </h1>
-            <p className="text-[14px] text-muted-foreground">
-              Set your database schema here in JSON form. Use the &apos;Load
-              schema with AI&apos; button to load your schema in with AI from a
-              description or unstructured format.
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                disabled={!hasChanges}
+              >
+                Reset Changes
+              </Button>
+              <Button onClick={handleSave} disabled={!hasChanges}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              You can update this schema by either directly editing the JSON in
+              the editor above, uploading a CSV file with your schema details,
+              or using AI to parse your database schema description.
             </p>
           </div>
-          <div className="flex gap-4">
-            <Button variant="outline" onClick={() => setParseDialogOpen(true)}>
-              Load schema with AI
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              disabled={!hasChanges}
-            >
-              Reset Changes
-            </Button>
-            <Button
-              onClick={handleSave}
-              loading={saveMetadataMutation.isPending}
-              disabled={!hasChanges || saveMetadataMutation.isPending}
-            >
-              Save Changes
-            </Button>
+        </div>
+        <div className="flex flex-col gap-1">
+          <JSONEditor value={metadata} onChange={setMetadata} />
+          <ExampleDatabaseMetadata />
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <h1 className="mb-1 text-[22px] font-semibold leading-7">
+            Upload New Database Schema
+          </h1>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              <span className="font-medium">1. CSV Upload:</span> We will give
+              you instructions on how to format and upload a CSV file with your
+              schema details (tables, fields, types). We'll help map the columns
+              to the required format.
+            </p>
+            <p>
+              <span className="font-medium">2. AI-Powered Parsing:</span> Paste
+              your schema in any format (CREATE TABLE, docs, etc) and our AI
+              will convert it to structured JSON.
+            </p>
           </div>
         </div>
 
-        <JSONEditor value={metadata} onChange={setMetadata} />
-
-        <ExampleDatabaseMetadata />
+        <Tabs defaultValue="csv" className="w-full">
+          <TabsList>
+            <TabsTrigger value="csv">CSV Upload (Recommended)</TabsTrigger>
+            <TabsTrigger value="ai">Parse with AI</TabsTrigger>
+          </TabsList>
+          <TabsContent value="csv">
+            <MetadataCSVUpload onSubmitAction={handleMetadataUpdate} />
+          </TabsContent>
+          <TabsContent value="ai">
+            <ParseDatabaseMetadata onParsed={handleMetadataUpdate} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <ParseDatabaseMetadataDialog
-        open={parseDialogOpen}
-        onOpenChange={setParseDialogOpen}
-        onParsed={setMetadata}
-      />
     </div>
   );
 }
