@@ -155,7 +155,7 @@ function FileUploadZone({
       const file = acceptedFiles[0];
       if (!file) return;
 
-      Papa.parse(file, {
+      Papa.parse<CSVRow>(file, {
         complete: (results) => {
           if (!Array.isArray(results.data) || results.data.length === 0) {
             toast({
@@ -166,9 +166,8 @@ function FileUploadZone({
             return;
           }
 
-          const headers = Object.keys(
-            results.data[0] as Record<string, unknown>,
-          );
+          if (!results.data[0]) return;
+          const headers = Object.keys(results.data[0]);
           onFileAccepted(results.data, headers);
         },
         header: true,
@@ -347,7 +346,9 @@ export function MetadataCSVUpload({ onSubmitAction }: MetadataCSVUploadProps) {
         return "";
       };
 
-      const patterns: Record<ColumnMappingKey, RegExp> = {
+      type MappingPatterns = Record<keyof FormValues["columnMappings"], RegExp>;
+
+      const patterns: MappingPatterns = {
         projectId: /^project_id$/i,
         datasetId: /^dataset_id$/i,
         tableName: /^table_name$/i,
@@ -357,22 +358,26 @@ export function MetadataCSVUpload({ onSubmitAction }: MetadataCSVUploadProps) {
         columnDescription: /^column_description$/i,
       };
 
-      // Set each field individually
-      Object.entries(patterns).forEach(([key, pattern]) => {
-        const match = findMatch(pattern, csvColumns);
-        if (match) {
-          form.setValue(`columnMappings.${key}`, match, {
-            shouldValidate: true,
-            shouldDirty: true,
-            shouldTouch: true,
-          });
-        }
+      const mappings = Object.entries(patterns).reduce(
+        (acc, [key, pattern]) => {
+          const match = findMatch(pattern, csvColumns);
+          if (match && key in databaseInstructions.columnMappings) {
+            acc[key as keyof FormValues["columnMappings"]] = match;
+          }
+          return acc;
+        },
+        {} as FormValues["columnMappings"],
+      );
+
+      form.setValue("columnMappings", mappings, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
       });
 
-      // Force a form validation after all values are set
       form.trigger();
     }
-  }, [csvColumns, form]);
+  }, [csvColumns, form, databaseInstructions.columnMappings]);
 
   const handleFileAccepted = (data: CSVRow[], columns: string[]) => {
     setCSVData(data);
