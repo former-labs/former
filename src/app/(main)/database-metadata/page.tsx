@@ -107,7 +107,7 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               You can update this schema by either directly editing the JSON in
-              the editor above, uploading a CSV file with your schema details,
+              the editor below, uploading a CSV file with your schema details,
               or using AI to parse your database schema description.
             </p>
           </div>
