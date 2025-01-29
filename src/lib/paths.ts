@@ -25,3 +25,5 @@ export const PATH_INSTRUCTIONS = "/instructions";
 export const PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK = "/auth/callback/";
 export const PATH_ELECTRON_CALLBACK = "/auth/electron/callback/";
 export const PATH_FORMER_ELECTRON_APP = "former://";
+export const PATH_ELECTRON_AUTH_COMPLETE = "/auth/complete";
+export const PATH_ELECTRON_AUTH_ERROR = "/auth/error";

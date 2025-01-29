@@ -1,5 +1,5 @@
 import { env } from '@/env';
-import { PATH_FORMER_ELECTRON_APP } from '@/lib/paths';
+import { PATH_ELECTRON_AUTH_COMPLETE, PATH_ELECTRON_AUTH_ERROR, PATH_FORMER_ELECTRON_APP } from '@/lib/paths';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -8,10 +8,19 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/';
 
   if (!code) {
-    return NextResponse.redirect('/auth/error?message=No+code+provided');
+    return NextResponse.redirect(`${PATH_ELECTRON_AUTH_ERROR}?message=No+code+provided`);
   }
   
-  const completionUrl = new URL('/auth/complete', env.DASHBOARD_URI);
+  // Parse the dashboard URI to get any existing search params
+  const dashboardUrl = new URL(env.DASHBOARD_URI);
+  const completionUrl = new URL(PATH_ELECTRON_AUTH_COMPLETE, env.DASHBOARD_URI);
+
+  // Copy over any existing search params from the dashboard URI
+  dashboardUrl.searchParams.forEach((value, key) => {
+    completionUrl.searchParams.set(key, value);
+  });
+
+  // Set our additional params
   completionUrl.searchParams.set('code', code);
   completionUrl.searchParams.set('next', next);
   completionUrl.searchParams.set('target', PATH_FORMER_ELECTRON_APP);
