@@ -125,8 +125,8 @@ export default function Page() {
             <p>
               <span className="font-medium">1. CSV Upload:</span> We will give
               you instructions on how to format and upload a CSV file with your
-              schema details (tables, fields, types). We'll help map the columns
-              to the required format.
+              schema details (tables, fields, types). We&apos;ll help map the
+              columns to the required format.
             </p>
             <p>
               <span className="font-medium">2. AI-Powered Parsing:</span> Paste
@@ -145,7 +145,7 @@ export default function Page() {
             <MetadataCSVUpload onSubmitAction={handleMetadataUpdate} />
           </TabsContent>
           <TabsContent value="ai">
-            <ParseDatabaseMetadata onParsed={handleMetadataUpdate} />
+            <ParseDatabaseMetadata onParsedAction={handleMetadataUpdate} />
           </TabsContent>
         </Tabs>
       </div>

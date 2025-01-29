@@ -24,9 +24,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export const ParseDatabaseMetadata = ({
-  onParsed,
+  onParsedAction,
 }: {
-  onParsed: (metadata: DatabaseMetadata) => void;
+  onParsedAction: (metadata: DatabaseMetadata) => void;
 }) => {
   const { toast } = useToast();
   const form = useForm<FormValues>({
@@ -39,7 +39,7 @@ export const ParseDatabaseMetadata = ({
   const parseDatabaseMetadata =
     api.databaseMetadata.parseDatabaseMetadataWithAI.useMutation({
       onSuccess: (data) => {
-        onParsed(JSON.stringify(data, null, 2));
+        onParsedAction(data);
         form.reset();
       },
       onError: (error) => {
