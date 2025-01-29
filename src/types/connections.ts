@@ -23,7 +23,13 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export type DatabaseType = 'bigquery' | 'postgres' | 'mysql' | 'sqlserver' | 'snowflake' | 'databricks';
+export type DatabaseType =
+  | "bigquery"
+  | "postgres"
+  | "mysql"
+  | "sqlserver"
+  | "snowflake"
+  | "databricks";
 
 export interface DatabaseInstructions {
   type: DatabaseType;

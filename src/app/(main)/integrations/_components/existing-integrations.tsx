@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useData } from "@/contexts/DataContext";
-import { Integration } from "@/types/connections";
+import { DatabaseType, Integration } from "@/types/connections";
 import { EditIcon, Trash2 } from "lucide-react";
 
 interface ExistingIntegrationsProps {
@@ -16,7 +16,7 @@ interface ExistingIntegrationsProps {
     type,
     integration,
   }: {
-    type: "bigquery" | "postgres";
+    type: DatabaseType;
     integration: Integration;
   }) => void;
 }

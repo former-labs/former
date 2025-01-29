@@ -7,7 +7,7 @@ import { PostgresConnectModal } from "@/app/(main)/integrations/_components/post
 import BigQueryLogo from "@/components/assets/bigquery.svg";
 import PostgresLogo from "@/components/assets/postgres.svg";
 import { useData } from "@/contexts/DataContext";
-import { type Integration } from "@/types/connections";
+import { DatabaseType, type Integration } from "@/types/connections";
 import { useState } from "react";
 
 const integrationTypes = [
@@ -52,7 +52,7 @@ export default function IntegrationsPage() {
     type,
     integration,
   }: {
-    type: "bigquery" | "postgres";
+    type: DatabaseType;
     integration?: Integration;
   }) => {
     setSelectedIntegration(integration);
