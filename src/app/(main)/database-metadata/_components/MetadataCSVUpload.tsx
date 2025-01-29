@@ -338,45 +338,51 @@ export function MetadataCSVUpload({ onSubmitAction }: MetadataCSVUploadProps) {
   const databaseInstructions = DATABASE_INSTRUCTIONS[selectedDatabaseType];
 
   useEffect(() => {
-    if (csvColumns.length > 0) {
-      const findMatch = (pattern: RegExp, columns: string[]) => {
-        for (const col of columns) {
-          if (pattern.test(col.toLowerCase())) return col;
-        }
-        return "";
-      };
-
-      type MappingPatterns = Record<keyof FormValues["columnMappings"], RegExp>;
-
-      const patterns: MappingPatterns = {
-        projectId: /^project_id$/i,
-        datasetId: /^dataset_id$/i,
-        tableName: /^table_name$/i,
-        tableDescription: /^table_description$/i,
-        columnName: /^column_name$/i,
-        columnType: /^data_type$/i,
-        columnDescription: /^column_description$/i,
-      };
-
-      const mappings = Object.entries(patterns).reduce(
-        (acc, [key, pattern]) => {
-          const match = findMatch(pattern, csvColumns);
-          if (match && key in databaseInstructions.columnMappings) {
-            acc[key as keyof FormValues["columnMappings"]] = match;
+    const updateMappings = async () => {
+      if (csvColumns.length > 0) {
+        const findMatch = (pattern: RegExp, columns: string[]) => {
+          for (const col of columns) {
+            if (pattern.test(col.toLowerCase())) return col;
           }
-          return acc;
-        },
-        {} as FormValues["columnMappings"],
-      );
+          return "";
+        };
 
-      form.setValue("columnMappings", mappings, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
+        type MappingPatterns = Record<
+          keyof FormValues["columnMappings"],
+          RegExp
+        >;
 
-      form.trigger();
-    }
+        const patterns: MappingPatterns = {
+          projectId: /^project_id$/i,
+          datasetId: /^dataset_id$/i,
+          tableName: /^table_name$/i,
+          tableDescription: /^table_description$/i,
+          columnName: /^column_name$/i,
+          columnType: /^data_type$/i,
+          columnDescription: /^column_description$/i,
+        };
+
+        const mappings = Object.entries(patterns).reduce(
+          (acc, [key, pattern]) => {
+            const match = findMatch(pattern, csvColumns);
+            if (match && key in databaseInstructions.columnMappings) {
+              acc[key as keyof FormValues["columnMappings"]] = match;
+            }
+            return acc;
+          },
+          {} as FormValues["columnMappings"],
+        );
+
+        form.setValue("columnMappings", mappings, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+
+        await form.trigger();
+      }
+    };
+    void updateMappings();
   }, [csvColumns, form, databaseInstructions.columnMappings]);
 
   const handleFileAccepted = (data: CSVRow[], columns: string[]) => {
