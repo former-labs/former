@@ -383,7 +383,7 @@ export function MetadataCSVUpload({ onSubmitAction }: MetadataCSVUploadProps) {
       }
     };
     void updateMappings();
-  }, [csvColumns, form, databaseInstructions.columnMappings]);
+  }, [csvColumns, form, databaseInstructions?.columnMappings]);
 
   const handleFileAccepted = (data: CSVRow[], columns: string[]) => {
     setCSVData(data);
