@@ -12,13 +12,7 @@ export async function GET(request: Request) {
   }
   
   // Parse the dashboard URI to get any existing search params
-  const dashboardUrl = new URL(env.DASHBOARD_URI);
   const completionUrl = new URL(PATH_ELECTRON_AUTH_COMPLETE, env.DASHBOARD_URI);
-
-  // Copy over any existing search params from the dashboard URI
-  dashboardUrl.searchParams.forEach((value, key) => {
-    completionUrl.searchParams.set(key, value);
-  });
 
   // Set our additional params
   completionUrl.searchParams.set('code', code);

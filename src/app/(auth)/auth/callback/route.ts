@@ -1,4 +1,5 @@
 import { env } from '@/env'
+import { PATH_LOGIN } from '@/lib/paths'
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/server/db'
 import { userTable } from '@/server/db/schema'
@@ -12,21 +13,21 @@ export async function GET(request: Request) {
   console.log("CALLBACK ROUTE", JSON.stringify(request, null, 2));
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing-code`)
+    return NextResponse.redirect(`${origin}${PATH_LOGIN}?error=missing-code`)
   }
 
   const supabase = await createClient()
   const { error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
-    return NextResponse.redirect(`${origin}/login?error=auth-code-error`)
+    return NextResponse.redirect(`${origin}${PATH_LOGIN}?error=auth-code-error`)
   }
 
   // Get the authenticated user
   const { data: { user: authUser } } = await supabase.auth.getUser()
   
   if (!authUser) {
-    return NextResponse.redirect(`${origin}/login?error=user-not-found`)
+    return NextResponse.redirect(`${origin}${PATH_LOGIN}?error=user-not-found`)
   }
 
   // Check for existing user
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
       })
     } catch (error) {
       console.error('Error creating user:', error)
-      return NextResponse.redirect(`${origin}/login?error=user-creation-failed`)
+      return NextResponse.redirect(`${origin}${PATH_LOGIN}?error=user-creation-failed`)
     }
   }
 
