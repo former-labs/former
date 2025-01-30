@@ -23,7 +23,8 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export type DatabaseType = 'bigquery' | 'postgres';
+const DATABASE_TYPES = ['bigquery', 'postgres'] as const;
+export type DatabaseType = typeof DATABASE_TYPES[number];
 
 export type Integration = {
   id: string;
@@ -76,7 +77,8 @@ const projectSchema = z.object({
 });
 
 export const databaseMetadataSchema = z.object({
-  projects: z.array(projectSchema)
+  projects: z.array(projectSchema),
+  databaseType: z.enum(DATABASE_TYPES),
 });
 
 export type DatabaseMetadata = z.infer<typeof databaseMetadataSchema>;
