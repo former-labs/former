@@ -1,21 +1,5 @@
 "use client";
 
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Code,
-  Command,
-  Database,
-  FileText,
-  GalleryVerticalEnd,
-  Plug,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react";
-import * as React from "react";
-
-import { MetadataTree } from "@/components/navbar/metadata-tree/metadata-tree";
 import { NavPages } from "@/components/navbar/nav-pages";
 import { NavUser } from "@/components/navbar/nav-user";
 import { WorkspaceSwitcher } from "@/components/navbar/workspace-switcher";
@@ -28,10 +12,27 @@ import {
 } from "@/components/ui/sidebar";
 import {
   PATH_EDITOR,
+  PATH_HELP,
   PATH_INSTRUCTIONS,
   PATH_INTEGRATIONS,
   PATH_KNOWLEDGE,
 } from "@/lib/paths";
+import {
+  AudioWaveform,
+  BookOpen,
+  Bot,
+  Code,
+  Command,
+  FileText,
+  GalleryVerticalEnd,
+  HelpCircle,
+  Plug,
+  ScrollText,
+  Settings2,
+  SquareTerminal,
+} from "lucide-react";
+import * as React from "react";
+import { MetadataTree } from "./metadata-tree/metadata-tree";
 
 // This is sample data.
 const data = {
@@ -163,7 +164,12 @@ const data = {
     {
       name: "AI Knowledge",
       url: PATH_KNOWLEDGE,
-      icon: Database,
+      icon: ScrollText,
+    },
+    {
+      name: "Help",
+      url: PATH_HELP,
+      icon: HelpCircle,
     },
   ],
 };
