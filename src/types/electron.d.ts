@@ -2,6 +2,7 @@ import type { Integration, Project, Table } from "./connections";
 
 export interface IElectronAPI {
   database: {
+    testConnection: (integration: Omit<Integration, "id" | "createdAt">) => Promise<{ success: boolean; error?: string }>;
     connect: (integration: Integration) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
     execute: (connectionId: string, query: string) => Promise<{

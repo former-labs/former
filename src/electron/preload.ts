@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld(
   'electron',
   {
     database: {
+      testConnection: (integration: Integration) => 
+        ipcRenderer.invoke('database:testConnection', integration),
       connect: (integration: Integration) => 
         ipcRenderer.invoke('database:connect', integration),
       disconnect: (connectionId: string) => 

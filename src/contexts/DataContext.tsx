@@ -9,8 +9,11 @@ interface DataContextType {
   setActiveIntegration: (integration: Integration | null) => void;
   databaseMetadata: DatabaseMetadata | null;
   isFetchingMetadata: boolean;
+  databaseConnectionError: string | null;
   driver: Driver | null;
-  initializeDriver: (integration: Integration) => Promise<string | undefined>;
+  initializeDriver: (
+    integration: Integration,
+  ) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
   fetchMetadataIncremental: (connectionId: string) => Promise<void>;
   fetchTablesForDataset: (
     connectionId: string,
@@ -49,6 +52,9 @@ interface DataContextType {
     tableId: string;
     value: boolean;
   }) => void;
+  testDatabaseConnection: (
+    integration: Omit<Integration, "id" | "createdAt">,
+  ) => Promise<{ success: boolean; error: string | null }>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -59,6 +65,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [databaseMetadata, setDatabaseMetadata] =
     useState<DatabaseMetadata | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
+  const [databaseConnectionError, setDatabaseConnectionError] = useState<
+    string | null
+  >(null);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [loadingDatasets, setLoadingDatasets] = useState<Set<string>>(
     new Set(),
@@ -144,20 +153,25 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }, [activeIntegration?.id, isStoreReady, isInitialized]);
 
   const initializeDriver = async (integration: Integration) => {
-    console.log("initializeDriver", integration);
+    let success = false;
+    let connectionId: string | undefined;
+    let error: string | undefined;
     try {
-      const result = await window.electron.database.connect(integration);
-      console.log("result", result);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      } else {
-        return result.connectionId;
-      }
-    } catch (error) {
-      console.error("Failed to initialize database connection:", error);
-      throw error;
+      ({ success, connectionId, error } =
+        await window.electron.database.connect(integration));
+    } catch (err) {
+      success = false;
+      error =
+        err instanceof Error
+          ? err.message
+          : "Failed to initialize database connection";
     }
+
+    return {
+      success,
+      connectionId,
+      error,
+    };
   };
 
   const fetchMetadataIncremental = async (connectionId: string) => {
@@ -171,7 +185,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       // First fetch projects and datasets
       const metadata =
         await window.electron.database.getProjectsAndDatasets(connectionId);
-      setDatabaseMetadata(metadata);
+      setDatabaseMetadata({
+        ...metadata,
+      });
     } catch (error) {
       console.error("Error fetching metadata:", error);
       throw error;
@@ -252,7 +268,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (activeIntegration) {
       console.log("activeIntegration", activeIntegration);
       initializeDriver(activeIntegration)
-        .then((connectionId) => {
+        .then(({ connectionId }) => {
           if (connectionId) {
             void fetchMetadataIncremental(connectionId);
           }
@@ -268,6 +284,18 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
+
+  const testDatabaseConnection = async (
+    integration: Omit<Integration, "id" | "createdAt">,
+  ) => {
+    const { success, error } =
+      await window.electron.database.testConnection(integration);
+    setDatabaseConnectionError(error ?? null);
+    return {
+      success,
+      error: error ?? null,
+    };
+  };
 
   const addIntegration = (
     integration: Omit<Integration, "id" | "createdAt">,
@@ -382,6 +410,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
             }),
           };
         }),
+        databaseType: prev.databaseType,
       };
     });
   };
@@ -394,8 +423,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         integrations,
         databaseMetadata,
         isFetchingMetadata,
+        databaseConnectionError,
         driver: null,
         initializeDriver,
+        testDatabaseConnection,
         fetchMetadataIncremental,
         fetchTablesForDataset,
         loadingDatasets,

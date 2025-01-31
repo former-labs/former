@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { useData } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { BigQueryCredentials, Integration } from "@/types/connections";
@@ -55,6 +56,7 @@ export function BigQueryConnectModal({
   onSubmit,
 }: BigQueryConnectModalProps) {
   const { toast } = useToast();
+  const { databaseConnectionError } = useData();
   const [uploadedFile, setUploadedFile] = useState<{
     name: string;
     size: number;
@@ -327,6 +329,12 @@ export function BigQueryConnectModal({
                 </FormItem>
               )}
             />
+
+            {databaseConnectionError && (
+              <p className="text-sm text-destructive">
+                {databaseConnectionError}
+              </p>
+            )}
 
             <Button
               type="submit"

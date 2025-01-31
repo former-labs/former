@@ -119,6 +119,10 @@ const ipcHandler = <T extends unknown[], R>(
 };
 
 // Set up IPC handlers
+ipcHandler('database:testConnection', (async (config: Integration) => {
+  return await database.testConnection(config);
+}) as IElectronAPI['database']['testConnection']);
+
 ipcHandler('database:connect', (async (config: Integration) => {
   return await database.connect(config);
 }) as IElectronAPI['database']['connect']);

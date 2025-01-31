@@ -6,31 +6,44 @@ import { PostgresDriver } from "./drivers/postgresDriver.js";
 
 const connections = new Map<string, Driver>();
 
-export const database: IElectronAPI['database'] = {
-  async connect(integration: Integration) {
-    try {
-      let driver: Driver;
-      const connectionId = integration.id ?? crypto.randomUUID();
+const connectDriver = async (integration: Integration) => {
+  try {
+    let driver: Driver;
+    let error: string | undefined;
 
-      switch (integration.type) {
-        case 'bigquery':
-          driver = new BigQueryDriver(integration.credentials as BigQueryCredentials, integration.config?.projectId ?? '');
-          break;
-        case 'postgres':
-          driver = new PostgresDriver(integration.credentials as PostgresCredentials);
-          break;
-        default:
-          throw new Error(`Invalid database type: ${integration.type} \n\n Integration: \n${JSON.stringify(integration)}`);
-      }
-
-      await driver.connect();
-      connections.set(connectionId, driver);
-
-      return { success: true, connectionId };
-    } catch (error) {
-      console.error('Failed to create connection:', error);
-      return { success: false, error: (error as Error).message };
+    switch (integration.type) {
+      case 'bigquery':
+        driver = new BigQueryDriver(integration.credentials as BigQueryCredentials, integration.config?.projectId ?? '');
+        break;
+      case 'postgres':
+        driver = new PostgresDriver(integration.credentials as PostgresCredentials);
+        break;
+      default:
+        error = `Invalid database type: ${integration.type} \n\n Integration: \n${JSON.stringify(integration)}`;
+        throw new Error(error);
     }
+
+    await driver.connect();
+
+    return { success: true, driver };
+  } catch (error: any) {
+    console.error('Failed to create connection:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export const database: IElectronAPI['database'] = {
+  async testConnection(integration: Integration) {
+    const { success, error } = await connectDriver(integration);
+    return { success, error };
+  },
+  async connect(integration: Integration) {
+    const connectionId = integration.id ?? crypto.randomUUID();
+    const {success, error, driver} = await connectDriver(integration);
+    if (driver) {
+      connections.set(connectionId, driver);
+    }
+    return { success, connectionId, error };
   },
 
   async disconnect(connectionId: string) {

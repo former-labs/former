@@ -31,21 +31,27 @@ export default function IntegrationsPage() {
   const [selectedIntegration, setSelectedIntegration] = useState<
     Integration | undefined
   >(undefined);
-  const { addIntegration, editIntegration } = useData();
+  const { addIntegration, editIntegration, testDatabaseConnection, databaseConnectionError } = useData();
 
-  const handleCreateIntegration = (
+  const handleCreateIntegration = async (
     integration: Omit<Integration, "id" | "createdAt">,
   ) => {
-    addIntegration(integration);
-    handleCloseModal();
+    const { success } = await testDatabaseConnection(integration);
+    if (success) {
+      addIntegration(integration);
+      handleCloseModal();
+    }
   };
 
-  const handleUpdateIntegration = (
+  const handleUpdateIntegration = async (
     id: string,
     integration: Omit<Integration, "id" | "createdAt">,
   ) => {
-    editIntegration(id, integration);
-    handleCloseModal();
+    const { success } = await testDatabaseConnection(integration);
+    if (success) {
+      editIntegration(id, integration);
+      handleCloseModal();
+    }
   };
 
   const handleOpenModal = ({
