@@ -77,6 +77,7 @@ You should refer to these when writing your own SQL code.
 
 ${knowledgePrompt}
 
+
 The user's current SQL code in their editor is below:
 \`\`\`sql
 ${input.editorContent}
@@ -106,24 +107,51 @@ The response to the user's request, in Markdown format.
 
 If you are responding with SQL code, you should include it in a SQL code block.
 You should also give each SQL query a unique numeric key, starting from 1 and incrementing by 1 for each query in the response.
-Include this key as a comment on the first line of the SQL code block in the same format as the example below.
+Include this key in the langauge definition of the code block in the same format as the example below.
 
-For example, if your response contained the following SQL code, you should include the following comment on the first line:
-\`\`\`sql
---- key: 1
+For example, if your response contained the following SQL code, you should have the following language definition:
+\`\`\`sql:key=1
 select
   foo,
   bar
 from my_table;
 \`\`\`
 
-If you had another SQL block it would start with the line \`--- key: 2\`, etc.
+If you had another SQL block, the language definition would be \`\`\`sql:key=2\`\`\` etc.
+
+
+When responding with a SQL block, you should look at how the SQL block should likely be inserted into the editor.
+Leave comments in the SQL code to indicate where it should be inserted and where the old code goes.
+An example of this is below:
+<EXAMPLE>
+For example, the user has the following SQL code in their editor:
+\`\`\`sql
+select
+  foo
+from my_table;
+\`\`\`
+
+They then might ask for "please select bar from my_table_2 in another query".
+
+You should then respond with the following SQL code:
+\`\`\`sql
+--- existing SQL for selecting foo from my_table
+
+select
+  bar
+from my_table_2;
+\`\`\`
+
+Make sure you use "--- existing SQL for" in the comment if you leave one.
+Make sure the "--- existing SQL for" comment is include inside the SQL code block, not outside of it.
+</EXAMPLE>
+
           `),
           knowledgeSources: z.array(z.object({
             key: z.number().describe(`
 The key of the SQL query.
-This is specified on the first line of the SQL code block as a comment.
-e.g. \`--- key: 1\` would give a key of 1.
+This is specified in the language definition of the SQL code block.
+e.g. sql:key=1 would give a key of 1.
             `),
             knowledgeSourceIds: z.array(z.number()).describe(`
 A list of IDs which represent the IDs of the knowledge queries that were used to generate the response.
@@ -191,15 +219,15 @@ Make sure you fully apply the changes to the original SQL code so that it perfec
 If the changes only apply to a subsection of the SQL code, please ensure you contain the full code in your response
 and modify only the relevant part of the code.
 
-Feel free to use SQL comments to act as shorthand for sections of the code you are not modifying.
-e.g. -- Existing query that does X goes here
-
 ${formatInstructions({ instructions: input.instructions })}
 
-<EXAMPLE>
+<EXAMPLE_1>
 An example of how you should apply the changes is below:
 
 <EXAMPLE_INPUT>
+Conversation summary:
+The user has asked you to "make the foo column aliased to bar".
+
 Original SQL code:
 \`\`\`sql
 select
@@ -218,7 +246,46 @@ select
   foo as bar
 from my_table;
 </EXAMPLE_OUTPUT>
-</EXAMPLE>`
+</EXAMPLE_1>
+
+
+<EXAMPLE_2>
+If the conversation with the user asks for a new query instead of a modification to the existing editor,
+you should output the original editor content with the new query added to it.
+
+An example of this is below:
+
+<EXAMPLE_INPUT>
+Conversation summary:
+The user has asked you to generate one query. The user has now asked for another query instead of asking
+you to modify the query you generated.
+
+Original SQL code:
+\`\`\`sql
+select
+  foo
+from my_table;
+\`\`\`
+
+Changes to apply:
+\`\`\`sql
+select
+  bar
+from my_other_table;
+\`\`\`
+</EXAMPLE_INPUT>
+
+<EXAMPLE_OUTPUT>
+select
+  foo as bar
+from my_table;
+
+select
+  bar
+from my_other_table;
+</EXAMPLE_OUTPUT>
+</EXAMPLE_2>
+`
       }
 
       const finalSystemMessage: ChatCompletionMessageParam = {
@@ -235,6 +302,13 @@ Changes to apply:
 \`\`\`sql
 ${input.applyContent}
 \`\`\`
+
+Make sure you take into account the conversation history to determine whether this query
+is likely a modification of SQL in the current editor, or if the user is asking you to insert their query
+into the editor and leave the rest of the editor content unchanged.
+
+The SQL to apply may have a comment like "--- existing SQL for". In that case, you should use that
+to guide how you should insert the SQL, but do not include that comment in your SQL response.
         `
       }
 
