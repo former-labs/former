@@ -7,6 +7,7 @@ import { api } from "@/trpc/react";
 import type { DatabaseMetadata } from "@/types/connections";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ExampleDatabaseMetadata } from "./_components/ExampleDatabaseMetadata";
 import { JSONEditor } from "./_components/JSONEditor";
 import { MetadataCSVUpload } from "./_components/MetadataCSVUpload";
 import { ParseDatabaseMetadata } from "./_components/ParseDatabaseMetadata";
@@ -85,12 +86,24 @@ export default function Page() {
 
   return (
     <div className="mx-auto max-w-screen-xl px-6 py-24">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-16">
+        <div className="flex flex-col gap-4">
+          <h1 className="text-3xl font-bold">Database Metadata</h1>
+          <p className="text-muted-foreground">
+            In order to generate accurate SQL queries for your database, the AI
+            needs to understand the tables and columns in your database schema.
+            You can see the current database schema given to the AI on the left
+            sidebar by looking for the tables with a checkbox. You can manage
+            the database schema that is provided to the AI using the below
+            forms.
+          </p>
+        </div>
+
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h1 className="text-[22px] font-semibold leading-7">
+            <h2 className="text-[22px] font-semibold leading-7">
               Current Database Schema
-            </h1>
+            </h2>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -156,89 +169,3 @@ export default function Page() {
     </div>
   );
 }
-
-const ExampleDatabaseMetadata = () => {
-  return (
-    <details className="mt-2">
-      <summary className="cursor-pointer text-sm text-muted-foreground">
-        View example schema format
-      </summary>
-      <div className="mt-2 rounded-lg border p-4">
-        <p className="mb-2 text-sm text-muted-foreground">
-          This is an example of the expected schema format:
-        </p>
-        <pre className="whitespace-pre-wrap font-mono text-sm">
-          {JSON.stringify(
-            {
-              dialect: "bigquery",
-              projects: [
-                {
-                  id: "example-project",
-                  name: "Example Project",
-                  datasets: [
-                    {
-                      id: "example-dataset",
-                      name: "Example Dataset",
-                      tables: [
-                        {
-                          id: "table1",
-                          name: "Table 1",
-                          fields: [
-                            {
-                              name: "field1",
-                              type: "STRING",
-                              description: "First field in the table",
-                            },
-                            {
-                              name: "field2",
-                              type: "INTEGER",
-                              description: "Second field in the table",
-                            },
-                            {
-                              name: "field3",
-                              type: "BOOLEAN",
-                              description: "Third field in the table",
-                            },
-                          ],
-                          description: "First table example",
-                        },
-                        {
-                          id: "table2",
-                          name: "Table 2",
-                          fields: [
-                            {
-                              name: "field1",
-                              type: "FLOAT",
-                              description: "First field in the table",
-                            },
-                            {
-                              name: "field2",
-                              type: "DATE",
-                              description: "Second field in the table",
-                            },
-                            {
-                              name: "field3",
-                              type: "STRING",
-                              description: "Third field in the table",
-                            },
-                          ],
-                          description: "Second table example",
-                        },
-                      ],
-                      tableCount: 2,
-                      description:
-                        "A dataset containing two tables with three fields each",
-                    },
-                  ],
-                  description: "A project to demonstrate schema parsing",
-                },
-              ],
-            },
-            null,
-            2,
-          )}
-        </pre>
-      </div>
-    </details>
-  );
-};
