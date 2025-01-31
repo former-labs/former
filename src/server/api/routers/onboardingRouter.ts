@@ -129,139 +129,139 @@ const DEMO_DATABASE_METADATA = {
           tables: [
             {
               id: "distribution_centers",
-              name: "distribution_centers",
+              name: "distribution_centers", 
+              description: "Contains information about product distribution centers",
               fields: [
-                { name: "id", type: "INT64", description: null },
-                { name: "name", type: "STRING", description: null },
-                { name: "latitude", type: "FLOAT64", description: null },
-                { name: "longitude", type: "FLOAT64", description: null }
+                { name: "id", type: "INT64", description: "Unique identifier for each distribution center e.g. 1" },
+                { name: "name", type: "STRING", description: "Name of the distribution center e.g. Chicago IL" },
+                { name: "latitude", type: "FLOAT64", description: "Latitude coordinate of the distribution center location e.g. 41.8781" },
+                { name: "longitude", type: "FLOAT64", description: "Longitude coordinate of the distribution center location e.g. -87.6298" }
               ],
-              description: null,
               includedInAIContext: true
             },
             {
               id: "events",
               name: "events",
+              description: "Tracks user events and interactions on the e-commerce platform",
               fields: [
-                { name: "id", type: "INT64", description: null },
-                { name: "user_id", type: "INT64", description: null },
-                { name: "sequence_number", type: "INT64", description: null },
-                { name: "session_id", type: "STRING", description: null },
-                { name: "created_at", type: "TIMESTAMP", description: null },
-                { name: "ip_address", type: "STRING", description: null },
-                { name: "city", type: "STRING", description: null },
-                { name: "state", type: "STRING", description: null },
-                { name: "postal_code", type: "STRING", description: null },
-                { name: "browser", type: "STRING", description: null },
-                { name: "traffic_source", type: "STRING", description: null },
-                { name: "uri", type: "STRING", description: null },
-                { name: "event_type", type: "STRING", description: null }
+                { name: "id", type: "INT64", description: "Unique identifier for each event e.g. 1001" },
+                { name: "user_id", type: "INT64", description: "ID of the user who triggered the event e.g. 5432" },
+                { name: "sequence_number", type: "INT64", description: "Order of events within a session e.g. 3" },
+                { name: "session_id", type: "STRING", description: "Unique identifier for user session e.g. abc123xyz" },
+                { name: "created_at", type: "TIMESTAMP", description: "When the event occurred e.g. 2023-01-15 14:30:00" },
+                { name: "ip_address", type: "STRING", description: "IP address of the user e.g. 192.168.1.1" },
+                { name: "city", type: "STRING", description: "City of the user e.g. New York" },
+                { name: "state", type: "STRING", description: "State of the user e.g. NY" },
+                { name: "postal_code", type: "STRING", description: "Postal code of the user e.g. 10001" },
+                { name: "browser", type: "STRING", description: "Web browser used e.g. Chrome" },
+                { name: "traffic_source", type: "STRING", description: "Source of the traffic e.g. Google" },
+                { name: "uri", type: "STRING", description: "Page URL where event occurred e.g. /products/123" },
+                { name: "event_type", type: "STRING", description: "Type of event e.g. page_view" }
               ],
-              description: null,
               includedInAIContext: true
             },
             {
               id: "inventory_items",
               name: "inventory_items",
+              description: "Tracks individual inventory items and their details",
               fields: [
-                { name: "id", type: "INT64", description: null },
-                { name: "product_id", type: "INT64", description: null },
-                { name: "created_at", type: "TIMESTAMP", description: null },
-                { name: "sold_at", type: "TIMESTAMP", description: null },
-                { name: "cost", type: "FLOAT64", description: null },
-                { name: "product_category", type: "STRING", description: null },
-                { name: "product_name", type: "STRING", description: null },
-                { name: "product_brand", type: "STRING", description: null },
-                { name: "product_retail_price", type: "FLOAT64", description: null },
-                { name: "product_department", type: "STRING", description: null },
-                { name: "product_sku", type: "STRING", description: null },
-                { name: "product_distribution_center_id", type: "INT64", description: null }
+                { name: "id", type: "INT64", description: "Unique identifier for inventory item e.g. 5001" },
+                { name: "product_id", type: "INT64", description: "ID of the associated product e.g. 123" },
+                { name: "created_at", type: "TIMESTAMP", description: "When item was added to inventory e.g. 2023-01-01 09:00:00" },
+                { name: "sold_at", type: "TIMESTAMP", description: "When item was sold e.g. 2023-01-15 13:45:00" },
+                { name: "cost", type: "FLOAT64", description: "Cost price of the item e.g. 25.50" },
+                { name: "product_category", type: "STRING", description: "Category of the product e.g. Electronics" },
+                { name: "product_name", type: "STRING", description: "Name of the product e.g. Wireless Headphones" },
+                { name: "product_brand", type: "STRING", description: "Brand of the product e.g. Sony" },
+                { name: "product_retail_price", type: "FLOAT64", description: "Retail price of the product e.g. 49.99" },
+                { name: "product_department", type: "STRING", description: "Department the product belongs to e.g. Audio" },
+                { name: "product_sku", type: "STRING", description: "Stock keeping unit e.g. SKU123456" },
+                { name: "product_distribution_center_id", type: "INT64", description: "ID of distribution center e.g. 2" }
               ],
-              description: null,
               includedInAIContext: true
             },
             {
               id: "order_items",
               name: "order_items",
+              description: "Details of individual items within orders",
               fields: [
-                { name: "id", type: "INT64", description: null },
-                { name: "order_id", type: "INT64", description: null },
-                { name: "user_id", type: "INT64", description: null },
-                { name: "product_id", type: "INT64", description: null },
-                { name: "inventory_item_id", type: "INT64", description: null },
-                { name: "status", type: "STRING", description: null },
-                { name: "created_at", type: "TIMESTAMP", description: null },
-                { name: "shipped_at", type: "TIMESTAMP", description: null },
-                { name: "delivered_at", type: "TIMESTAMP", description: null },
-                { name: "returned_at", type: "TIMESTAMP", description: null },
-                { name: "sale_price", type: "FLOAT64", description: null }
+                { name: "id", type: "INT64", description: "Unique identifier for order item e.g. 10001" },
+                { name: "order_id", type: "INT64", description: "ID of the parent order e.g. 5001" },
+                { name: "user_id", type: "INT64", description: "ID of the purchasing user e.g. 1234" },
+                { name: "product_id", type: "INT64", description: "ID of the purchased product e.g. 789" },
+                { name: "inventory_item_id", type: "INT64", description: "ID of specific inventory item e.g. 5001" },
+                { name: "status", type: "STRING", description: "Current status of the order item e.g. Delivered" },
+                { name: "created_at", type: "TIMESTAMP", description: "When order was placed e.g. 2023-02-01 10:30:00" },
+                { name: "shipped_at", type: "TIMESTAMP", description: "When item was shipped e.g. 2023-02-02 09:15:00" },
+                { name: "delivered_at", type: "TIMESTAMP", description: "When item was delivered e.g. 2023-02-04 14:20:00" },
+                { name: "returned_at", type: "TIMESTAMP", description: "When item was returned e.g. 2023-02-10 11:00:00" },
+                { name: "sale_price", type: "FLOAT64", description: "Final sale price e.g. 45.99" }
               ],
-              description: null,
               includedInAIContext: true
             },
             {
               id: "orders",
               name: "orders",
+              description: "Main orders table containing order-level information",
               fields: [
-                { name: "order_id", type: "INT64", description: null },
-                { name: "user_id", type: "INT64", description: null },
-                { name: "status", type: "STRING", description: null },
-                { name: "gender", type: "STRING", description: null },
-                { name: "created_at", type: "TIMESTAMP", description: null },
-                { name: "returned_at", type: "TIMESTAMP", description: null },
-                { name: "shipped_at", type: "TIMESTAMP", description: null },
-                { name: "delivered_at", type: "TIMESTAMP", description: null },
-                { name: "num_of_item", type: "INT64", description: null }
+                { name: "order_id", type: "INT64", description: "Unique identifier for order e.g. 5001" },
+                { name: "user_id", type: "INT64", description: "ID of ordering user e.g. 1234" },
+                { name: "status", type: "STRING", description: "Current order status e.g. Processing" },
+                { name: "gender", type: "STRING", description: "Customer's gender e.g. Female" },
+                { name: "created_at", type: "TIMESTAMP", description: "When order was created e.g. 2023-03-01 15:30:00" },
+                { name: "returned_at", type: "TIMESTAMP", description: "When order was returned e.g. 2023-03-10 09:45:00" },
+                { name: "shipped_at", type: "TIMESTAMP", description: "When order was shipped e.g. 2023-03-02 11:20:00" },
+                { name: "delivered_at", type: "TIMESTAMP", description: "When order was delivered e.g. 2023-03-04 14:15:00" },
+                { name: "num_of_item", type: "INT64", description: "Number of items in order e.g. 3" }
               ],
-              description: null,
               includedInAIContext: true
             },
             {
               id: "products",
               name: "products",
+              description: "Product catalog with details of all available products",
               fields: [
-                { name: "id", type: "INT64", description: null },
-                { name: "cost", type: "FLOAT64", description: null },
-                { name: "category", type: "STRING", description: null },
-                { name: "name", type: "STRING", description: null },
-                { name: "brand", type: "STRING", description: null },
-                { name: "retail_price", type: "FLOAT64", description: null },
-                { name: "department", type: "STRING", description: null },
-                { name: "sku", type: "STRING", description: null },
-                { name: "distribution_center_id", type: "INT64", description: null }
+                { name: "id", type: "INT64", description: "Unique identifier for product e.g. 789" },
+                { name: "cost", type: "FLOAT64", description: "Cost price of product e.g. 30.00" },
+                { name: "category", type: "STRING", description: "Product category e.g. Electronics" },
+                { name: "name", type: "STRING", description: "Product name e.g. Bluetooth Speaker" },
+                { name: "brand", type: "STRING", description: "Product brand e.g. JBL" },
+                { name: "retail_price", type: "FLOAT64", description: "Retail selling price e.g. 59.99" },
+                { name: "department", type: "STRING", description: "Department product belongs to e.g. Audio" },
+                { name: "sku", type: "STRING", description: "Stock keeping unit e.g. SKU789012" },
+                { name: "distribution_center_id", type: "INT64", description: "ID of stocking distribution center e.g. 2" }
               ],
-              description: null,
               includedInAIContext: true
             },
             {
               id: "users",
               name: "users",
+              description: "Customer information and demographics",
               fields: [
-                { name: "id", type: "INT64", description: null },
-                { name: "first_name", type: "STRING", description: null },
-                { name: "last_name", type: "STRING", description: null },
-                { name: "email", type: "STRING", description: null },
-                { name: "age", type: "INT64", description: null },
-                { name: "gender", type: "STRING", description: null },
-                { name: "state", type: "STRING", description: null },
-                { name: "street_address", type: "STRING", description: null },
-                { name: "postal_code", type: "STRING", description: null },
-                { name: "city", type: "STRING", description: null },
-                { name: "country", type: "STRING", description: null },
-                { name: "latitude", type: "FLOAT64", description: null },
-                { name: "longitude", type: "FLOAT64", description: null },
-                { name: "traffic_source", type: "STRING", description: null },
-                { name: "created_at", type: "TIMESTAMP", description: null }
+                { name: "id", type: "INT64", description: "Unique identifier for user e.g. 1234" },
+                { name: "first_name", type: "STRING", description: "User's first name e.g. John" },
+                { name: "last_name", type: "STRING", description: "User's last name e.g. Smith" },
+                { name: "email", type: "STRING", description: "User's email address e.g. john.smith@email.com" },
+                { name: "age", type: "INT64", description: "User's age e.g. 35" },
+                { name: "gender", type: "STRING", description: "User's gender e.g. Male" },
+                { name: "state", type: "STRING", description: "User's state e.g. California" },
+                { name: "street_address", type: "STRING", description: "User's street address e.g. 123 Main St" },
+                { name: "postal_code", type: "STRING", description: "User's postal code e.g. 94105" },
+                { name: "city", type: "STRING", description: "User's city e.g. San Francisco" },
+                { name: "country", type: "STRING", description: "User's country e.g. United States" },
+                { name: "latitude", type: "FLOAT64", description: "Location latitude e.g. 37.7749" },
+                { name: "longitude", type: "FLOAT64", description: "Location longitude e.g. -122.4194" },
+                { name: "traffic_source", type: "STRING", description: "How user found the site e.g. Facebook" },
+                { name: "created_at", type: "TIMESTAMP", description: "When user account was created e.g. 2023-01-01 00:00:00" }
               ],
-              description: null,
               includedInAIContext: true
             }
           ],
           tableCount: 7,
-          description: null
+          description: "E-commerce dataset containing orders, products, users, and related data"
         }
       ],
-      description: null
+      description: "Demo project containing e-commerce sample data"
     }
   ]
 };
