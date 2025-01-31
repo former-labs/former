@@ -397,7 +397,7 @@ export const SqlEditor = () => {
           )}
         </div>
         <div className="mr-2 text-sm text-muted-foreground">
-          Highlight text → Cmd+K
+          Highlight SQL → Cmd+K
         </div>
       </div>
       <div className="min-h-0 flex-1 border-t">
