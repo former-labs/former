@@ -1,5 +1,5 @@
 import type { BigQueryCredentials, Integration, PostgresCredentials } from "../types/connections.js";
-import { IElectronAPI } from "../types/electron.js";
+import { type IElectronAPI } from "../types/electron.js";
 import { BigQueryDriver } from "./drivers/bigQueryDriver.js";
 import { type Driver } from "./drivers/driver.js";
 import { PostgresDriver } from "./drivers/postgresDriver.js";

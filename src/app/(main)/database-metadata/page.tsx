@@ -99,7 +99,11 @@ export default function Page() {
               >
                 Reset Changes
               </Button>
-              <Button onClick={handleSave} disabled={!hasChanges}>
+              <Button
+                onClick={handleSave}
+                disabled={!hasChanges}
+                loading={saveMetadataMutation.isPending}
+              >
                 Save Changes
               </Button>
             </div>
@@ -166,6 +170,7 @@ const ExampleDatabaseMetadata = () => {
         <pre className="whitespace-pre-wrap font-mono text-sm">
           {JSON.stringify(
             {
+              dialect: "bigquery",
               projects: [
                 {
                   id: "example-project",

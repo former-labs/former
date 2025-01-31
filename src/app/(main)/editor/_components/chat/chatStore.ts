@@ -155,6 +155,7 @@ export const useChat = () => {
 
 export const filterDatabaseMetadataContext = (metadata: DatabaseMetadata): DatabaseMetadata => {
   return {
+    dialect: metadata.dialect,
     projects: metadata.projects
       .map(project => ({
         ...project,

@@ -1,5 +1,5 @@
 import { BigQuery, type Job, type JobCallback, type TableField } from "@google-cloud/bigquery";
-import type { BigQueryCredentials, Field, Project, Table } from "../../types/connections.js";
+import type { BigQueryCredentials, DatabaseMetadata, Field, Project, Table } from "../../types/connections.js";
 import { Driver } from "./driver.js";
 
 export class BigQueryDriver extends Driver {
@@ -106,9 +106,7 @@ export class BigQueryDriver extends Driver {
     return this.projectId;
   }
 
-  async fetchProjectsAndDatasets(): Promise<{
-    projects: Project[];
-  }> {
+  async fetchProjectsAndDatasets(): Promise<DatabaseMetadata> {
     const projects: Project[] = [];
 
     const [datasets] = await this.client.getDatasets({
@@ -153,7 +151,7 @@ export class BigQueryDriver extends Driver {
       }
     }
 
-    return { projects };
+    return { dialect: "bigquery", projects };
   }
 
   async executeQuery(query: string): Promise<{

@@ -217,6 +217,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       setDatabaseMetadata((prev) => {
         if (!prev) return prev;
         return {
+          dialect: prev.dialect,
           projects: prev.projects.map((project) => ({
             ...project,
             datasets: project.datasets.map((dataset) => {
@@ -364,6 +365,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setDatabaseMetadata((prev) => {
       if (!prev) return prev;
       return {
+        dialect: prev.dialect,
         projects: prev.projects.map((project) => {
           if (project.id !== projectId) return project;
           return {
@@ -447,6 +449,7 @@ export const useData = () => {
     if (!databaseMetadata) return;
 
     const updatedMetadata = {
+      dialect: databaseMetadata.dialect,
       projects: databaseMetadata.projects.map((project) => {
         if (project.id !== projectId) return project;
         return {

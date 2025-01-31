@@ -1,4 +1,4 @@
-import type { DatabaseMetadata, Dataset, Project, Table } from "@/types/connections";
+import type { DatabaseMetadata, DatabaseType, Dataset, Project, Table } from "@/types/connections";
 
 export type CSVRow = Record<string, string>;
 
@@ -12,10 +12,16 @@ export interface ColumnMappings {
   columnDescription?: string;
 }
 
-export function transformToMetadata(
-  data: CSVRow[],
-  mappings: ColumnMappings,
-): DatabaseMetadata {
+export const transformToMetadata = ({
+  data,
+  mappings,
+  databaseType,
+}: {
+  data: CSVRow[];
+  mappings: ColumnMappings;
+  databaseType: DatabaseType;
+}): DatabaseMetadata => {
+  // Just print the database type for now
   const projectMap = new Map<string, Project>();
 
   data.forEach((row) => {
@@ -79,6 +85,7 @@ export function transformToMetadata(
   });
 
   return {
+    dialect: databaseType,
     projects: Array.from(projectMap.values()),
   };
 } 

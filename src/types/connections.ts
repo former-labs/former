@@ -23,13 +23,16 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export type DatabaseType =
-  | "bigquery"
-  | "postgres"
-  | "mysql"
-  | "sqlserver"
-  | "snowflake"
-  | "databricks";
+export const DATABASE_TYPES = [
+  "bigquery",
+  "postgres",
+  "mysql",
+  "sqlserver",
+  "snowflake",
+  "databricks",
+] as const;
+
+export type DatabaseType = (typeof DATABASE_TYPES)[number];
 
 export interface DatabaseInstructions {
   type: DatabaseType;
@@ -97,6 +100,7 @@ const projectSchema = z.object({
 });
 
 export const databaseMetadataSchema = z.object({
+  dialect: z.enum(DATABASE_TYPES),
   projects: z.array(projectSchema)
 });
 
