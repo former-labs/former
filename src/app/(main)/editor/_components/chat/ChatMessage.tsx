@@ -87,11 +87,24 @@ const CodeBlock = ({
     throw new Error("Node passed to code block that isn't a code element.");
   }
 
+  const className = children.props.className;
+  const language: string | null =
+    typeof className === "string"
+      ? (className
+          .split(" ")
+          .find((cls) => cls.startsWith("language-"))
+          ?.replace("language-", "") ?? null)
+      : null;
+
   /*
     ReactMarkdown is stupid and passes both inline and block code elements
-    through the CodeInline component first. We strip out the inline code
+    through the CodeInline component first. Actually it might just be a generic
+    <code> element, not sure if CodeInline. Anyway, we strip out the inline code
     wrapper here first and rewrap with our code block wrapper.
     This should just be a string now.
+
+    Note that the <code> element has a className which is the langauge.
+    e.g. language-sql
   */
   const codeContent = children.props.children;
   if (typeof codeContent !== "string") {
@@ -104,6 +117,7 @@ const CodeBlock = ({
   return (
     <ApplyCodeBlock
       codeContent={codeContentString}
+      language={language}
       knowledgeSources={knowledgeSources}
     />
   );
