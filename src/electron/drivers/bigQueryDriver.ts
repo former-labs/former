@@ -11,7 +11,7 @@ export class BigQueryDriver extends Driver {
   }>;
   private demo: boolean;
 
-  constructor(credentials: BigQueryCredentials, projectId: string, demo: boolean = false) {
+  constructor(credentials: BigQueryCredentials, projectId: string, demo = false) {
     super(credentials);
     this.projectId = projectId;
     this.client = new BigQuery({
