@@ -76,6 +76,7 @@ const projectSchema = z.object({
 });
 
 export const databaseMetadataSchema = z.object({
+  dialect: z.enum(["postgres", "bigquery"]),
   projects: z.array(projectSchema)
 });
 
