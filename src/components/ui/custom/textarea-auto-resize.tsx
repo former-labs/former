@@ -18,7 +18,9 @@ export const TextareaAutoResize = forwardRef<
     requestAnimationFrame(() => {
       if (textAreaRef.current) {
         textAreaRef.current.style.height = "auto";
-        textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
+        // The min height of 32px is a hack for a text area shrinking bug
+        const height = Math.max(textAreaRef.current.scrollHeight, 48);
+        textAreaRef.current.style.height = `${height}px`;
       }
     });
   }, [value, textAreaRef]);

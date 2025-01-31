@@ -78,9 +78,6 @@ You should refer to these when writing your own SQL code.
 ${knowledgePrompt}
 
 
-
-
-
 The user's current SQL code in their editor is below:
 \`\`\`sql
 ${input.editorContent}
@@ -146,6 +143,7 @@ from my_table_2;
 \`\`\`
 
 Make sure you use "--- existing SQL for" in the comment if you leave one.
+Make sure the "--- existing SQL for" comment is include inside the SQL code block, not outside of it.
 </EXAMPLE>
 
           `),
