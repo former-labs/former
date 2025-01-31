@@ -30,7 +30,7 @@ export const env = envSchema.parse(envLocal);
 
 // const envDevelopment = {
 //   NODE_ENV: "development",
-//   DASHBOARD_URI: "",
+//   DASHBOARD_URI: "dev.desktop.formerlabs.com",
 // };
 
 // export const env = envSchema.parse(envDevelopment);
