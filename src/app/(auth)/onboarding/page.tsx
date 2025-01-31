@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { useData } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +44,7 @@ export default function OnboardingPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { handleWorkspaceSwitch } = useAuth();
+  const { addIntegration } = useData();
 
   const formSchema = z.object({
     workspaceName: z.string().min(3, "Must be at least 3 characters"),
@@ -56,7 +58,8 @@ export default function OnboardingPage() {
   });
 
   const createWorkspace = api.onboarding.createWorkspace.useMutation();
-
+  const { data: demoIntegration } =
+    api.onboarding.retrieveDemoIntegration.useQuery();
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const error = searchParams.get("error");
@@ -91,6 +94,10 @@ export default function OnboardingPage() {
       return;
     } else {
       await handleWorkspaceSwitch(role);
+    }
+
+    if (demoIntegration) {
+      addIntegration(demoIntegration);
     }
 
     router.push("/");

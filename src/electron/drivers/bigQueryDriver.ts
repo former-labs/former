@@ -9,8 +9,9 @@ export class BigQueryDriver extends Driver {
     status: "complete" | "error" | "canceled" | "running";
     error?: string;
   }>;
+  private demo: boolean;
 
-  constructor(credentials: BigQueryCredentials, projectId: string) {
+  constructor(credentials: BigQueryCredentials, projectId: string, demo: boolean = false) {
     super(credentials);
     this.projectId = projectId;
     this.client = new BigQuery({
@@ -18,6 +19,7 @@ export class BigQueryDriver extends Driver {
       projectId,
     });
     this.jobs = new Map();
+    this.demo = demo;
   }
 
   async connect(): Promise<void> {
@@ -35,7 +37,7 @@ export class BigQueryDriver extends Driver {
     }>;
     nextPageToken?: string;
   }> {
-    const MAX_RESULTS_PER_PAGE = 10;
+    const MAX_RESULTS_PER_PAGE = 1000;
     
     const [datasets, , response] = await this.client.getDatasets({
       maxResults: MAX_RESULTS_PER_PAGE,
@@ -110,7 +112,7 @@ export class BigQueryDriver extends Driver {
     const projects: Project[] = [];
 
     const [datasets] = await this.client.getDatasets({
-      maxResults: 10,
+      maxResults: 1000,
     });
 
     for (const dataset of datasets) {
@@ -158,6 +160,9 @@ export class BigQueryDriver extends Driver {
     jobId: string;
   }> {
     try {
+      console.log("Executing query:", query);
+      console.log("Demo:", this.demo);
+
       const { job, err } = await new Promise<{
         job: Job;
         err: null;
@@ -167,6 +172,7 @@ export class BigQueryDriver extends Driver {
       }>((resolve) => {
         this.client.createQueryJob({
           query,
+          ...(this.demo ? { maxResults: 1000 } : {}),
           useLegacySql: false,
         }, (err, job) => {
           // Assert job exists when no error
