@@ -401,7 +401,12 @@ export const SqlEditor = () => {
         </div>
       </div>
       <div className="min-h-0 flex-1 border-t">
-        <div className="relative h-full">
+        <div className="relative h-full text-sm">
+          <div
+            className={`pointer-events-none absolute left-[70px] z-10 font-sans italic text-gray-400 opacity-80 ${!editorContent && inlinePromptWidgets.length === 0 ? "" : "hidden"} `}
+          >
+            Use Cmd+K for AI inline or Cmd+L for AI chat...
+          </div>
           {editorContentOld !== null && (
             <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-2">
               <Button
