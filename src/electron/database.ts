@@ -14,7 +14,7 @@ export const database: IElectronAPI['database'] = {
 
       switch (integration.type) {
         case 'bigquery':
-          driver = new BigQueryDriver(integration.credentials as BigQueryCredentials, integration.config?.projectId ?? '');
+          driver = new BigQueryDriver(integration.credentials as BigQueryCredentials, integration.config?.projectId ?? '', integration.demo);
           break;
         case 'postgres':
           driver = new PostgresDriver(integration.credentials as PostgresCredentials);

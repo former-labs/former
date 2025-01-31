@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { useData } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,6 +46,7 @@ export default function OnboardingPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { handleWorkspaceSwitch } = useAuth();
+  const { addIntegration } = useData();
 
   const formSchema = z.object({
     workspaceName: z.string().min(3, "Must be at least 3 characters"),
@@ -58,6 +60,12 @@ export default function OnboardingPage() {
   });
 
   const createWorkspace = api.onboarding.createWorkspace.useMutation();
+  const createUser = api.user.createUser.useMutation();
+  const { refetch: fetchDemoIntegration } =
+    api.onboarding.retrieveDemoIntegration.useQuery(
+      undefined, // no input params
+      { enabled: false }, // disable automatic querying
+    );
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -83,19 +91,33 @@ export default function OnboardingPage() {
     setError("");
     setIsLoading(true);
 
-    const { role } = await createWorkspace.mutateAsync({
-      workspaceName: values.workspaceName,
-    });
+    try {
+      // Ensure user exists first
+      await createUser.mutateAsync();
 
-    if (!role) {
-      setError("Failed to create workspace");
-      setIsLoading(false);
-      return;
-    } else {
+      const { role } = await createWorkspace.mutateAsync({
+        workspaceName: values.workspaceName,
+      });
+
+      if (!role) {
+        setError("Failed to create workspace");
+        return;
+      }
+
       await handleWorkspaceSwitch(role);
-    }
 
-    router.push("/");
+      // Only fetch demo integration after workspace is created
+      const { data: demoIntegration } = await fetchDemoIntegration();
+      if (demoIntegration) {
+        addIntegration(demoIntegration);
+      }
+
+      router.push("/");
+    } catch (err) {
+      setError("An error occurred while creating the workspace");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -146,9 +168,7 @@ export default function OnboardingPage() {
         </Form>
       </div>
       {error && (
-        <p className="self-center text-center text-destructive-foreground">
-          {error}
-        </p>
+        <p className="self-center pt-2 text-center text-red-500">{error}</p>
       )}
     </div>
   );
