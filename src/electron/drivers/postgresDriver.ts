@@ -76,43 +76,78 @@ export class PostgresDriver extends Driver {
     tables: Table[];
     nextPageToken?: string;
   }> {
+    const MAX_TABLES_PER_BATCH = 100;
     const client = await this.pool.connect();
     try {
+      // First get total count of tables
+      const countResult = await client.query(
+        `SELECT COUNT(*) as count
+         FROM information_schema.tables
+         WHERE table_schema = $1`,
+        [datasetId]
+      );
+      const totalTables = parseInt(countResult.rows[0].count, 10);
+
+      // Fetch tables with pagination-like behavior
       const result = await client.query(
         `SELECT 
           t.table_name,
-          c.column_name,
-          c.data_type,
-          col_description(format('%I.%I', t.table_schema, t.table_name)::regclass::oid, c.ordinal_position) as description
+          obj_description(format('%I.%I', t.table_schema, t.table_name)::regclass::oid) as table_description,
+          json_agg(json_build_object(
+            'name', c.column_name,
+            'type', c.data_type,
+            'description', col_description(format('%I.%I', t.table_schema, t.table_name)::regclass::oid, c.ordinal_position)
+          )) as columns
         FROM information_schema.tables t
         JOIN information_schema.columns c 
           ON t.table_schema = c.table_schema 
           AND t.table_name = c.table_name
-        WHERE t.table_schema = $1`,
-        [datasetId]
+        WHERE t.table_schema = $1
+        GROUP BY t.table_schema, t.table_name
+        LIMIT $2`,
+        [datasetId, MAX_TABLES_PER_BATCH]
       );
 
-      const tables = new Map();
-      for (const row of result.rows) {
-        if (!tables.has(row.table_name)) {
-          tables.set(row.table_name, {
+      const tables = result.rows.map((row: {
+        table_name: string;
+        table_description: string | null;
+        columns: Array<{
+          name: string;
+          type: string;
+          description: string | null;
+        }>;
+      }) => {
+        try {
+          return {
             id: row.table_name,
             name: row.table_name,
-            description: row.description,
+            description: row.table_description,
+            fields: row.columns.map(col => ({
+              name: col.name,
+              type: col.type,
+              description: col.description
+            }))
+          };
+        } catch (error) {
+          console.error(`Error processing table ${row.table_name}:`, error);
+          // Return minimal table object if processing fails
+          return {
+            id: row.table_name,
+            name: row.table_name,
+            description: 'Failed to process table metadata',
             fields: []
-          });
+          };
         }
-        tables.get(row.table_name).fields.push({
-          name: row.column_name,
-          type: row.data_type,
-          description: row.description || null,
-        });
-      }
+      });
 
       return {
-        tables: Array.from(tables.values()),
-        nextPageToken: undefined
+        tables,
+        // Return nextPageToken if there are more tables to fetch
+        nextPageToken: tables.length < totalTables ? datasetId : undefined
       };
+    } catch (error) {
+      console.error(`Error fetching tables for dataset ${datasetId}:`, error);
+      throw new Error(`Failed to fetch tables for dataset ${datasetId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       client.release();
     }

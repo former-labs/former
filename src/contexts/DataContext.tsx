@@ -1,7 +1,11 @@
 "use client";
 
 import { type Driver } from "@/electron/drivers/driver";
-import { type DatabaseMetadata, type Integration } from "@/types/connections";
+import {
+  type DatabaseMetadata,
+  type Integration,
+  type Table,
+} from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface DataContextType {
@@ -49,6 +53,16 @@ interface DataContextType {
     tableId: string;
     value: boolean;
   }) => void;
+  setDatasetIncludedInAIContext: (params: {
+    projectId: string;
+    datasetId: string;
+    value: boolean;
+  }) => void;
+  loadingCheckboxes: Set<string>;
+  fetchAllTablesForDataset: (
+    projectId: string,
+    datasetId: string,
+  ) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -67,6 +81,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [isStoreReady, setIsStoreReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [loadedDatasets, setLoadedDatasets] = useState<Set<string>>(new Set());
+  const [loadingCheckboxes, setLoadingCheckboxes] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Check if store is ready
   useEffect(() => {
@@ -248,6 +265,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Clean up loading states when integration changes or component unmounts
+  useEffect(() => {
+    return () => {
+      setLoadingDatasets(new Set());
+      setLoadingCheckboxes(new Set());
+      setLoadedDatasets(new Set());
+    };
+  }, [activeIntegration?.id]);
+
   // Initialize connection when integration changes
   useEffect(() => {
     if (activeIntegration) {
@@ -388,6 +414,112 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
+  const setDatasetIncludedInAIContext = ({
+    projectId,
+    datasetId,
+    value,
+  }: {
+    projectId: string;
+    datasetId: string;
+    value: boolean;
+  }) => {
+    setDatabaseMetadata((prev) => {
+      if (!prev) return prev;
+      return {
+        dialect: prev.dialect,
+        projects: prev.projects.map((project) => {
+          if (project.id !== projectId) return project;
+          return {
+            ...project,
+            datasets: project.datasets.map((dataset) => {
+              if (dataset.id !== datasetId) return dataset;
+              return {
+                ...dataset,
+                includedInAIContext: value,
+                tables: dataset.tables.map((table) => ({
+                  ...table,
+                  includedInAIContext: value,
+                })),
+              };
+            }),
+          };
+        }),
+      };
+    });
+  };
+
+  const fetchAllTablesForDataset = async (
+    projectId: string,
+    datasetId: string,
+  ) => {
+    let nextPageToken: string | undefined;
+    let allTables: Table[] = [];
+    let hasError = false;
+    try {
+      if (!activeIntegration?.id) return;
+      setLoadingCheckboxes((prev) => new Set([...prev, datasetId]));
+
+      do {
+        try {
+          const result = await window.electron.database.getTablesForDataset(
+            activeIntegration.id,
+            datasetId,
+            nextPageToken,
+          );
+          nextPageToken = result.nextPageToken;
+          // Ensure tables have includedInAIContext set to false by default
+          const tablesWithDefaults = result.tables.map((table) => ({
+            ...table,
+            includedInAIContext: false,
+          }));
+          allTables = [...allTables, ...tablesWithDefaults];
+        } catch (error) {
+          console.error(
+            `Error fetching tables for dataset ${datasetId}:`,
+            error,
+          );
+          hasError = true;
+          break;
+        }
+      } while (nextPageToken);
+
+      if (!hasError) {
+        // Update the metadata with all tables at once
+        setDatabaseMetadata((prev) => {
+          if (!prev) return prev;
+          return {
+            dialect: prev.dialect,
+            projects: prev.projects.map((project) => {
+              if (project.id !== projectId) return project;
+              return {
+                ...project,
+                datasets: project.datasets.map((dataset) => {
+                  if (dataset.id !== datasetId) return dataset;
+                  return {
+                    ...dataset,
+                    tables: allTables,
+                  };
+                }),
+              };
+            }),
+          };
+        });
+
+        setLoadedDatasets((prev) => new Set([...prev, datasetId]));
+      }
+    } finally {
+      setLoadingCheckboxes((prev) => {
+        const next = new Set(prev);
+        next.delete(datasetId);
+        return next;
+      });
+    }
+
+    if (hasError) {
+      throw new Error(`Failed to fetch all tables for dataset ${datasetId}`);
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -410,6 +542,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         cancelQuery,
         getQueryResult,
         setTableIncludedInAIContext,
+        setDatasetIncludedInAIContext,
+        loadingCheckboxes,
+        fetchAllTablesForDataset,
       }}
     >
       {children}

@@ -32,7 +32,7 @@ export function TableItem({
   const { setTableIncludedInAIContext } = useData();
 
   return (
-    <div className="space-y-0.5">
+    <div className="flex flex-col">
       <div className="flex w-full items-center">
         <Checkbox
           checked={table.includedInAIContext}
@@ -50,7 +50,7 @@ export function TableItem({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-full justify-start gap-2"
+          className="h-7 w-full justify-start gap-2"
           onClick={onToggle}
         >
           <Tooltip>
@@ -99,7 +99,7 @@ export function TableItem({
         </Button>
       </div>
       {isExpanded && (
-        <div className="pl-4">
+        <div className="ml-4 mt-0.5 flex flex-col gap-0.5">
           {table.fields?.map((field) => (
             <FieldItem
               key={field.name}

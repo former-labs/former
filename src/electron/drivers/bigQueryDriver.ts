@@ -57,7 +57,7 @@ export class BigQueryDriver extends Driver {
     tables: Table[];
     nextPageToken?: string;
   }> {
-    const MAX_RESULTS_PER_PAGE = 1000;
+    const MAX_RESULTS_PER_PAGE = 100;
     const dataset = this.client.dataset(datasetId);
     
     const [tables, , response] = await dataset.getTables({
@@ -72,25 +72,41 @@ export class BigQueryDriver extends Driver {
       ...(field.fields && { fields: field.fields.map(parseField) })
     });
 
-    const tablesWithMetadata = await Promise.all(
-      tables.map(async (table) => {
-        const [metadata] = await table.getMetadata();
-        if (!table.id) {
-          throw new Error(`Table ID is undefined for dataset ${datasetId}`);
-        }
-        return {
-          id: table.id,
-          name: metadata.friendlyName ?? table.id,
-          description: metadata.description ?? null,
-          fields: metadata.schema.fields.map(parseField),
-        };
-      })
-    );
+    try {
+      const tablesWithMetadata = await Promise.all(
+        tables.map(async (table) => {
+          try {
+            const [metadata] = await table.getMetadata();
+            if (!table.id) {
+              throw new Error(`Table ID is undefined for dataset ${datasetId}`);
+            }
+            return {
+              id: table.id,
+              name: metadata.friendlyName ?? table.id,
+              description: metadata.description ?? null,
+              fields: metadata.schema.fields.map(parseField),
+            };
+          } catch (error) {
+            console.error(`Error fetching metadata for table ${table.id}:`, error);
+            // Return a minimal table object if metadata fetch fails
+            return {
+              id: table.id ?? 'unknown',
+              name: table.id ?? 'unknown',
+              description: 'Failed to load table metadata',
+              fields: [],
+            };
+          }
+        })
+      );
 
-    return {
-      tables: tablesWithMetadata,
-      nextPageToken: response?.nextPageToken,
-    };
+      return {
+        tables: tablesWithMetadata,
+        nextPageToken: response?.nextPageToken,
+      };
+    } catch (error) {
+      console.error(`Error processing tables for dataset ${datasetId}:`, error);
+      throw new Error(`Failed to process tables for dataset ${datasetId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private parseValue(value: any): any {

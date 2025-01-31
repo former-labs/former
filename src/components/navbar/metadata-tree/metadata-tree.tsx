@@ -19,6 +19,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/contexts/DataContext";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import debounce from "lodash/debounce";
 import {
   ArrowRight,
   ChevronDown,
@@ -27,17 +29,73 @@ import {
   Search,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type DatasetExtended,
   HighlightedText,
   type ProjectExtended,
   type TableExtended,
+  getDatasetCheckboxState,
 } from "./common";
 import { TableItem } from "./TableItem";
 
-// Main component
+// Error boundary component
+class MetadataTreeErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("MetadataTree error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 text-sm text-red-500">
+          <p>Error loading metadata tree.</p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="mt-2 text-blue-500 hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Wrap the main component with error boundary
 export function MetadataTree() {
+  return (
+    <MetadataTreeErrorBoundary>
+      <MetadataTreeContent />
+    </MetadataTreeErrorBoundary>
+  );
+}
+
+// Main component content
+function MetadataTreeContent() {
   const router = useRouter();
   const {
     databaseMetadata,
@@ -463,8 +521,49 @@ function DatasetItem({
   toggleTable: (id: string) => void;
   hideEmptyDatabases: boolean;
 }) {
-  const { activeIntegration, fetchTablesForDataset, loadingDatasets } =
-    useData();
+  const {
+    activeIntegration,
+    fetchTablesForDataset,
+    loadingDatasets,
+    loadingCheckboxes,
+    setDatasetIncludedInAIContext,
+    loadedDatasets,
+    fetchAllTablesForDataset,
+  } = useData();
+
+  // Debounce the checkbox change handler
+  const debouncedSetDatasetIncluded = useMemo(
+    () =>
+      debounce(
+        (params: { projectId: string; datasetId: string; value: boolean }) =>
+          setDatasetIncludedInAIContext(params),
+        300,
+      ),
+    [setDatasetIncludedInAIContext],
+  );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetDatasetIncluded.cancel();
+    };
+  }, [debouncedSetDatasetIncluded]);
+
+  const handleCheckboxChange = async (checked: boolean) => {
+    try {
+      if (checked && !loadedDatasets.has(dataset.id)) {
+        onToggle();
+        await fetchAllTablesForDataset(projectId, dataset.id);
+      }
+      debouncedSetDatasetIncluded({
+        projectId,
+        datasetId: dataset.id,
+        value: checked,
+      });
+    } catch (error) {
+      console.error("Failed to update dataset:", error);
+    }
+  };
 
   const handleToggle = async () => {
     onToggle();
@@ -473,7 +572,23 @@ function DatasetItem({
     }
   };
 
+  // Use the helper function for checkbox state
+  const checkboxState = useMemo(
+    () => getDatasetCheckboxState(dataset),
+    [dataset],
+  );
+
   const isLoading = loadingDatasets.has(dataset.id);
+  const isCheckboxLoading = loadingCheckboxes.has(dataset.id);
+
+  // Virtual list for tables with reduced height
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: dataset.tables.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: useCallback(() => 32, []), // Reduced from 40 to 32
+    overscan: 5,
+  });
 
   if (
     hideEmptyDatabases &&
@@ -486,81 +601,122 @@ function DatasetItem({
 
   return (
     <div className="space-y-0.5">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-full justify-start gap-2"
-        onClick={handleToggle}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex w-full items-center gap-2">
-              <Database className="h-4 w-4" />
-              <span className="truncate">
-                <HighlightedText text={dataset.name} query={searchQuery} />
-              </span>
-              <span className="ml-auto flex items-center gap-2">
-                <Badge variant="secondary">
-                  {dataset.tableCount ??
-                    dataset._originalTableCount ??
-                    dataset.tables.length}
-                </Badge>
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">
+      <div className="flex w-full items-center">
+        <Checkbox
+          checked={checkboxState.checked}
+          indeterminate={checkboxState.indeterminate}
+          disabled={isCheckboxLoading}
+          onClick={(e) => {
+            e.stopPropagation();
+            void handleCheckboxChange(!checkboxState.checked);
+          }}
+          className="ml-2"
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-full justify-start gap-2"
+          onClick={handleToggle}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex w-full items-center gap-2">
+                <Database className="h-4 w-4" />
+                <span className="truncate">
                   <HighlightedText text={dataset.name} query={searchQuery} />
                 </span>
-                <Badge variant="secondary">
-                  {dataset.tableCount ??
-                    dataset._originalTableCount ??
-                    dataset.tables.length}{" "}
-                  tables
-                </Badge>
+                <span className="ml-auto flex items-center gap-2">
+                  {isCheckboxLoading && (
+                    <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-gray-900" />
+                  )}
+                  <Badge variant="secondary">
+                    {dataset.tableCount ??
+                      dataset._originalTableCount ??
+                      dataset.tables.length}
+                  </Badge>
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </span>
               </div>
-              <div>
-                {dataset.description ? (
-                  <HighlightedText
-                    text={dataset.description}
-                    query={searchQuery}
-                  />
-                ) : (
-                  "No description available"
-                )}
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">
+                    <HighlightedText text={dataset.name} query={searchQuery} />
+                  </span>
+                  <Badge variant="secondary">
+                    {dataset.tableCount ??
+                      dataset._originalTableCount ??
+                      dataset.tables.length}{" "}
+                    tables
+                  </Badge>
+                </div>
+                <div>
+                  {dataset.description ? (
+                    <HighlightedText
+                      text={dataset.description}
+                      query={searchQuery}
+                    />
+                  ) : (
+                    "No description available"
+                  )}
+                </div>
               </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </Button>
+            </TooltipContent>
+          </Tooltip>
+        </Button>
+      </div>
       {isExpanded && (
         <div className="pl-4">
           {isLoading ? (
-            <div className="flex items-center gap-2 py-2 pl-2">
+            <div className="flex items-center gap-2 py-1 pl-2">
               <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-gray-900" />
               <span className="text-sm text-muted-foreground">
                 Loading tables...
               </span>
             </div>
           ) : (
-            dataset.tables.map((table) => (
-              <TableItem
-                key={table.id}
-                projectId={projectId}
-                datasetId={dataset.id}
-                table={table}
-                searchQuery={searchQuery}
-                isExpanded={expandedTables.has(table.id)}
-                onToggle={() => toggleTable(table.id)}
-              />
-            ))
+            <div ref={parentRef} className="max-h-[400px] overflow-y-auto">
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: "100%",
+                  position: "relative",
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const table = dataset.tables[virtualRow.index];
+                  if (!table) return null;
+
+                  return (
+                    <div
+                      key={table.id}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <TableItem
+                        projectId={projectId}
+                        datasetId={dataset.id}
+                        table={table}
+                        searchQuery={searchQuery}
+                        isExpanded={expandedTables.has(table.id)}
+                        onToggle={() => toggleTable(table.id)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       )}

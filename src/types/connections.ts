@@ -67,7 +67,8 @@ const datasetSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   tableCount: z.number(),
-  tables: z.array(tableSchema)
+  tables: z.array(tableSchema),
+  includedInAIContext: z.boolean().optional()
 });
 
 const projectSchema = z.object({

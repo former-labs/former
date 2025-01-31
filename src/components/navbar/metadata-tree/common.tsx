@@ -19,6 +19,26 @@ export type ProjectExtended = Omit<Project, "datasets"> & {
 
 export type FieldExtended = Field;
 
+export type CheckboxState = {
+  checked: boolean;
+  indeterminate: boolean;
+};
+
+// Helper functions for computing checkbox states
+export function getDatasetCheckboxState(
+  dataset: DatasetExtended,
+): CheckboxState {
+  const includedTables = dataset.tables.filter((t) => t.includedInAIContext);
+  return {
+    checked:
+      includedTables.length === dataset.tables.length &&
+      dataset.tables.length > 0,
+    indeterminate:
+      includedTables.length > 0 &&
+      includedTables.length < dataset.tables.length,
+  };
+}
+
 // Helper component for highlighting search matches
 export function HighlightedText({
   text,
