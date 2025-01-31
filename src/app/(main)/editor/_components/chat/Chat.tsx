@@ -21,7 +21,10 @@ export const ChatSidebar = () => {
   return (
     <div className="flex h-full flex-col gap-4 bg-gray-200 p-3">
       <div className="flex items-center justify-between">
-        <div className="text-lg font-medium">Chat</div>
+        <div className="text-lg font-medium">
+          AI Chat{" "}
+          <span className="ml-2 text-sm text-muted-foreground">(Cmd+L)</span>
+        </div>
         <div className="flex gap-2">
           {chats.length > 0 && (
             <DropdownMenu>

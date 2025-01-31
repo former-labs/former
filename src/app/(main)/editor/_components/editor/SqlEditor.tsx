@@ -332,71 +332,81 @@ export const SqlEditor = () => {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex flex-shrink-0 gap-2 overflow-x-auto bg-gray-50 px-2 py-1">
-        {/* <Button
-          variant="ghost"
-          onClick={() =>
-            executeQuery({ editorSelectionContent, editorContent })
-          }
-          disabled={resultLoading}
-        >
-          {resultLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Play className="h-4 w-4" />
-          )}
-        </Button> */}
-        {env.NEXT_PUBLIC_NODE_ENV === "development" && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost">Debug Actions</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={setInitialContent}>
-                Set Initial Content
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={startDiff}>
-                Start diff
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={endDiff}>End diff</DropdownMenuItem>
-              <DropdownMenuItem onClick={printContent}>
-                Print editor content
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={setDecorations}>
-                Set decorations
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={printDecorations}>
-                Print decorations
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={enableIntellisense}>
-                Intellisense
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={printSelection}>
-                Print Selection
-              </DropdownMenuItem>
-              {editorContentOld !== null && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    const newRenderSideBySide = !renderSideBySide;
-                    setRenderSideBySide(newRenderSideBySide);
-
-                    // Update line numbers when toggling view
-                    if (codeEditor) {
-                      codeEditor.updateOptions({
-                        lineNumbers: newRenderSideBySide ? "on" : "off",
-                      });
-                    }
-                  }}
-                >
-                  {renderSideBySide ? "Inline View" : "Side by Side View"}
+      <div className="flex flex-shrink-0 items-center justify-between bg-gray-50 px-2 py-1">
+        <div className="flex gap-2 overflow-x-auto">
+          {/* <Button
+            variant="ghost"
+            onClick={() =>
+              executeQuery({ editorSelectionContent, editorContent })
+            }
+            disabled={resultLoading}
+          >
+            {resultLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button> */}
+          {env.NEXT_PUBLIC_NODE_ENV === "development" && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost">Debug Actions</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={setInitialContent}>
+                  Set Initial Content
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                <DropdownMenuItem onClick={startDiff}>
+                  Start diff
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={endDiff}>End diff</DropdownMenuItem>
+                <DropdownMenuItem onClick={printContent}>
+                  Print editor content
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={setDecorations}>
+                  Set decorations
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={printDecorations}>
+                  Print decorations
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={enableIntellisense}>
+                  Intellisense
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={printSelection}>
+                  Print Selection
+                </DropdownMenuItem>
+                {editorContentOld !== null && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const newRenderSideBySide = !renderSideBySide;
+                      setRenderSideBySide(newRenderSideBySide);
+
+                      // Update line numbers when toggling view
+                      if (codeEditor) {
+                        codeEditor.updateOptions({
+                          lineNumbers: newRenderSideBySide ? "on" : "off",
+                        });
+                      }
+                    }}
+                  >
+                    {renderSideBySide ? "Inline View" : "Side by Side View"}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        <div className="mr-2 text-sm text-muted-foreground">
+          Highlight SQL → Cmd+K
+        </div>
       </div>
       <div className="min-h-0 flex-1 border-t">
-        <div className="relative h-full">
+        <div className="relative h-full text-sm">
+          <div
+            className={`pointer-events-none absolute left-[70px] z-10 font-sans italic tracking-wide text-gray-400 opacity-80 ${!editorContent && inlinePromptWidgets.length === 0 ? "" : "hidden"} `}
+          >
+            Use Cmd+K for AI inline or Cmd+L for AI chat...
+          </div>
           {editorContentOld !== null && (
             <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-2">
               <Button
