@@ -11,6 +11,7 @@ export interface BigQueryCredentials {
   token_uri: string;
   auth_provider_x509_cert_url: string;
   client_x509_cert_url: string;
+  universe_domain?: string;
 }
 
 export interface PostgresCredentials {
@@ -32,6 +33,7 @@ export type Integration = {
   credentials: DatabaseCredentials;
   config: IntegrationConfig | null;
   createdAt: string;
+  demo?: boolean;
 };
 
 export type IntegrationConfig = BigQueryConfig;
