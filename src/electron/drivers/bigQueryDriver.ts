@@ -172,7 +172,6 @@ export class BigQueryDriver extends Driver {
       }>((resolve) => {
         this.client.createQueryJob({
           query,
-          ...(this.demo ? { maxResults: 1000 } : {}),
           useLegacySql: false,
         }, (err, job) => {
           // Assert job exists when no error
@@ -247,7 +246,9 @@ export class BigQueryDriver extends Driver {
 
     const job = this.client.job(jobId);
 
-    const [rows] = await job.getQueryResults();
+    const [rows] = await job.getQueryResults({
+      ...(this.demo ? { maxResults: 1000 } : {}),
+    });
     const result = rows.map(row => {
       const parsedRow: any = {};
       for (const key in row) {

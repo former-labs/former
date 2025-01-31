@@ -58,8 +58,13 @@ export default function OnboardingPage() {
   });
 
   const createWorkspace = api.onboarding.createWorkspace.useMutation();
-  const { data: demoIntegration } =
-    api.onboarding.retrieveDemoIntegration.useQuery();
+  const createUser = api.user.createUser.useMutation();
+  const { refetch: fetchDemoIntegration } =
+    api.onboarding.retrieveDemoIntegration.useQuery(
+      undefined, // no input params
+      { enabled: false }, // disable automatic querying
+    );
+
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const error = searchParams.get("error");
@@ -84,23 +89,33 @@ export default function OnboardingPage() {
     setError("");
     setIsLoading(true);
 
-    const { role } = await createWorkspace.mutateAsync({
-      workspaceName: values.workspaceName,
-    });
+    try {
+      // Ensure user exists first
+      await createUser.mutateAsync();
 
-    if (!role) {
-      setError("Failed to create workspace");
-      setIsLoading(false);
-      return;
-    } else {
+      const { role } = await createWorkspace.mutateAsync({
+        workspaceName: values.workspaceName,
+      });
+
+      if (!role) {
+        setError("Failed to create workspace");
+        return;
+      }
+
       await handleWorkspaceSwitch(role);
-    }
 
-    if (demoIntegration) {
-      addIntegration(demoIntegration);
-    }
+      // Only fetch demo integration after workspace is created
+      const { data: demoIntegration } = await fetchDemoIntegration();
+      if (demoIntegration) {
+        addIntegration(demoIntegration);
+      }
 
-    router.push("/");
+      router.push("/");
+    } catch (err) {
+      setError("An error occurred while creating the workspace");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -151,9 +166,7 @@ export default function OnboardingPage() {
         </Form>
       </div>
       {error && (
-        <p className="self-center text-center text-destructive-foreground">
-          {error}
-        </p>
+        <p className="self-center pt-2 text-center text-red-500">{error}</p>
       )}
     </div>
   );
