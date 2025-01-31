@@ -628,8 +628,36 @@ Phrase it as a description of the new query. Keep it relatively short, 1-2 sente
 const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
   // TODO: Probs just get the CREATE statements for everything? Bc we need foreign keys and stuff like that.
   // SQL just works as a schema definition language.
+
+  let dialectInstructions = null;
+  if (metadata.dialect === "postgres") {
+    dialectInstructions = `
+The SQL dialect is Postgres.
+
+To select a table, you should use something like this:
+\`\`\`sql
+SELECT field_name FROM dataset_name.table_name;
+\`\`\`
+
+Notice how we use the dataset name and table name.
+    `;
+  } else if (metadata.dialect === "bigquery") {
+    dialectInstructions = `
+The SQL dialect is BigQuery.
+
+To select a field from a table, you should use something like this:
+\`\`\`sql
+SELECT field_name FROM \`dataset_name.table_name\`;
+\`\`\`
+
+Notice how we use the dataset name and table name with backticks.
+    `;
+  }
+
   return `\
 <DATABASE_SCHEMA>
+${dialectInstructions ? `<DIALECT_INSTRUCTIONS>\n${dialectInstructions}\n</DIALECT_INSTRUCTIONS>` : ''}
+
 ${JSON.stringify(metadata.projects, null, 2)}
 </DATABASE_SCHEMA>\
 `;

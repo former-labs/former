@@ -2,7 +2,7 @@ import { getAIChatTextResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { databaseMetadataTable } from "@/server/db/schema";
-import { databaseMetadataSchema } from "@/types/connections";
+import { DATABASE_TYPES, databaseMetadataSchema } from "@/types/connections";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
@@ -85,6 +85,11 @@ You are a database schema parser. You will take a natural language description o
 
 The output must be valid JSON that matches the following TypeScript types:
 
+type DatabaseMetadata = {
+  dialect: ${DATABASE_TYPES.map(type => `"${type}"`).join(" | ")};
+  projects: Project[];
+}
+
 type Project = {
   id: string;
   name: string; 
@@ -117,6 +122,7 @@ type Field = {
 Here is an example of the expected output format:
 
 {
+  "dialect": "postgres",
   "projects": [
     {
       "id": "my-project",

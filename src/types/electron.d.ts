@@ -1,4 +1,4 @@
-import type { Integration, Project, Table } from "./connections";
+import type { DatabaseMetadata, Integration, Table } from "./connections";
 
 export interface IElectronAPI {
   database: {
@@ -17,9 +17,7 @@ export interface IElectronAPI {
     } | {
       status: "canceled";
     }>;
-    getProjectsAndDatasets: (connectionId: string) => Promise<{
-      projects: Project[];
-    }>;
+    getProjectsAndDatasets: (connectionId: string) => Promise<DatabaseMetadata>;
     getTablesForDataset: (connectionId: string, datasetId: string, pageToken?: string) => Promise<{
       tables: Table[];
       nextPageToken?: string;

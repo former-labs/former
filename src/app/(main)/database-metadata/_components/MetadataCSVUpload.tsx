@@ -20,12 +20,13 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DATABASE_INSTRUCTIONS } from "@/lib/databaseInstructions";
-import { CSVRow, transformToMetadata } from "@/lib/metadataTransformer";
+import { type CSVRow, transformToMetadata } from "@/lib/metadataTransformer";
 import { cn } from "@/lib/utils";
-import type {
-  DatabaseInstructions,
-  DatabaseMetadata,
-  DatabaseType,
+import {
+  DATABASE_TYPES,
+  type DatabaseInstructions,
+  type DatabaseMetadata,
+  type DatabaseType,
 } from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ClientSideRowModelModule, ModuleRegistry } from "ag-grid-community";
@@ -35,27 +36,11 @@ import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
 import Papa from "papaparse";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Control, useForm } from "react-hook-form";
+import { type Control, useForm } from "react-hook-form";
 import { z } from "zod";
 
-const DATABASE_TYPES: DatabaseType[] = [
-  "bigquery",
-  "postgres",
-  "mysql",
-  "sqlserver",
-  "snowflake",
-  "databricks",
-];
-
 const formSchema = z.object({
-  databaseType: z.enum([
-    "bigquery",
-    "postgres",
-    "mysql",
-    "sqlserver",
-    "snowflake",
-    "databricks",
-  ] as const),
+  databaseType: z.enum(DATABASE_TYPES),
   columnMappings: z.object({
     projectId: z.string().min(1, "Project ID mapping is required"),
     datasetId: z.string().min(1, "Dataset ID mapping is required"),
@@ -438,7 +423,11 @@ export function MetadataCSVUpload({ onSubmitAction }: MetadataCSVUploadProps) {
     }
 
     try {
-      const metadata = transformToMetadata(csvData, values.columnMappings);
+      const metadata = transformToMetadata({
+        data: csvData,
+        mappings: values.columnMappings,
+        databaseType: values.databaseType,
+      });
       onSubmitAction(metadata, values.databaseType);
       toast({
         title: "Success",

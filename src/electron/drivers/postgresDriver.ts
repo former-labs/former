@@ -1,6 +1,6 @@
 import pkg from 'pg';
 import { v4 as uuidv4 } from 'uuid';
-import type { PostgresCredentials, Project, Table } from "../../types/connections.js";
+import type { DatabaseMetadata, PostgresCredentials, Project, Table } from "../../types/connections.js";
 import { Driver } from "./driver.js";
 
 const { Pool } = pkg;
@@ -38,9 +38,7 @@ export class PostgresDriver extends Driver {
     await this.pool.end();
   }
 
-  async fetchProjectsAndDatasets(): Promise<{
-    projects: Project[];
-  }> {
+  async fetchProjectsAndDatasets(): Promise<DatabaseMetadata> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
@@ -68,7 +66,7 @@ export class PostgresDriver extends Driver {
         }))
       };
 
-      return { projects: [project] };
+      return { dialect: "postgres", projects: [project] };
     } finally {
       client.release();
     }

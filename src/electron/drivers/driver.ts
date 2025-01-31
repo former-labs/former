@@ -1,4 +1,4 @@
-import type { Project, Table } from "../../types/connections.js";
+import type { DatabaseMetadata, Table } from "../../types/connections.js";
 
 // Abstract base class for database connections
 export abstract class Driver {
@@ -25,9 +25,7 @@ export abstract class Driver {
   }>;
   abstract getProjectId(): string;
   abstract getProjectName(): string;
-  abstract fetchProjectsAndDatasets(): Promise<{
-    projects: Project[];
-  }>;
+  abstract fetchProjectsAndDatasets(): Promise<DatabaseMetadata>;
   abstract fetchTablesForDataset(datasetId: string, pageToken?: string): Promise<{
     tables: Table[];
     nextPageToken?: string;
