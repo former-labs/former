@@ -11,9 +11,11 @@ import { StaticEditor } from "./StaticEditor";
 
 export const ApplyCodeBlock = ({
   codeContent,
+  language,
   knowledgeSources,
 }: {
   codeContent: string;
+  language: string | null;
   knowledgeSources: {
     key: number;
     knowledgeSourceIds: string[];
@@ -27,7 +29,8 @@ export const ApplyCodeBlock = ({
   const { data: instructions, isLoading: instructionsLoading } =
     api.instructions.getInstructions.useQuery();
 
-  const { key, codeContentClean } = parseCodeContent(codeContent);
+  const key = parseKeyFromLanguage(language);
+  const codeContentClean = codeContent.trim();
 
   const knowledgeSourceIds =
     knowledgeSources.find((source) => source.key === key)?.knowledgeSourceIds ??
@@ -104,29 +107,10 @@ export const ApplyCodeBlock = ({
   );
 };
 
-const parseCodeContent = (
-  codeContent: string,
-): {
-  key: number;
-  codeContentClean: string;
-} => {
-  const lines = codeContent.split("\n");
-
-  const keyMatch = lines[0]?.match(/^--- key: (\d+)$/);
-  if (!keyMatch) {
-    throw new Error("Invalid code content: missing key");
-  }
-
-  const keyString = keyMatch[1];
-  if (!keyString) {
-    throw new Error("Invalid code content: key match group not found");
-  }
-
-  const key = parseInt(keyString, 10);
-  if (isNaN(key)) {
-    throw new Error("Invalid code content: key must be a number");
-  }
-
-  const codeContentClean = lines.slice(1).join("\n").trim();
-  return { key, codeContentClean };
+const parseKeyFromLanguage = (language: string | null): number | null => {
+  if (!language) return null;
+  const parts = language.split("=");
+  if (parts.length !== 2) return null;
+  const parsed = parseInt(parts[1]!, 10);
+  return isNaN(parsed) ? null : parsed;
 };
