@@ -124,8 +124,8 @@ const DEMO_DATABASE_METADATA = {
       name: "former-demo",
       datasets: [
         {
-          id: "demo_thelook_ecommerce",
-          name: "demo_thelook_ecommerce",
+          id: "thelook_ecommerce",
+          name: "thelook_ecommerce",
           tables: [
             {
               id: "distribution_centers",
@@ -275,9 +275,9 @@ const DEMO_QUERIES = [
   dc.name AS distribution_center_name,
   COUNT(DISTINCT oi.order_id) AS total_orders,
   AVG(TIMESTAMP_DIFF(oi.delivered_at, oi.created_at, MINUTE)) AS average_delivery_time_minutes
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-JOIN \`former-labs.thelook_ecommerce.inventory_items\` AS ii ON oi.inventory_item_id = ii.id
-JOIN \`former-labs.thelook_ecommerce.distribution_centers\` AS dc ON ii.product_distribution_center_id = dc.id
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+JOIN \`former-demo.thelook_ecommerce.inventory_items\` AS ii ON oi.inventory_item_id = ii.id
+JOIN \`former-demo.thelook_ecommerce.distribution_centers\` AS dc ON ii.product_distribution_center_id = dc.id
 WHERE DATE(oi.created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)
   AND oi.delivered_at IS NOT NULL
 GROUP BY distribution_center_id, distribution_center_name
@@ -291,9 +291,9 @@ ORDER BY total_orders DESC`
   dc.name AS distribution_center_name,
   COUNT(DISTINCT oi.order_id) AS total_orders,
   AVG(TIMESTAMP_DIFF(oi.delivered_at, oi.created_at, MINUTE)) AS average_delivery_time_minutes
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-JOIN \`former-labs.thelook_ecommerce.inventory_items\` AS ii ON oi.inventory_item_id = ii.id
-JOIN \`former-labs.thelook_ecommerce.distribution_centers\` AS dc ON ii.product_distribution_center_id = dc.id
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+JOIN \`former-demo.thelook_ecommerce.inventory_items\` AS ii ON oi.inventory_item_id = ii.id
+JOIN \`former-demo.thelook_ecommerce.distribution_centers\` AS dc ON ii.product_distribution_center_id = dc.id
 WHERE DATE(oi.created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 WEEK)
   AND oi.delivered_at IS NOT NULL
 GROUP BY distribution_center_id, distribution_center_name
@@ -305,8 +305,8 @@ ORDER BY total_orders DESC`
     query: `SELECT
  u.traffic_source, 
  COUNT(DISTINCT oi.user_id) total_customers
-FROM \`former-labs.thelook_ecommerce.order_items\` oi
-LEFT JOIN \`former-labs.thelook_ecommerce.users\` u
+FROM \`former-demo.thelook_ecommerce.order_items\` oi
+LEFT JOIN \`former-demo.thelook_ecommerce.users\` u
 ON oi.user_id = u.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1
@@ -318,7 +318,7 @@ ORDER BY 2 DESC`
     query: `SELECT 
  DATE_TRUNC(DATE(oi.created_at), WEEK(MONDAY)) AS week_start_date,
  COUNT(DISTINCT oi.order_id) AS number_of_orders
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
 WHERE oi.status NOT IN ('Cancelled', 'Returned')
  AND DATE(oi.created_at) >= DATE_SUB(
  DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)),
@@ -336,8 +336,8 @@ ORDER BY 1 DESC`
   SUM(oi.sale_price) AS order_revenue,
   COUNT(DISTINCT oi.order_id) AS order_count,
   COUNT(DISTINCT oi.user_id) AS customer_count
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-LEFT JOIN \`former-labs.thelook_ecommerce.orders\` AS o ON oi.order_id = o.order_id
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+LEFT JOIN \`former-demo.thelook_ecommerce.orders\` AS o ON oi.order_id = o.order_id
 WHERE oi.status NOT IN ('Cancelled', 'Returned') 
 AND DATE(oi.created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH)
 GROUP BY 1
@@ -350,7 +350,7 @@ ORDER BY 1 DESC`
 SELECT 
   country, -- Select country
   COUNT(DISTINCT id) AS user_count -- Count distinct users by their ID
-FROM \`former-labs.thelook_ecommerce.users\` -- From the users table
+FROM \`former-demo.thelook_ecommerce.users\` -- From the users table
 WHERE country IN ('New Zealand', 'Australia') -- Filter for New Zealand and Australia
 GROUP BY country -- Group results by country
 ORDER BY user_count DESC; -- Order by number of users in descending order`
@@ -362,8 +362,8 @@ ORDER BY user_count DESC; -- Order by number of users in descending order`
  p.brand,
  SUM(oi.sale_price) AS revenue,
  COUNT(oi.id) AS quantity
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
- LEFT JOIN \`former-labs.thelook_ecommerce.products\` AS p ON oi.product_id = p.id
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+ LEFT JOIN \`former-demo.thelook_ecommerce.products\` AS p ON oi.product_id = p.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1
 ORDER BY 3 DESC`
@@ -375,8 +375,8 @@ ORDER BY 3 DESC`
   p.id AS product_id,
   p.name AS product_name,
   SUM(oi.sale_price) AS revenue
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-LEFT JOIN \`former-labs.thelook_ecommerce.products\` AS p ON oi.product_id = p.id
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+LEFT JOIN \`former-demo.thelook_ecommerce.products\` AS p ON oi.product_id = p.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
   AND EXTRACT(MONTH FROM DATE(oi.created_at)) BETWEEN 1 AND 3
   AND EXTRACT(YEAR FROM DATE(oi.created_at)) = EXTRACT(YEAR FROM CURRENT_DATE())
@@ -393,8 +393,8 @@ ORDER BY 3 DESC`
   COUNT(oi.id) as num_of_items_sold,
   SUM(CASE WHEN oi.status = 'Returned' THEN 1 ELSE 0 END) as num_returned,
   SUM(CASE WHEN oi.status = 'Returned' THEN 1 ELSE 0 END) / COUNT(oi.id) as return_rate
-FROM \`former-labs.thelook_ecommerce.order_items\` as oi 
-JOIN \`former-labs.thelook_ecommerce.products\` as p 
+FROM \`former-demo.thelook_ecommerce.order_items\` as oi 
+JOIN \`former-demo.thelook_ecommerce.products\` as p 
 ON oi.product_id = p.id
 WHERE EXTRACT(YEAR FROM DATE(oi.created_at)) = EXTRACT(YEAR FROM DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
 GROUP BY 1,2,3
@@ -408,7 +408,7 @@ LIMIT 5;`
     query: `SELECT 
   DATE_TRUNC(DATE(oi.created_at), WEEK(MONDAY)) AS week_start_date,
   COUNT(DISTINCT oi.order_id) AS number_of_orders
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
 WHERE oi.status NOT IN ('Cancelled', 'Returned')
 AND DATE(oi.created_at) >= DATE_SUB(
   DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)),
@@ -427,18 +427,18 @@ ORDER BY 1 DESC`
   AVG(
     (
       SELECT COUNT(oitemp.id) 
-      FROM \`former-labs.thelook_ecommerce.order_items\` AS oitemp 
+      FROM \`former-demo.thelook_ecommerce.order_items\` AS oitemp 
       WHERE oitemp.order_id = o.order_id
     )
   ) AS avg_sku_sold
-FROM \`former-labs.thelook_ecommerce.events\` AS e
-JOIN \`former-labs.thelook_ecommerce.users\` AS u 
+FROM \`former-demo.thelook_ecommerce.events\` AS e
+JOIN \`former-demo.thelook_ecommerce.users\` AS u 
   ON e.user_id = u.id
-JOIN \`former-labs.thelook_ecommerce.orders\` AS o 
+JOIN \`former-demo.thelook_ecommerce.orders\` AS o 
   ON u.id = o.user_id
-JOIN \`former-labs.thelook_ecommerce.order_items\` AS oi 
+JOIN \`former-demo.thelook_ecommerce.order_items\` AS oi 
   ON o.order_id = oi.order_id
-JOIN \`former-labs.thelook_ecommerce.inventory_items\` AS ii 
+JOIN \`former-demo.thelook_ecommerce.inventory_items\` AS ii 
   ON oi.inventory_item_id = ii.id
 WHERE u.traffic_source = 'Facebook'
   AND u.gender = 'M'
@@ -452,8 +452,8 @@ HAVING COUNT(DISTINCT e.event_type) BETWEEN 2 AND 5`
     description: "Identifies the best-selling items based on the number of orders. It joins the products and order_items tables and groups the results by product ID, name, and category, ordering them by the number of orders in descending order.",
     query: `SELECT oi.product_id as product_id, 
 p.name as product_name, p.category as product_category, count(oi.id) as num_of_items_sold
-FROM \`former-labs.thelook_ecommerce.products\` as p 
-JOIN \`former-labs.thelook_ecommerce.order_items\` as oi
+FROM \`former-demo.thelook_ecommerce.products\` as p 
+JOIN \`former-demo.thelook_ecommerce.order_items\` as oi
 ON p.id = oi.product_id
 GROUP BY 1,2,3
 ORDER BY num_of_items_sold DESC`
@@ -465,8 +465,8 @@ ORDER BY num_of_items_sold DESC`
   SELECT 
     u.id AS user_id, 
     COUNT(DISTINCT o.order_id) AS order_count
-  FROM \`former-labs.thelook_ecommerce.orders\` AS o
-  JOIN \`former-labs.thelook_ecommerce.users\` AS u 
+  FROM \`former-demo.thelook_ecommerce.orders\` AS o
+  JOIN \`former-demo.thelook_ecommerce.users\` AS u 
     ON u.id = o.user_id
   GROUP BY u.id
 ), 
@@ -475,7 +475,7 @@ UserOrderValues AS (
     oi.user_id, 
     oi.order_id, 
     SUM(oi.sale_price) AS order_value
-  FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
+  FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
   GROUP BY oi.user_id, oi.order_id
 )
 SELECT
@@ -497,8 +497,8 @@ GROUP BY user_group`
     SUM(oi.sale_price) AS revenue,
     COUNT(DISTINCT oi.order_id) AS order_count,
     COUNT(DISTINCT oi.user_id) AS customers_purchased
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-LEFT JOIN \`former-labs.thelook_ecommerce.orders\` AS o 
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+LEFT JOIN \`former-demo.thelook_ecommerce.orders\` AS o 
 ON oi.order_id = o.order_id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1
@@ -510,7 +510,7 @@ ORDER BY 1 DESC`
     query: `SELECT 
   id,
   email
-FROM \`former-labs.thelook_ecommerce.users\` 
+FROM \`former-demo.thelook_ecommerce.users\` 
 WHERE gender = 'F' AND country = 'China'
 ORDER BY 1;`
   },
@@ -525,7 +525,7 @@ FROM (
   SELECT
     FORMAT_TIMESTAMP('%Y-%m', created_at) AS YEAR_MONTH,
     COUNT(id) AS NEW_USER_SIGNUPS
-  FROM \`former-labs.thelook_ecommerce.users\`
+  FROM \`former-demo.thelook_ecommerce.users\`
   WHERE DATE(created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
   GROUP BY YEAR_MONTH
   ORDER BY YEAR_MONTH
@@ -539,8 +539,8 @@ FROM (
     u.id AS user_id,
     u.country
   FROM
-    \`former-labs.thelook_ecommerce.order_items\` AS oi
-  JOIN \`former-labs.thelook_ecommerce.users\` AS u ON oi.user_id = u.id
+    \`former-demo.thelook_ecommerce.order_items\` AS oi
+  JOIN \`former-demo.thelook_ecommerce.users\` AS u ON oi.user_id = u.id
   WHERE
     oi.status NOT IN ('Cancelled', 'Returned')
     AND EXTRACT(YEAR FROM oi.created_at) = EXTRACT(YEAR FROM CURRENT_DATE()) - 1 -- filter for last year
@@ -560,11 +560,11 @@ LIMIT 10;  -- limit to top 10 countries`
     query: `SELECT
   (COUNT(DISTINCT CASE WHEN customer_order_counts.order_count > 1 THEN o.order_id ELSE NULL END) /
   COUNT(DISTINCT o.order_id)) * 100 AS percentage_repeat_orders
-FROM \`former-labs.thelook_ecommerce.orders\` AS o
+FROM \`former-demo.thelook_ecommerce.orders\` AS o
 INNER JOIN (
   SELECT u.id AS user_id, COUNT(o.order_id) AS order_count
-  FROM \`former-labs.thelook_ecommerce.users\` AS u
-  INNER JOIN \`former-labs.thelook_ecommerce.orders\` AS o ON u.id = o.user_id
+  FROM \`former-demo.thelook_ecommerce.users\` AS u
+  INNER JOIN \`former-demo.thelook_ecommerce.orders\` AS o ON u.id = o.user_id
   GROUP BY u.id
 ) AS customer_order_counts ON o.user_id = customer_order_counts.user_id`
   },
@@ -579,8 +579,8 @@ INNER JOIN (
   DATE(oi.created_at) AS sale_date,
   COUNT(DISTINCT oi.order_id) AS daily_order_count,
   SUM(oi.sale_price) AS daily_sales_vol
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-LEFT JOIN \`former-labs.thelook_ecommerce.orders\` AS o 
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+LEFT JOIN \`former-demo.thelook_ecommerce.orders\` AS o 
   ON oi.order_id = o.order_id
 WHERE oi.status NOT IN ('Cancelled', 'Returned')
   AND DATE(oi.created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH)
@@ -594,8 +594,8 @@ ORDER BY sale_date`
   SELECT 
     DISTINCT oi.user_id,
     u.country AS country
-  FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-  INNER JOIN \`former-labs.thelook_ecommerce.users\` AS u 
+  FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+  INNER JOIN \`former-demo.thelook_ecommerce.users\` AS u 
   ON oi.user_id = u.id
   WHERE oi.status NOT IN ('Cancelled','Returned')
   -- Added filter for orders from last year
@@ -623,22 +623,22 @@ LIMIT 1;`
   o.created_at
 FROM (
   SELECT DISTINCT order_id
-  FROM \`former-labs.thelook_ecommerce.order_items\` oi
-  JOIN \`former-labs.thelook_ecommerce.products\` p
+  FROM \`former-demo.thelook_ecommerce.order_items\` oi
+  JOIN \`former-demo.thelook_ecommerce.products\` p
   ON oi.product_id = p.id
   WHERE p.category = 'Swim'
 ) swim_orders
 JOIN (
   SELECT DISTINCT order_id
-  FROM \`former-labs.thelook_ecommerce.order_items\` oi
-  JOIN \`former-labs.thelook_ecommerce.products\` p
+  FROM \`former-demo.thelook_ecommerce.order_items\` oi
+  JOIN \`former-demo.thelook_ecommerce.products\` p
   ON oi.product_id = p.id
   WHERE p.category = 'Socks'
 ) socks_orders
 ON swim_orders.order_id = socks_orders.order_id
-JOIN \`former-labs.thelook_ecommerce.order_items\` o
+JOIN \`former-demo.thelook_ecommerce.order_items\` o
 ON swim_orders.order_id = o.order_id
-JOIN \`former-labs.thelook_ecommerce.products\` p1
+JOIN \`former-demo.thelook_ecommerce.products\` p1
 ON o.product_id = p1.id
 GROUP BY 1, 5, 6
 ORDER BY o.order_id`
@@ -650,8 +650,8 @@ ORDER BY o.order_id`
   oi.user_id,
   u.email,
   SUM(oi.sale_price) total_purchase
-FROM \`former-labs.thelook_ecommerce.order_items\` oi
-LEFT JOIN \`former-labs.thelook_ecommerce.users\` u ON oi.user_id = u.id
+FROM \`former-demo.thelook_ecommerce.order_items\` oi
+LEFT JOIN \`former-demo.thelook_ecommerce.users\` u ON oi.user_id = u.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1, 2
 ORDER BY 3 DESC
@@ -664,7 +664,7 @@ LIMIT 10;`
   SELECT
     oi.user_id,
     SUM(oi.sale_price) AS total_spend
-  FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
+  FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
   WHERE oi.status NOT IN ('Cancelled', 'Returned')
     AND EXTRACT(YEAR FROM DATE(oi.created_at)) = EXTRACT(YEAR FROM DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
   GROUP BY oi.user_id
@@ -685,8 +685,8 @@ LIMIT 10;`
     oi.user_id,
     p.category,
     SUM(oi.sale_price) AS category_spend
-  FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-  JOIN \`former-labs.thelook_ecommerce.products\` AS p ON oi.product_id = p.id
+  FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+  JOIN \`former-demo.thelook_ecommerce.products\` AS p ON oi.product_id = p.id
   WHERE oi.status NOT IN ('Cancelled', 'Returned')
   GROUP BY oi.user_id, p.category
 )
@@ -709,8 +709,8 @@ ORDER BY user_group DESC, total_category_spend DESC`
  p.category,
  SUM(oi.sale_price) AS revenue,
  COUNT(oi.id) AS quantity
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-LEFT JOIN \`former-labs.thelook_ecommerce.products\` AS p
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+LEFT JOIN \`former-demo.thelook_ecommerce.products\` AS p
 ON oi.product_id = p.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1
@@ -726,8 +726,8 @@ ORDER BY 3 DESC`
     p.category as product_category,
     COUNT(oi.id) as num_of_items_sold,
     RANK() OVER (PARTITION BY p.category ORDER BY COUNT(oi.id) DESC) as rank
-  FROM \`former-labs.thelook_ecommerce.products\` as p
-  INNER JOIN \`former-labs.thelook_ecommerce.order_items\` as oi
+  FROM \`former-demo.thelook_ecommerce.products\` as p
+  INNER JOIN \`former-demo.thelook_ecommerce.order_items\` as oi
   ON p.id = oi.product_id
   WHERE EXTRACT(YEAR FROM DATE(oi.created_at)) = EXTRACT(YEAR FROM DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
   GROUP BY 1, 2, 3
@@ -750,8 +750,8 @@ ORDER BY product_category, num_of_items_sold DESC -- Ordering by category and nu
     SUM(CASE WHEN u.gender = 'M' THEN 1 ELSE null END) AS male,
     SUM(CASE WHEN u.gender = 'F' THEN 1 ELSE null END) AS female,
     u.country AS country
-  FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-  INNER JOIN \`former-labs.thelook_ecommerce.users\` AS u 
+  FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+  INNER JOIN \`former-demo.thelook_ecommerce.users\` AS u 
   ON oi.user_id = u.id
   WHERE oi.status NOT IN ('Cancelled','Returned')
   GROUP BY 1, 4
@@ -773,8 +773,8 @@ ORDER BY 2 DESC`
     p.category,
     SUM(CASE WHEN oi.status = 'Cancelled' THEN 1 ELSE null END) AS Cancelled,
     SUM(CASE WHEN oi.status = 'Returned' THEN 1 ELSE null END) AS Returned
-FROM \`former-labs.thelook_ecommerce.order_items\` oi
-    LEFT JOIN \`former-labs.thelook_ecommerce.products\` p
+FROM \`former-demo.thelook_ecommerce.order_items\` oi
+    LEFT JOIN \`former-demo.thelook_ecommerce.products\` p
     ON oi.product_id = p.id
 GROUP BY 1
 ORDER BY 2 DESC;`
@@ -785,10 +785,10 @@ ORDER BY 2 DESC;`
     query: `SELECT 
     COUNT(DISTINCT oi.order_id) AS order_count,
     SUM(oi.sale_price) AS order_revenue
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-LEFT JOIN \`former-labs.thelook_ecommerce.orders\` AS o 
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+LEFT JOIN \`former-demo.thelook_ecommerce.orders\` AS o 
     ON oi.order_id = o.order_id
-LEFT JOIN \`former-labs.thelook_ecommerce.users\` AS u 
+LEFT JOIN \`former-demo.thelook_ecommerce.users\` AS u 
     ON o.user_id = u.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
     AND DATE(oi.created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 WEEK)
@@ -802,7 +802,7 @@ WHERE oi.status NOT IN ('Cancelled','Returned')
  user_id,
  gender,
 FROM
- \`former-labs.thelook_ecommerce.orders\` /* Specifying the table from which to retrieve the orders */
+ \`former-demo.thelook_ecommerce.orders\` /* Specifying the table from which to retrieve the orders */
 ORDER BY 
  created_at DESC /* Sorting the orders by creation day, nearest first */
 LIMIT 5 /* Limiting the results to the last five orders only */`
@@ -818,8 +818,8 @@ LIMIT 5 /* Limiting the results to the last five orders only */`
     WHEN u.age >50 THEN 'Eldery'
   END AS age_group,
   COUNT(DISTINCT oi.user_id) total_customers
-FROM \`former-labs.thelook_ecommerce.order_items\` oi
-LEFT JOIN \`former-labs.thelook_ecommerce.users\` u
+FROM \`former-demo.thelook_ecommerce.order_items\` oi
+LEFT JOIN \`former-demo.thelook_ecommerce.users\` u
 ON oi.user_id = u.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1
@@ -832,9 +832,9 @@ ORDER BY 2 DESC`
   u.traffic_source AS traffic_source,
   u.country AS country,
   SUM(oi.sale_price) AS total_sales_revenue
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-LEFT JOIN \`former-labs.thelook_ecommerce.orders\` AS o ON oi.order_id = o.order_id
-LEFT JOIN \`former-labs.thelook_ecommerce.users\` AS u ON o.user_id = u.id
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+LEFT JOIN \`former-demo.thelook_ecommerce.orders\` AS o ON oi.order_id = o.order_id
+LEFT JOIN \`former-demo.thelook_ecommerce.users\` AS u ON o.user_id = u.id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1, 2
 ORDER BY traffic_source, country`
@@ -846,8 +846,8 @@ ORDER BY traffic_source, country`
  o.gender,
  SUM(oi.sale_price) revenue,
  COUNT(oi.id) as quantity_of_items
-FROM \`former-labs.thelook_ecommerce.order_items\` oi
-LEFT JOIN \`former-labs.thelook_ecommerce.orders\` o
+FROM \`former-demo.thelook_ecommerce.order_items\` oi
+LEFT JOIN \`former-demo.thelook_ecommerce.orders\` o
 ON oi.order_id = o.order_id
 WHERE oi.status NOT IN ('Cancelled','Returned')
 GROUP BY 1
@@ -861,25 +861,25 @@ ORDER BY 2`
   o.user_id AS user_id,
   SUM(oi.sale_price) AS total_order_revenue,
   SUM(oi.sale_price - ii.cost) AS total_order_profit
-FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-JOIN \`former-labs.thelook_ecommerce.orders\` AS o ON oi.order_id = o.order_id
-JOIN \`former-labs.thelook_ecommerce.inventory_items\` AS ii ON oi.inventory_item_id = ii.id
+FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+JOIN \`former-demo.thelook_ecommerce.orders\` AS o ON oi.order_id = o.order_id
+JOIN \`former-demo.thelook_ecommerce.inventory_items\` AS ii ON oi.inventory_item_id = ii.id
 WHERE oi.status NOT IN ('Cancelled', 'Returned')
   AND DATE(oi.created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 MONTH)
 GROUP BY oi.order_id, o.user_id`
   },
   {
     name: "Best Selling Products Last 6 Months",
-    description: "Finds the top 10 best-selling products over the last 6 months, grouping by product ID and name and ordering by the number of items sold in descending order. Utilizes the 'products' and 'order_items' tables from the 'former-labs.thelook_ecommerce' dataset.",
+    description: "Finds the top 10 best-selling products over the last 6 months, grouping by product ID and name and ordering by the number of items sold in descending order. Utilizes the 'products' and 'order_items' tables from the 'former-demo.thelook_ecommerce' dataset.",
     query: `WITH ProductSales AS (
   SELECT 
     p.id AS product_id, 
     p.name AS product_name, 
     COUNT(oi.id) AS num_of_items_sold
   FROM 
-    \`former-labs.thelook_ecommerce.products\` AS p
+    \`former-demo.thelook_ecommerce.products\` AS p
   INNER JOIN 
-    \`former-labs.thelook_ecommerce.order_items\` AS oi
+    \`former-demo.thelook_ecommerce.order_items\` AS oi
   ON 
     p.id = oi.product_id
   WHERE 
@@ -904,8 +904,8 @@ LIMIT 10 -- Show the top 10 best-selling products`
   p.brand,
   SUM(CASE WHEN oi.status = 'Cancelled' THEN 1 ELSE null END) AS Cancelled,
   SUM(CASE WHEN oi.status = 'Returned' THEN 1 ELSE null END) AS Returned
-FROM \`former-labs.thelook_ecommerce.order_items\` oi
-LEFT JOIN \`former-labs.thelook_ecommerce.products\` p
+FROM \`former-demo.thelook_ecommerce.order_items\` oi
+LEFT JOIN \`former-demo.thelook_ecommerce.products\` p
 ON oi.product_id = p.id
 GROUP BY 1
 ORDER BY 2 DESC`
@@ -915,10 +915,10 @@ ORDER BY 2 DESC`
     description: "This query calculates the sum of the cost for all inventory items that have not been sold or referenced in an order in the last year. The query uses a left join between the inventory_items and a subquery on order_items to exclude any inventory items that have been sold in the last year.",
     query: `SELECT
   SUM(ii.cost) AS total_inventory_value
-FROM \`former-labs.thelook_ecommerce.inventory_items\` AS ii
+FROM \`former-demo.thelook_ecommerce.inventory_items\` AS ii
 LEFT JOIN (
   SELECT DISTINCT inventory_item_id
-  FROM \`former-labs.thelook_ecommerce.order_items\`
+  FROM \`former-demo.thelook_ecommerce.order_items\`
   WHERE DATE(created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR)
 ) AS recent_sales
 ON ii.id = recent_sales.inventory_item_id
@@ -931,8 +931,8 @@ WHERE recent_sales.inventory_item_id IS NULL`
     SELECT 
         p.category,
         COUNT(oi.id) AS quantity_this_quarter
-    FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-    LEFT JOIN \`former-labs.thelook_ecommerce.products\` AS p
+    FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+    LEFT JOIN \`former-demo.thelook_ecommerce.products\` AS p
     ON oi.product_id = p.id
     WHERE oi.status NOT IN ('Cancelled','Returned')
     AND DATE(oi.created_at) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 QUARTER), QUARTER) -- Current quarter's start date
@@ -943,8 +943,8 @@ LastYearQuarterData AS (
     SELECT 
         p.category,
         COUNT(oi.id) AS quantity_last_year_quarter
-    FROM \`former-labs.thelook_ecommerce.order_items\` AS oi
-    LEFT JOIN \`former-labs.thelook_ecommerce.products\` AS p
+    FROM \`former-demo.thelook_ecommerce.order_items\` AS oi
+    LEFT JOIN \`former-demo.thelook_ecommerce.products\` AS p
     ON oi.product_id = p.id
     WHERE oi.status NOT IN ('Cancelled','Returned')
     -- Calculating the same quarter of the last year
