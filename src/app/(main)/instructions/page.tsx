@@ -69,6 +69,27 @@ export default function Page() {
           placeholder="Enter instructions..."
           className="min-h-48 w-full border border-zinc-200 bg-white shadow-sm"
         />
+
+        <details className="rounded-lg border">
+          <summary className="cursor-pointer px-4 py-2 hover:bg-muted">
+            Example Instructions
+          </summary>
+          <div className="border-t p-4">
+            <pre className="whitespace-pre-wrap text-sm text-muted-foreground">
+              {`SQL Style Guide
+- Use uppercase for SQL keywords (SELECT, FROM, WHERE, etc)
+- Always include table aliases in joins
+- Add comments for complex queries
+
+Other Notes
+- customer_id is always a UUID
+- status can only be 'active', 'pending', or 'cancelled'
+- Soft deletes are handled via deleted_at column
+- Always include WHERE deleted_at IS NULL unless explicitly querying deleted records
+- Limit large result sets to 1000 rows by default`}
+            </pre>
+          </div>
+        </details>
       </div>
     </div>
   );

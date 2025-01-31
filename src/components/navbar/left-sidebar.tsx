@@ -9,6 +9,7 @@ import {
   Database,
   FileText,
   GalleryVerticalEnd,
+  HelpCircle,
   ScrollText,
   Settings2,
   SquareTerminal,
@@ -29,6 +30,7 @@ import {
 import {
   PATH_DATABASE_METADATA,
   PATH_EDITOR,
+  PATH_HELP,
   PATH_INSTRUCTIONS,
   PATH_KNOWLEDGE,
 } from "@/lib/paths";
@@ -164,6 +166,11 @@ const data = {
       name: "Database Schema",
       url: PATH_DATABASE_METADATA,
       icon: Database,
+    },
+    {
+      name: "Help",
+      url: PATH_HELP,
+      icon: HelpCircle,
     },
   ],
 };
