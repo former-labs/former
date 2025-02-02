@@ -1,6 +1,10 @@
 # Former
 
-Former is the best AI SQL Editor.
+[Former](https://formerlabs.com/) is simply the best way to write SQL with AI.
+
+Former is a desktop/web SQL editor with a copilot experience designed specifically for writing SQL. It was created as a 10x better alternative to the workflow of copy pasting database context and SQL into and out of ChatGPT.
+
+Instead of using an external AI that knows nothing about your database, Former provides you with AI assistance embedded in your SQL editor, with an AI that knows everything about your database and the nuances of working with your schema.
 
 ![Former Demo Video](docs/video-demo-cmdk.gif)
 
@@ -13,6 +17,7 @@ The fastest way to get started with Former is by visting [Former Labs](https://f
 
 Former Cloud offers a generous free tier with a 14 day trial period. After the trial period ends, you are welcome to start paying for Former Pro or switch to the self hosted option.
 
+Former Cloud also hosts a web alternative to the desktop client that does not support query execution or database connections for security reasons. You can access the web hosted alternative on our [website](https://formerlabs.com/products).
 
 ### Self-hosting
 
