@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createTRPCRouter, userProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
-import { databaseMetadataTable, knowledgeTable, roleTable, RoleType, workspaceTable } from "@/server/db/schema";
+import { integrationTable, knowledgeTable, roleTable, RoleType, workspaceTable } from "@/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -65,16 +65,17 @@ export const onboardingRouter = createTRPCRouter({
             },
           });
 
-          // Initialize demo database metadata
-          const [databaseMetadata] = await tx
-            .insert(databaseMetadataTable)
+          // Initialize demo integration
+          const [integration] = await tx
+            .insert(integrationTable)
             .values({
               workspaceId: newWorkspace.id,
-              databaseMetadata: DEMO_DATABASE_METADATA
+              databaseMetadata: DEMO_DATABASE_METADATA,
+              type: "cloud",
             })
             .returning();
 
-          if (!databaseMetadata) {
+          if (!integration) {
             throw new TRPCError({
               code: 'INTERNAL_SERVER_ERROR',
               message: 'Failed to create database metadata'
@@ -87,7 +88,8 @@ export const onboardingRouter = createTRPCRouter({
               workspaceId: newWorkspace.id,
               name: query.name,
               description: query.description,
-              query: query.query
+              query: query.query,
+              integrationId: integration.id,
             }))
           ).returning();
 

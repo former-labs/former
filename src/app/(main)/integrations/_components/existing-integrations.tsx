@@ -69,7 +69,7 @@ export function ExistingIntegrations({
                   {integration.name}
                 </TableCell>
                 <TableCell className="text-sm text-zinc-500">
-                  {integration.type}
+                  {integration.databaseType}
                 </TableCell>
                 <TableCell className="text-sm text-zinc-500">
                   {new Date(integration.createdAt).toLocaleDateString("en-US", {
@@ -88,7 +88,7 @@ export function ExistingIntegrations({
                       className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
                       onClick={() =>
                         onEditIntegration({
-                          type: integration.type,
+                          type: integration.databaseType,
                           integration,
                         })
                       }

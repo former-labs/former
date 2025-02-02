@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useData } from "@/contexts/DataContext";
 import { api } from "@/trpc/react";
 import { useState } from "react";
+import { IntegrationSwitcher } from "../../integrations/_components/integration-switcher";
 
 export default function AdminEvalPage() {
   const { activeIntegration } = useData();
@@ -39,9 +40,9 @@ export default function AdminEvalPage() {
         <h1 className="text-3xl font-bold">SQL Eval</h1>
       </div>
 
-      {/* <div className="mb-4">
+      <div className="mb-4">
         <IntegrationSwitcher />
-      </div> */}
+      </div>
 
       <Card className="p-4">
         <div className="mb-4">

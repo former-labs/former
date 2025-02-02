@@ -12,7 +12,7 @@ export const database: IElectronAPI['database'] = {
       let driver: Driver;
       const connectionId = integration.id ?? crypto.randomUUID();
 
-      switch (integration.type) {
+      switch (integration.databaseType) {
         case 'bigquery':
           driver = new BigQueryDriver(integration.credentials as BigQueryCredentials, integration.config?.projectId ?? '');
           break;
@@ -20,7 +20,7 @@ export const database: IElectronAPI['database'] = {
           driver = new PostgresDriver(integration.credentials as PostgresCredentials);
           break;
         default:
-          throw new Error(`Invalid database type: ${integration.type} \n\n Integration: \n${JSON.stringify(integration)}`);
+          throw new Error(`Invalid database type: ${integration.databaseType} \n\n Integration: \n${JSON.stringify(integration)}`);
       }
 
       await driver.connect();

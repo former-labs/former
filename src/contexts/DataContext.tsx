@@ -293,7 +293,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         integration.id === id
           ? {
               ...integration,
-              type: updates.type,
+              databaseType: updates.databaseType,
               name: updates.name,
               credentials: updates.credentials,
             }

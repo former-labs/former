@@ -30,13 +30,13 @@ export function IntegrationSwitcher() {
     >
       <SelectTrigger className="w-[200px]">
         <SelectValue placeholder="Select integration">
-          {activeIntegration?.type ?? "Select integration"}
+          {activeIntegration?.databaseType ?? "Select integration"}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {integrations.map((integration) => (
           <SelectItem key={integration.id} value={integration.id}>
-            {integration.type}
+            {integration.databaseType}
           </SelectItem>
         ))}
       </SelectContent>

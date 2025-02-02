@@ -113,7 +113,7 @@ export function BigQueryConnectModal({
       onSubmit({
         id: integration?.id ?? null,
         integration: {
-          type: "bigquery",
+          databaseType: "bigquery",
           credentials,
           name: values.name,
           config: {

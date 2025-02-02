@@ -1,7 +1,7 @@
 import { getAIChatTextResponse } from "@/server/ai/openai";
 import { createTRPCRouter, workspaceProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
-import { databaseMetadataTable } from "@/server/db/schema";
+import { integrationTable } from "@/server/db/schema";
 import { DATABASE_TYPES, databaseMetadataSchema } from "@/types/connections";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
@@ -13,8 +13,8 @@ export const databaseMetadataRouter = createTRPCRouter({
     .query(async ({ ctx }) => {
       const metadata = await db
         .select()
-        .from(databaseMetadataTable)
-        .where(eq(databaseMetadataTable.workspaceId, ctx.activeWorkspaceId))
+        .from(integrationTable)
+        .where(eq(integrationTable.workspaceId, ctx.activeWorkspaceId))
         .limit(1);
 
       const metadataItem = metadata[0];
@@ -32,25 +32,26 @@ export const databaseMetadataRouter = createTRPCRouter({
     }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const [updatedMetadata] = await db
-          .update(databaseMetadataTable)
+        const [updatedIntegration] = await db
+          .update(integrationTable)
           .set({
             databaseMetadata: input.databaseMetadata,
           })
-          .where(eq(databaseMetadataTable.workspaceId, ctx.activeWorkspaceId))
+          .where(eq(integrationTable.workspaceId, ctx.activeWorkspaceId))
           .returning({
-            id: databaseMetadataTable.id,
+            id: integrationTable.id,
           });
 
-        if (!updatedMetadata) {
+        if (!updatedIntegration) {
           const [newMetadata] = await db
-            .insert(databaseMetadataTable)
+            .insert(integrationTable)
             .values({
               databaseMetadata: input.databaseMetadata,
               workspaceId: ctx.activeWorkspaceId,
+              type: "cloud",
             })
             .returning({
-              id: databaseMetadataTable.id,
+              id: integrationTable.id,
             });
 
           if (!newMetadata) {
@@ -63,7 +64,7 @@ export const databaseMetadataRouter = createTRPCRouter({
           return newMetadata;
         }
 
-        return updatedMetadata;
+        return updatedIntegration;
       } catch (error) {
         console.error("Error setting database metadata:", error);
         throw new TRPCError({

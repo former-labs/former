@@ -166,7 +166,7 @@ export function PostgresConnectModal({
     onSubmit({
       id: integration?.id ?? null,
       integration: {
-        type: "postgres",
+        databaseType: "postgres",
         credentials,
         name: values.name,
         config: null,

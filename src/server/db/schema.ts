@@ -1,4 +1,4 @@
-import { type DatabaseMetadata } from "@/types/connections";
+import { DATABASE_TYPES, type DatabaseMetadata } from "@/types/connections";
 import { relations } from "drizzle-orm";
 import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
@@ -130,6 +130,8 @@ export const knowledgeTable = pgTable("knowledge", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   query: text("query").notNull(),
+  integrationId: uuid("integration_id")
+    .references(() => integrationTable.id),
 });
 
 export const instructionsTable = pgTable("instructions", {
@@ -140,12 +142,15 @@ export const instructionsTable = pgTable("instructions", {
   instructions: text("instructions").notNull(),
 });
 
-export const databaseMetadataTable = pgTable("database_metadata", {
+export const integrationTable = pgTable("integration", {
   id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name"),
   createdAt: createdAtField,
   updatedAt: updatedAtField,
   workspaceId: workspaceIdField.unique(),
-  databaseMetadata: jsonb("database_metadata").$type<DatabaseMetadata>().notNull(),
+  type: text("type", { enum: ["local", "cloud"] }),
+  databaseType: text("database_type", { enum: DATABASE_TYPES }),
+  databaseMetadata: jsonb("database_metadata").$type<DatabaseMetadata>(),
 });
 
 export type ConversationSelect = typeof conversationTable.$inferSelect;
@@ -160,3 +165,5 @@ export type RoleSelectWithRelations = RoleSelect & {
 };
 export type KnowledgeSelect = typeof knowledgeTable.$inferSelect;
 export type InstructionsSelect = typeof instructionsTable.$inferSelect;
+
+export type IntegrationSelect = typeof integrationTable.$inferSelect;
