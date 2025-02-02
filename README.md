@@ -1,10 +1,8 @@
 # Former
 
-Former the best AI SQL Editor.
+Former is the best AI SQL Editor.
 
-
-(gifs)
-
+![Former Demo Video](docs/video-demo-cmdk.gif)
 
 
 ## Getting Started
