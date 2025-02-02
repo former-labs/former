@@ -1,4 +1,3 @@
-import { IntegrationSelect } from "@/server/db/schema";
 import { z } from "zod";
 
 export interface BigQueryCredentials {
@@ -50,12 +49,17 @@ export interface DatabaseInstructions {
   };
 }
 
-export type Integration = IntegrationSelect & LocalIntegrationData;
-
 export type LocalIntegrationData = {
   id: string;
   credentials: DatabaseCredentials;
   config: IntegrationConfig | null;
+};
+
+export type IntegrationToSave = {
+  name: string;
+  databaseType: DatabaseType;
+  credentials: DatabaseCredentials;
+  config: IntegrationConfig;
 };
 
 export type IntegrationConfig = BigQueryConfig;

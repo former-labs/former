@@ -8,8 +8,8 @@ import { eq } from "drizzle-orm";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { z } from "zod";
 
-export const databaseMetadataRouter = createTRPCRouter({
-  getDatabaseMetadata: workspaceProtectedProcedure
+export const integrationRouter = createTRPCRouter({
+  getIntegration: workspaceProtectedProcedure
     .query(async ({ ctx }) => {
       const metadata = await db
         .select()
@@ -24,6 +24,29 @@ export const databaseMetadataRouter = createTRPCRouter({
       }
 
       return metadataItem.databaseMetadata;
+    }),
+
+  createIntegration: workspaceProtectedProcedure
+    .input(z.object({
+      name: z.string(),
+      type: z.enum(["local", "cloud"]),
+      databaseType: z.enum(DATABASE_TYPES),
+      databaseMetadata: databaseMetadataSchema.optional()
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const [newIntegration] = await db.insert(integrationTable).values({
+        name: input.name,
+        type: input.type,
+        databaseType: input.databaseType,
+        databaseMetadata: input.databaseMetadata,
+        workspaceId: ctx.activeWorkspaceId,
+      }).returning();
+
+      if (!newIntegration) {
+        throw new Error("Failed to create integration");
+      }
+
+      return newIntegration;
     }),
 
   setDatabaseMetadata: workspaceProtectedProcedure

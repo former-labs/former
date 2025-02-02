@@ -2,16 +2,22 @@
 
 import { type Driver } from "@/electron/drivers/driver";
 import { api } from "@/trpc/react";
-import { type DatabaseMetadata, type Integration } from "@/types/connections";
+import {
+  IntegrationToSave,
+  type DatabaseMetadata,
+  type LocalIntegrationData,
+} from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface DataContextType {
-  activeIntegration: Integration | null;
-  setActiveIntegration: (integration: Integration | null) => void;
+  activeIntegration: LocalIntegrationData | null;
+  setActiveIntegration: (integration: LocalIntegrationData | null) => void;
   databaseMetadata: DatabaseMetadata | null;
   isFetchingMetadata: boolean;
   driver: Driver | null;
-  initializeDriver: (integration: Integration) => Promise<string | undefined>;
+  initializeDriver: (
+    integration: LocalIntegrationData,
+  ) => Promise<string | undefined>;
   fetchMetadataIncremental: (connectionId: string) => Promise<void>;
   fetchTablesForDataset: (
     connectionId: string,
@@ -19,13 +25,10 @@ interface DataContextType {
   ) => Promise<void>;
   loadingDatasets: Set<string>;
   isLoadingDatasets: boolean;
-  integrations: Integration[];
-  addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
-  editIntegration: (
-    id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
-  ) => void;
-  removeIntegration: (id: string) => void;
+  localIntegrationDataList: LocalIntegrationData[];
+  addLocalIntegration: (integration: IntegrationToSave) => Promise<void>;
+  editLocalIntegration: (id: string, integration: IntegrationToSave) => void;
+  removeLocalIntegration: (id: string) => void;
   executeQuery: (query: string) => Promise<{
     jobId: string;
   }>;
@@ -56,7 +59,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeIntegration, setActiveIntegration] =
-    useState<Integration | null>(null);
+    useState<LocalIntegrationData | null>(null);
   const [databaseMetadata, setDatabaseMetadata] =
     useState<DatabaseMetadata | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
@@ -64,10 +67,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loadingDatasets, setLoadingDatasets] = useState<Set<string>>(
     new Set(),
   );
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [localIntegrationDataList, setLocalIntegrationDataList] = useState<
+    LocalIntegrationData[]
+  >([]);
   const [isStoreReady, setIsStoreReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [loadedDatasets, setLoadedDatasets] = useState<Set<string>>(new Set());
+
+  const createIntegration = api.integration.createIntegration.useMutation();
 
   // Check if store is ready
   useEffect(() => {
@@ -98,7 +105,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Only set integrations if we found some stored
         if (storedIntegrations?.length > 0) {
-          setIntegrations(storedIntegrations);
+          setLocalIntegrationDataList(storedIntegrations);
         }
 
         // Only set active integration if we found a valid one
@@ -123,17 +130,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Only set default active integration if we've initialized and none is set
   useEffect(() => {
-    if (isInitialized && !activeIntegration && integrations[0]) {
-      setActiveIntegration(integrations[0]);
+    if (isInitialized && !activeIntegration && localIntegrationDataList[0]) {
+      setActiveIntegration(localIntegrationDataList[0]);
     }
-  }, [integrations, activeIntegration, isInitialized]);
+  }, [localIntegrationDataList, activeIntegration, isInitialized]);
 
   // Persist integrations whenever they change
   useEffect(() => {
     if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    console.log("setting integrations", integrations);
-    void window.electron.store.setIntegrations(integrations);
-  }, [integrations, isStoreReady, isInitialized]);
+    console.log("setting integrations", localIntegrationDataList);
+    void window.electron.store.setIntegrations(localIntegrationDataList);
+  }, [localIntegrationDataList, isStoreReady, isInitialized]);
 
   // Persist active integration whenever it changes
   useEffect(() => {
@@ -144,7 +151,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     );
   }, [activeIntegration?.id, isStoreReady, isInitialized]);
 
-  const initializeDriver = async (integration: Integration) => {
+  const initializeDriver = async (integration: LocalIntegrationData) => {
     console.log("initializeDriver", integration);
     try {
       const result = await window.electron.database.connect(integration);
@@ -271,39 +278,49 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
 
-  const addIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    const newIntegration: Integration = {
-      ...integration,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    setIntegrations((prev) => [...prev, newIntegration]);
-    console.log("newIntegration", newIntegration);
-    setActiveIntegration(newIntegration);
+  const addLocalIntegration = async (integrationToSave: IntegrationToSave) => {
+    const newIntegration = await createIntegration.mutateAsync({
+      name: integrationToSave.name,
+      type: "local",
+      databaseType: integrationToSave.databaseType,
+    });
+    const id = newIntegration.id;
+
+    setLocalIntegrationDataList((prev) => [
+      ...prev,
+      {
+        id: newIntegration.id,
+        config: integrationToSave.config,
+        credentials: integrationToSave.credentials,
+      },
+    ]);
+    setActiveIntegration({
+      id: newIntegration.id,
+      config: integrationToSave.config,
+      credentials: integrationToSave.credentials,
+    });
   };
 
-  const editIntegration = (
+  const editLocalIntegration = (
     id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
+    integrationToSave: IntegrationToSave,
   ) => {
-    setIntegrations((prev) =>
+    setLocalIntegrationDataList((prev) =>
       prev.map((integration) =>
         integration.id === id
           ? {
               ...integration,
-              databaseType: updates.databaseType,
-              name: updates.name,
-              credentials: updates.credentials,
+              databaseType: integrationToSave.databaseType,
+              name: integrationToSave.name,
+              credentials: integrationToSave.credentials,
             }
           : integration,
       ),
     );
   };
 
-  const removeIntegration = (id: string) => {
-    setIntegrations((prev) => {
+  const removeLocalIntegration = (id: string) => {
+    setLocalIntegrationDataList((prev) => {
       const filtered = prev.filter((i) => i.id !== id);
       if (activeIntegration?.id === id) {
         // If removed integration was active, set new active integration
@@ -394,7 +411,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         activeIntegration,
         setActiveIntegration,
-        integrations,
+        localIntegrationDataList,
         databaseMetadata,
         isFetchingMetadata,
         driver: null,
@@ -404,9 +421,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         loadingDatasets,
         isLoadingDatasets,
         loadedDatasets,
-        addIntegration,
-        editIntegration,
-        removeIntegration,
+        addLocalIntegration,
+        editLocalIntegration,
+        removeLocalIntegration,
         executeQuery,
         cancelQuery,
         getQueryResult,
@@ -426,10 +443,10 @@ export const useData = () => {
 
   const utils = api.useUtils();
   const { data: databaseMetadata, isLoading } =
-    api.databaseMetadata.getDatabaseMetadata.useQuery();
+    api.integration.getIntegration.useQuery();
 
   const { mutate: setDatabaseMetadataMutation } =
-    api.databaseMetadata.setDatabaseMetadata.useMutation({
+    api.integration.setDatabaseMetadata.useMutation({
       onSuccess: () => {
         // void utils.databaseMetadata.getDatabaseMetadata.invalidate();
       },
@@ -472,11 +489,8 @@ export const useData = () => {
     };
 
     // Optimistically update the cache
-    void utils.databaseMetadata.getDatabaseMetadata.cancel();
-    utils.databaseMetadata.getDatabaseMetadata.setData(
-      undefined,
-      updatedMetadata,
-    );
+    void utils.integration.getIntegration.cancel();
+    utils.integration.getIntegration.setData(undefined, updatedMetadata);
 
     setDatabaseMetadataMutation({
       databaseMetadata: updatedMetadata,

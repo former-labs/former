@@ -1,4 +1,4 @@
-import type { BigQueryCredentials, Integration, PostgresCredentials } from "../types/connections.js";
+import type { BigQueryCredentials, LocalIntegrationData, PostgresCredentials } from "../types/connections.js";
 import { type IElectronAPI } from "../types/electron.js";
 import { BigQueryDriver } from "./drivers/bigQueryDriver.js";
 import { type Driver } from "./drivers/driver.js";
@@ -7,7 +7,7 @@ import { PostgresDriver } from "./drivers/postgresDriver.js";
 const connections = new Map<string, Driver>();
 
 export const database: IElectronAPI['database'] = {
-  async connect(integration: Integration) {
+  async connect(integration: LocalIntegrationData) {
     try {
       let driver: Driver;
       const connectionId = integration.id ?? crypto.randomUUID();

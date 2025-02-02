@@ -37,7 +37,7 @@ export const ParseDatabaseMetadata = ({
   });
 
   const parseDatabaseMetadata =
-    api.databaseMetadata.parseDatabaseMetadataWithAI.useMutation({
+    api.integration.parseDatabaseMetadataWithAI.useMutation({
       onSuccess: (data) => {
         onParsedAction(data);
         form.reset();

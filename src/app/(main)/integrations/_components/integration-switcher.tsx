@@ -10,7 +10,11 @@ import {
 import { useData } from "@/contexts/DataContext";
 
 export function IntegrationSwitcher() {
-  const { activeIntegration, setActiveIntegration, integrations } = useData();
+  const {
+    activeIntegration,
+    setActiveIntegration,
+    localIntegrationDataList: integrations,
+  } = useData();
 
   if (integrations.length === 0) {
     return (

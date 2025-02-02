@@ -22,7 +22,11 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import type { BigQueryCredentials, Integration } from "@/types/connections";
+import type {
+  BigQueryCredentials,
+  IntegrationToSave,
+  LocalIntegrationData,
+} from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -41,10 +45,10 @@ type FormValues = z.infer<typeof formSchema>;
 export interface BigQueryConnectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  integration?: Integration;
+  integration?: LocalIntegrationData;
   onSubmit: (params: {
     id: string | null;
-    integration: Omit<Integration, "id" | "createdAt">;
+    integrationToSave: IntegrationToSave;
   }) => void;
 }
 
@@ -112,7 +116,7 @@ export function BigQueryConnectModal({
 
       onSubmit({
         id: integration?.id ?? null,
-        integration: {
+        integrationToSave: {
           databaseType: "bigquery",
           credentials,
           name: values.name,

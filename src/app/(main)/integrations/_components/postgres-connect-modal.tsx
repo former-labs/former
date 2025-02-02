@@ -17,7 +17,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import type { Integration, PostgresCredentials } from "@/types/connections";
+import type {
+  LocalIntegrationData,
+  PostgresCredentials,
+} from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -46,10 +49,10 @@ type FormValues = z.infer<typeof formSchema>;
 export interface PostgresConnectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  integration?: Integration;
+  integration?: LocalIntegrationData;
   onSubmit: (params: {
     id: string | null;
-    integration: Omit<Integration, "id" | "createdAt">;
+    integration: Omit<LocalIntegrationData, "id" | "createdAt">;
   }) => void;
 }
 

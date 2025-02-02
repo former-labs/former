@@ -1,8 +1,8 @@
-import type { DatabaseMetadata, Integration, Table } from "./connections";
+import type { DatabaseMetadata, LocalIntegrationData, Table } from "./connections";
 
 export interface IElectronAPI {
   database: {
-    connect: (integration: Integration) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
+    connect: (integration: LocalIntegrationData) => Promise<{ success: boolean; connectionId?: string; error?: string }>;
     disconnect: (connectionId: string) => Promise<void>;
     execute: (connectionId: string, query: string) => Promise<{
       jobId: string;
@@ -28,8 +28,8 @@ export interface IElectronAPI {
   receive: (channel: string, func: (...args: unknown[]) => void) => void;
   on: (channel: string, func: (...args: unknown[]) => void) => void;
   store: {
-    getIntegrations: () => Promise<Integration[]>;
-    setIntegrations: (integrations: Integration[]) => Promise<void>;
+    getIntegrations: () => Promise<LocalIntegrationData[]>;
+    setIntegrations: (integrations: LocalIntegrationData[]) => Promise<void>;
     getActiveIntegrationId: () => Promise<string | null>;
     setActiveIntegrationId: (id: string | null) => Promise<void>;
   };

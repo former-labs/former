@@ -1,4 +1,4 @@
-import type { Integration } from '@/types/connections';
+import type { LocalIntegrationData } from '@/types/connections';
 import type { IElectronAPI } from '@/types/electron';
 import { type IpcRendererEvent, contextBridge, ipcRenderer } from 'electron';
 
@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld(
   'electron',
   {
     database: {
-      connect: (integration: Integration) => 
+      connect: (integration: LocalIntegrationData) => 
         ipcRenderer.invoke('database:connect', integration),
       disconnect: (connectionId: string) => 
         ipcRenderer.invoke('database:disconnect', connectionId),
@@ -46,7 +46,7 @@ contextBridge.exposeInMainWorld(
     },
     store: {
       getIntegrations: () => ipcRenderer.invoke('store:getIntegrations'),
-      setIntegrations: (integrations: Integration[]) => 
+      setIntegrations: (integrations: LocalIntegrationData[]) => 
         ipcRenderer.invoke('store:setIntegrations', integrations),
       getActiveIntegrationId: () => 
         ipcRenderer.invoke('store:getActiveIntegrationId'),

@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import type { Integration } from '../types/connections.js';
+import type { LocalIntegrationData } from '../types/connections.js';
 import type { IElectronAPI } from '../types/electron.js';
 import { database } from './database.js';
 import { env } from './env.electron.js';
@@ -119,7 +119,7 @@ const ipcHandler = <T extends unknown[], R>(
 };
 
 // Set up IPC handlers
-ipcHandler('database:connect', (async (config: Integration) => {
+ipcHandler('database:connect', (async (config: LocalIntegrationData) => {
   return await database.connect(config);
 }) as IElectronAPI['database']['connect']);
 
@@ -143,7 +143,7 @@ ipcHandler('store:getIntegrations', (async () => {
   return storeUtils.getIntegrations();
 }) as IElectronAPI['store']['getIntegrations']);
 
-ipcHandler('store:setIntegrations', (async (integrations: Integration[]) => {
+ipcHandler('store:setIntegrations', (async (integrations: LocalIntegrationData[]) => {
   storeUtils.setIntegrations(integrations);
 }) as IElectronAPI['store']['setIntegrations']);
 

@@ -7,7 +7,11 @@ import { PostgresConnectModal } from "@/app/(main)/integrations/_components/post
 import BigQueryLogo from "@/components/assets/bigquery.svg";
 import PostgresLogo from "@/components/assets/postgres.svg";
 import { useData } from "@/contexts/DataContext";
-import { DatabaseType, type Integration } from "@/types/connections";
+import {
+  DatabaseType,
+  IntegrationToSave,
+  type LocalIntegrationData,
+} from "@/types/connections";
 import { useState } from "react";
 
 const integrationTypes = [
@@ -29,22 +33,23 @@ export default function IntegrationsPage() {
   const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
   const [openPostgresModal, setOpenPostgresModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<
-    Integration | undefined
+    LocalIntegrationData | undefined
   >(undefined);
-  const { addIntegration, editIntegration } = useData();
+  const { addLocalIntegration, editLocalIntegration } = useData();
 
-  const handleCreateIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    addIntegration(integration);
+  const handleCreateIntegration = (integrationToSave: IntegrationToSave) => {
+    addLocalIntegration(integrationToSave);
     handleCloseModal();
   };
 
-  const handleUpdateIntegration = (
-    id: string,
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    editIntegration(id, integration);
+  const handleUpdateIntegration = ({
+    id,
+    integrationToSave,
+  }: {
+    id: string;
+    integrationToSave: IntegrationToSave;
+  }) => {
+    editLocalIntegration(id, integrationToSave);
     handleCloseModal();
   };
 
@@ -53,7 +58,7 @@ export default function IntegrationsPage() {
     integration,
   }: {
     type: DatabaseType;
-    integration?: Integration;
+    integration?: LocalIntegrationData;
   }) => {
     setSelectedIntegration(integration);
     if (type === "bigquery") {
@@ -71,15 +76,15 @@ export default function IntegrationsPage() {
 
   const handleModalSubmit = ({
     id,
-    integration,
+    integrationToSave,
   }: {
     id: string | null;
-    integration: Omit<Integration, "id" | "createdAt">;
+    integrationToSave: IntegrationToSave;
   }) => {
     if (id) {
-      handleUpdateIntegration(id, integration);
+      handleUpdateIntegration({ id, integrationToSave });
     } else {
-      handleCreateIntegration(integration);
+      handleCreateIntegration(integrationToSave);
     }
   };
 
@@ -123,7 +128,7 @@ export default function IntegrationsPage() {
           if (!open) handleCloseModal();
         }}
         integration={selectedIntegration}
-        onSubmit={(integration) => handleModalSubmit(integration)}
+        onSubmit={(integrationToSave) => handleModalSubmit(integrationToSave)}
       />
       <PostgresConnectModal
         open={openPostgresModal}
@@ -131,7 +136,7 @@ export default function IntegrationsPage() {
           if (!open) handleCloseModal();
         }}
         integration={selectedIntegration}
-        onSubmit={(integration) => handleModalSubmit(integration)}
+        onSubmit={(integrationToSave) => handleModalSubmit(integrationToSave)}
       />
     </div>
   );

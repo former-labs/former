@@ -18,7 +18,7 @@ export default function Page() {
   const { toast } = useToast();
 
   const { data: existingMetadata, isLoading } =
-    api.databaseMetadata.getDatabaseMetadata.useQuery();
+    api.integration.getIntegration.useQuery();
 
   useEffect(() => {
     if (existingMetadata) {
@@ -26,24 +26,23 @@ export default function Page() {
     }
   }, [existingMetadata]);
 
-  const saveMetadataMutation =
-    api.databaseMetadata.setDatabaseMetadata.useMutation({
-      onSuccess: () => {
-        void utils.databaseMetadata.getDatabaseMetadata.invalidate();
-        toast({
-          title: "Success",
-          description: "Database metadata has been saved successfully",
-          variant: "default",
-        });
-      },
-      onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to save database metadata",
-          variant: "destructive",
-        });
-      },
-    });
+  const saveMetadataMutation = api.integration.setDatabaseMetadata.useMutation({
+    onSuccess: () => {
+      void utils.integration.getIntegration.invalidate();
+      toast({
+        title: "Success",
+        description: "Database metadata has been saved successfully",
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save database metadata",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSave = () => {
     try {
