@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { useData } from "@/contexts/DataContext";
+import { useIntegrations } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { PATH_HOME } from "@/lib/paths";
 import { api } from "@/trpc/react";
@@ -46,7 +46,7 @@ export default function OnboardingPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { handleWorkspaceSwitch } = useAuth();
-  const { addIntegration } = useData();
+  const { addIntegration } = useIntegrations();
 
   const formSchema = z.object({
     workspaceName: z.string().min(3, "Must be at least 3 characters"),

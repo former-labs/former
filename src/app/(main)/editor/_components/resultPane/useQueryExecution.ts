@@ -1,9 +1,9 @@
 "use client";
 
-import { useData } from "@/contexts/DataContext";
+import { useIntegrations } from "@/contexts/DataContext";
 
 export const useQueryExecution = () => {
-  const { activeIntegration } = useData();
+  const { activeIntegration } = useIntegrations();
 
   if (!activeIntegration) {
     throw new Error("No active integration");

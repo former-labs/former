@@ -7,10 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useData } from "@/contexts/DataContext";
+import { useIntegrations } from "@/contexts/DataContext";
 
 export function IntegrationSwitcher() {
-  const { activeIntegration, setActiveIntegration, integrations } = useData();
+  const { activeIntegration, setActiveIntegration, integrations } =
+    useIntegrations();
 
   if (integrations.length === 0) {
     return (

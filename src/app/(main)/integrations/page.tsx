@@ -6,7 +6,7 @@ import { IntegrationCard } from "@/app/(main)/integrations/_components/integrati
 import { PostgresConnectModal } from "@/app/(main)/integrations/_components/postgres-connect-modal";
 import BigQueryLogo from "@/components/assets/bigquery.svg";
 import PostgresLogo from "@/components/assets/postgres.svg";
-import { useData } from "@/contexts/DataContext";
+import { useIntegrations } from "@/contexts/DataContext";
 import { type Integration } from "@/types/connections";
 import { useState } from "react";
 
@@ -31,7 +31,7 @@ export default function IntegrationsPage() {
   const [selectedIntegration, setSelectedIntegration] = useState<
     Integration | undefined
   >(undefined);
-  const { addIntegration, editIntegration } = useData();
+  const { addIntegration, editIntegration } = useIntegrations();
 
   const handleCreateIntegration = (
     integration: Omit<Integration, "id" | "createdAt">,

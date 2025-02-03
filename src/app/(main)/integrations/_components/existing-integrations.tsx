@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useData } from "@/contexts/DataContext";
+import { useIntegrations } from "@/contexts/DataContext";
 import { Integration } from "@/types/connections";
 import { EditIcon, Trash2 } from "lucide-react";
 
@@ -24,7 +24,7 @@ interface ExistingIntegrationsProps {
 export function ExistingIntegrations({
   onEditIntegration,
 }: ExistingIntegrationsProps) {
-  const { integrations, removeIntegration } = useData();
+  const { integrations, removeIntegration } = useIntegrations();
 
   const handleDelete = (id: string) => {
     removeIntegration(id);
