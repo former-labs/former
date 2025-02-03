@@ -28,7 +28,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import * as React from "react";
-import { MetadataTree } from "./metadata-tree/metadata-tree";
+import { MetadataTree } from "./metadata-tree/MetadataTree";
 
 const data = {
   sections: [
