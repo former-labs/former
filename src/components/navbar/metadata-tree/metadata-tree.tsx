@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { useData } from "@/contexts/DataContext";
 import {
   ArrowRight,
@@ -39,13 +40,8 @@ import { TableItem } from "./TableItem";
 // Main component
 export function MetadataTree() {
   const router = useRouter();
-  const {
-    databaseMetadata,
-    isFetchingMetadata,
-    activeIntegration,
-    integrations,
-    setActiveIntegration,
-  } = useData();
+  const { databaseMetadata, isFetchingMetadata } = useDatabaseMetadata();
+  const { activeIntegration, integrations, setActiveIntegration } = useData();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set(),
   );
@@ -463,8 +459,8 @@ function DatasetItem({
   toggleTable: (id: string) => void;
   hideEmptyDatabases: boolean;
 }) {
-  const { activeIntegration, fetchTablesForDataset, loadingDatasets } =
-    useData();
+  const { activeIntegration } = useData();
+  const { fetchTablesForDataset, loadingDatasets } = useDatabaseMetadata();
 
   const handleToggle = async () => {
     onToggle();

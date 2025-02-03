@@ -6,7 +6,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useData } from "@/contexts/DataContext";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/chat/Chat";
 import { useChat } from "./_components/chat/chatStore";
@@ -15,7 +15,7 @@ import { getActiveEditor } from "./_components/editor/editorStore";
 import { QueryResultPane } from "./_components/resultPane/QueryResultPane";
 
 export default function EditorPage() {
-  const { databaseMetadata } = useData();
+  const { databaseMetadata } = useDatabaseMetadata();
   const { createChat } = useChat();
 
   useEventListener("keydown", (e) => {

@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { useData } from "@/contexts/DataContext";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { api } from "@/trpc/react";
 import { filterDatabaseMetadataContext } from "../chat/chatStore";
 import { useActiveEditor } from "../editor/editorStore";
 
 export const QueryResultError = ({ resultError }: { resultError: string }) => {
-  const { databaseMetadata } = useData();
+  const { databaseMetadata } = useDatabaseMetadata();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
   const { data: instructions, isLoading: instructionsLoading } =
     api.instructions.getInstructions.useQuery();
