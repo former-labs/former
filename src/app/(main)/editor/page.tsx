@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/resizable";
 import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { env } from "@/env";
+import { PATH_INTEGRATIONS } from "@/lib/paths";
 import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/chat/Chat";
 import { useChat } from "./_components/chat/chatStore";
@@ -37,7 +38,7 @@ export default function EditorPage() {
         </div>
         <Button
           variant="outline"
-          onClick={() => (window.location.href = "/integrations")}
+          onClick={() => (window.location.href = PATH_INTEGRATIONS)}
           className="mt-4"
         >
           Connect Database

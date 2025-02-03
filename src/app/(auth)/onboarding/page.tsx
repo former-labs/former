@@ -14,13 +14,13 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
 import { useToast } from "@/hooks/use-toast";
+import { PATH_HOME } from "@/lib/paths";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
 
 // Comment
 const getErrorDetails = (error: string) => {
@@ -112,7 +112,7 @@ export default function OnboardingPage() {
         addIntegration(demoIntegration);
       }
 
-      router.push("/");
+      router.push(PATH_HOME);
     } catch (err) {
       setError("An error occurred while creating the workspace");
     } finally {

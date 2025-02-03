@@ -1,5 +1,6 @@
 "use client";
 
+import { PATH_HOME } from "@/lib/paths";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
@@ -14,7 +15,10 @@ function AuthCompleteContent() {
     if (target) {
       const redirectUrl = new URL(target);
       redirectUrl.searchParams.set("code", searchParams.get("code") || "");
-      redirectUrl.searchParams.set("next", searchParams.get("next") || "/");
+      redirectUrl.searchParams.set(
+        "next",
+        searchParams.get("next") || PATH_HOME,
+      );
       window.location.href = redirectUrl.toString();
     }
     // window.close();

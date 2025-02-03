@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoFormer } from "@/components/utils/LogoFormer";
 import { useAuth } from "@/contexts/AuthContext";
+import { PATH_LOGIN } from "@/lib/paths";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,7 +61,7 @@ export default function SignupPage() {
 
           <div className="text-center text-sm text-gray-500">
             Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 hover:underline">
+            <Link href={PATH_LOGIN} className="text-blue-600 hover:underline">
               Log in
             </Link>
           </div>

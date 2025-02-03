@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { useData } from "@/contexts/DataContext";
+import { PATH_INTEGRATIONS } from "@/lib/paths";
 import {
   ArrowRight,
   ChevronDown,
@@ -161,7 +162,7 @@ export function MetadataTree() {
                 variant="outline"
                 className="w-full justify-start text-muted-foreground"
                 size="sm"
-                onClick={() => router.push("/integrations")}
+                onClick={() => router.push(PATH_INTEGRATIONS)}
               >
                 <span className="truncate">Configure integrations</span>
                 <ArrowRight className="h-4 w-4" />
