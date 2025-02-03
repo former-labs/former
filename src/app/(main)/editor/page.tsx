@@ -7,6 +7,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
+import { env } from "@/env";
 import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/chat/Chat";
 import { useChat } from "./_components/chat/chatStore";
@@ -28,7 +29,7 @@ export default function EditorPage() {
     }
   });
 
-  if (!databaseMetadata) {
+  if (env.NEXT_PUBLIC_PLATFORM === "desktop" && !databaseMetadata) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <div className="text-lg text-gray-500">
@@ -54,10 +55,14 @@ export default function EditorPage() {
               <ResizablePanel defaultSize={70} minSize={30}>
                 <EditorSection />
               </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={30} minSize={15}>
-                <QueryResultPane />
-              </ResizablePanel>
+              {env.NEXT_PUBLIC_PLATFORM === "desktop" && (
+                <>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel defaultSize={30} minSize={15}>
+                    <QueryResultPane />
+                  </ResizablePanel>
+                </>
+              )}
             </ResizablePanelGroup>
           </div>
         </ResizablePanel>

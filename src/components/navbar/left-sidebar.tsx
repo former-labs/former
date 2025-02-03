@@ -10,6 +10,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { env } from "@/env";
 import {
   PATH_EDITOR,
   PATH_HELP,
@@ -151,11 +152,15 @@ const data = {
       url: PATH_EDITOR,
       icon: Code,
     },
-    {
-      name: "Integrations",
-      url: PATH_INTEGRATIONS,
-      icon: Plug,
-    },
+    ...(env.NEXT_PUBLIC_PLATFORM === "desktop"
+      ? [
+          {
+            name: "Integrations",
+            url: PATH_INTEGRATIONS,
+            icon: Plug,
+          },
+        ]
+      : []),
     {
       name: "AI Instructions",
       url: PATH_INSTRUCTIONS,

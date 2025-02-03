@@ -226,7 +226,13 @@ export const SqlEditor = () => {
   // Add Cmd+Enter binding to execute query
   useEditorKeybind({
     id: "execute-query",
-    callback: () => executeQuery({ editorSelectionContent, editorContent }),
+    callback: async () => {
+      if (env.NEXT_PUBLIC_PLATFORM === "web") {
+        console.log("Query execution disabled on web.");
+        return;
+      }
+      await executeQuery({ editorSelectionContent, editorContent });
+    },
     keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
     codeEditor,
   });
@@ -337,19 +343,21 @@ export const SqlEditor = () => {
     <div className="flex h-full w-full flex-col">
       <div className="flex flex-shrink-0 items-center justify-between bg-gray-50 px-2 py-1">
         <div className="flex gap-2 overflow-x-auto">
-          <Button
-            variant="ghost"
-            onClick={() =>
-              executeQuery({ editorSelectionContent, editorContent })
-            }
-            disabled={resultLoading}
-          >
-            {resultLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-          </Button>
+          {env.NEXT_PUBLIC_PLATFORM === "desktop" && (
+            <Button
+              variant="ghost"
+              onClick={() =>
+                executeQuery({ editorSelectionContent, editorContent })
+              }
+              disabled={resultLoading}
+            >
+              {resultLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           {env.NEXT_PUBLIC_NODE_ENV === "development" && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
