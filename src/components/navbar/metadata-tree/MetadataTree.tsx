@@ -30,19 +30,13 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  type DatasetExtended,
-  HighlightedText,
-  type ProjectExtended,
-} from "./common";
+import { HighlightedText, type ProjectExtended } from "./common";
+import { DatasetItem } from "./DatasetItem";
 import { filterMetadataBySearch } from "./filterMetadataBySearch";
-import { TableItem } from "./TableItem";
 
 export function MetadataTree() {
-  const router = useRouter();
   const { databaseMetadata, isFetchingMetadata } = useDatabaseMetadata();
-  const { activeIntegration, integrations, setActiveIntegration } =
-    useIntegrations();
+  const { activeIntegration } = useIntegrations();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set(),
   );
@@ -130,47 +124,7 @@ export function MetadataTree() {
       <SidebarGroup className="flex h-full flex-col">
         <SidebarGroupLabel>Active Integration</SidebarGroupLabel>
 
-        <div className="mb-1 px-2">
-          {integrations.length > 0 ? (
-            <div>
-              <Select
-                value={activeIntegration?.id ?? ""}
-                onValueChange={(value) => {
-                  const integration = integrations.find((i) => i.id === value);
-                  if (integration) setActiveIntegration(integration);
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select integration">
-                    {activeIntegration?.name ?? "Select integration"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {integrations.map((integration) => (
-                    <SelectItem
-                      key={integration.id}
-                      value={integration.id ?? ""}
-                    >
-                      {integration.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-muted-foreground"
-                size="sm"
-                onClick={() => router.push(PATH_INTEGRATIONS)}
-              >
-                <span className="truncate">Configure integrations</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
+        <IntegrationDropdown />
 
         {activeIntegration && (
           <>
@@ -332,125 +286,47 @@ function ProjectItem({
   );
 }
 
-// Component for dataset items
-function DatasetItem({
-  projectId,
-  dataset,
-  searchQuery,
-  isExpanded,
-  onToggle,
-  expandedTables,
-  toggleTable,
-  hideEmptyDatabases,
-}: {
-  projectId: string;
-  dataset: DatasetExtended;
-  searchQuery: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-  expandedTables: Set<string>;
-  toggleTable: (id: string) => void;
-  hideEmptyDatabases: boolean;
-}) {
-  const { activeIntegration } = useIntegrations();
-  const { fetchTablesForDataset, loadingDatasets } = useDatabaseMetadata();
-
-  const handleToggle = async () => {
-    onToggle();
-    if (!isExpanded && activeIntegration?.id) {
-      await fetchTablesForDataset(activeIntegration.id, dataset.id);
-    }
-  };
-
-  const isLoading = loadingDatasets.has(dataset.id);
-
-  if (
-    hideEmptyDatabases &&
-    (dataset.tableCount ??
-      dataset._originalTableCount ??
-      dataset.tables.length) === 0
-  ) {
-    return null;
-  }
+function IntegrationDropdown() {
+  const router = useRouter();
+  const { activeIntegration, integrations, setActiveIntegration } =
+    useIntegrations();
 
   return (
-    <div className="space-y-0.5">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-full justify-start gap-2"
-        onClick={handleToggle}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex w-full items-center gap-2">
-              <Database className="h-4 w-4" />
-              <span className="truncate">
-                <HighlightedText text={dataset.name} query={searchQuery} />
-              </span>
-              <span className="ml-auto flex items-center gap-2">
-                <Badge variant="secondary">
-                  {dataset.tableCount ??
-                    dataset._originalTableCount ??
-                    dataset.tables.length}
-                </Badge>
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">
-                  <HighlightedText text={dataset.name} query={searchQuery} />
-                </span>
-                <Badge variant="secondary">
-                  {dataset.tableCount ??
-                    dataset._originalTableCount ??
-                    dataset.tables.length}{" "}
-                  tables
-                </Badge>
-              </div>
-              <div>
-                {dataset.description ? (
-                  <HighlightedText
-                    text={dataset.description}
-                    query={searchQuery}
-                  />
-                ) : (
-                  "No description available"
-                )}
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </Button>
-      {isExpanded && (
-        <div className="pl-4">
-          {isLoading ? (
-            <div className="flex items-center gap-2 py-2 pl-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-gray-900" />
-              <span className="text-sm text-muted-foreground">
-                Loading tables...
-              </span>
-            </div>
-          ) : (
-            dataset.tables.map((table) => (
-              <TableItem
-                key={table.id}
-                projectId={projectId}
-                datasetId={dataset.id}
-                table={table}
-                searchQuery={searchQuery}
-                isExpanded={expandedTables.has(table.id)}
-                onToggle={() => toggleTable(table.id)}
-              />
-            ))
-          )}
+    <div className="mb-1 px-2">
+      {integrations.length > 0 ? (
+        <div>
+          <Select
+            value={activeIntegration?.id ?? ""}
+            onValueChange={(value) => {
+              const integration = integrations.find((i) => i.id === value);
+              if (integration) setActiveIntegration(integration);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select integration">
+                {activeIntegration?.name ?? "Select integration"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {integrations.map((integration) => (
+                <SelectItem key={integration.id} value={integration.id ?? ""}>
+                  {integration.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <div>
+          <Button
+            variant="outline"
+            className="w-full justify-start text-muted-foreground"
+            size="sm"
+            onClick={() => router.push(PATH_INTEGRATIONS)}
+          >
+            <span className="truncate">Configure integrations</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>
