@@ -8,26 +8,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useData } from "@/contexts/DataContext";
-import { Integration } from "@/types/connections";
+import { LocalIntegrationToSave } from "@/types/connections";
 import { EditIcon, Trash2 } from "lucide-react";
-
-interface ExistingIntegrationsProps {
-  onEditIntegration: ({
-    type,
-    integration,
-  }: {
-    type: "bigquery" | "postgres";
-    integration: Integration;
-  }) => void;
-}
 
 export function ExistingIntegrations({
   onEditIntegration,
-}: ExistingIntegrationsProps) {
-  const { integrations, removeIntegration } = useData();
+}: {
+  onEditIntegration: (integration: LocalIntegrationToSave) => void;
+}) {
+  const { cloudIntegrations, removeLocalIntegration } = useData();
 
   const handleDelete = (id: string) => {
-    removeIntegration(id);
+    removeLocalIntegration(id);
   };
 
   return (
@@ -60,7 +52,7 @@ export function ExistingIntegrations({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {integrations.map((integration) => (
+            {cloudIntegrations.map((integration) => (
               <TableRow
                 key={integration.id}
                 className="border-zinc-200 hover:bg-zinc-50"
@@ -69,7 +61,7 @@ export function ExistingIntegrations({
                   {integration.name}
                 </TableCell>
                 <TableCell className="text-sm text-zinc-500">
-                  {integration.type}
+                  {integration.databaseType}
                 </TableCell>
                 <TableCell className="text-sm text-zinc-500">
                   {new Date(integration.createdAt).toLocaleDateString("en-US", {
@@ -89,11 +81,10 @@ export function ExistingIntegrations({
                       disabled={integration.demo}
                       onClick={() =>
                         onEditIntegration({
-                          type: integration.type,
                           integration,
                         })
                       }
-                    >
+                    >''
                       <EditIcon className="h-4 w-4" />
                     </Button>
                     <Button
@@ -109,7 +100,7 @@ export function ExistingIntegrations({
                 </TableCell>
               </TableRow>
             ))}
-            {integrations.length === 0 && (
+            {cloudIntegrations.length === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={4}

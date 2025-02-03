@@ -1,4 +1,4 @@
-import type { BigQueryCredentials, Integration, PostgresCredentials } from "../types/connections.js";
+import type { BigQueryCredentials, IntegrationCombined, PostgresCredentials } from "../types/connections.js";
 import { type IElectronAPI } from "../types/electron.js";
 import { BigQueryDriver } from "./drivers/bigQueryDriver.js";
 import { type Driver } from "./drivers/driver.js";
@@ -7,20 +7,20 @@ import { PostgresDriver } from "./drivers/postgresDriver.js";
 const connections = new Map<string, Driver>();
 
 export const database: IElectronAPI['database'] = {
-  async connect(integration: Integration) {
+  async connect(integration: IntegrationCombined) {
     try {
       let driver: Driver;
       const connectionId = integration.id ?? crypto.randomUUID();
 
-      switch (integration.type) {
+      switch (integration.databaseType) {
         case 'bigquery':
-          driver = new BigQueryDriver(integration.credentials as BigQueryCredentials, integration.config?.projectId ?? '', integration.demo);
+          driver = new BigQueryDriver(integration.localIntegrationData.credentials as BigQueryCredentials, integration.localIntegrationData.config?.projectId ?? '', integration?.demo ?? false);
           break;
         case 'postgres':
-          driver = new PostgresDriver(integration.credentials as PostgresCredentials);
+          driver = new PostgresDriver(integration.localIntegrationData.credentials as PostgresCredentials);
           break;
         default:
-          throw new Error(`Invalid database type: ${integration.type} \n\n Integration: \n${JSON.stringify(integration)}`);
+          throw new Error(`Invalid database type: ${integration.databaseType} \n\n Integration: \n${JSON.stringify(integration)}`);
       }
 
       await driver.connect();

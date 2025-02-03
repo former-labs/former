@@ -9,7 +9,7 @@ import { api } from "@/trpc/react";
 import { useState } from "react";
 
 export default function AdminEvalPage() {
-  const { activeIntegration } = useData();
+  const { activeCloudIntegration } = useData();
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<string>("");
 
@@ -23,13 +23,13 @@ export default function AdminEvalPage() {
   });
 
   const handleEval = async () => {
-    if (!activeIntegration) {
+    if (!activeCloudIntegration) {
       setResult("Please select an integration first");
       return;
     }
 
     void evalMutation.mutate({
-      integrationId: activeIntegration.id,
+      integrationId: activeCloudIntegration.id,
       query,
     });
   };
@@ -55,7 +55,7 @@ export default function AdminEvalPage() {
         </div>
 
         <div className="mb-4">
-          <Button onClick={handleEval} disabled={!activeIntegration || !query}>
+          <Button onClick={handleEval} disabled={!activeCloudIntegration || !query}>
             Run Query
           </Button>
         </div>

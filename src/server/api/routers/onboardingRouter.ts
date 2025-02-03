@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createTRPCRouter, userProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
 import { knowledgeTable, roleTable, RoleType, workspaceTable } from "@/server/db/schema";
-import type { Integration } from "@/types/connections";
+import type { LocalIntegrationToSave } from "@/types/connections";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -102,8 +102,8 @@ export const onboardingRouter = createTRPCRouter({
 
   retrieveDemoIntegration: userProtectedProcedure
     .query(async () => {
-      const demoIntegration: Omit<Integration, "id" | "createdAt"> = {
-        type: "bigquery",
+      const demoIntegration: LocalIntegrationToSave = {
+        databaseType: "bigquery",
         name: "Demo BigQuery Integration",
         // These are the credentials for a very restricted demo service account that only has access to BigQuery Data Viewer and BigQuery Job User roles in the former-prod project. We are making sure to only include a single dataset in the demo integration and set a limit of 1000 rows for each query on this dataset.
         credentials: {

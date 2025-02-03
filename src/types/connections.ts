@@ -1,3 +1,4 @@
+import { IntegrationSelect } from "@/server/db/schema";
 import { z } from "zod";
 
 export interface BigQueryCredentials {
@@ -24,15 +25,33 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export type DatabaseType = 'bigquery' | 'postgres';
+export const DATABASE_TYPES = [
+  "bigquery",
+  "postgres",
+  "mysql",
+  "sqlserver",
+  "snowflake",
+  "databricks",
+] as const;
 
-export type Integration = {
+export type DatabaseType = (typeof DATABASE_TYPES)[number];
+
+export type LocalIntegrationData = {
   id: string;
-  type: DatabaseType;
-  name: string;
   credentials: DatabaseCredentials;
   config: IntegrationConfig | null;
-  createdAt: string;
+};
+
+export type IntegrationCombined = IntegrationSelect & {
+  localIntegrationData: LocalIntegrationData | null;
+};
+
+export type LocalIntegrationToSave = {
+  id?: string;
+  name: string;
+  databaseType: DatabaseType;
+  credentials: DatabaseCredentials;
+  config: IntegrationConfig;
   demo?: boolean;
 };
 

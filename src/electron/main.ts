@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import type { Integration } from '../types/connections.js';
+import type { IntegrationCombined, LocalIntegrationData } from '../types/connections.js';
 import type { IElectronAPI } from '../types/electron.js';
 import { database } from './database.js';
 import { env } from './env.electron.js';
@@ -119,7 +119,7 @@ const ipcHandler = <T extends unknown[], R>(
 };
 
 // Set up IPC handlers
-ipcHandler('database:connect', (async (config: Integration) => {
+ipcHandler('database:connect', (async (config: IntegrationCombined) => {
   return await database.connect(config);
 }) as IElectronAPI['database']['connect']);
 
@@ -141,19 +141,11 @@ ipcHandler('database:getJobResult', (async (connectionId: string, jobId: string)
 
 ipcHandler('store:getIntegrations', (async () => {
   return storeUtils.getIntegrations();
-}) as IElectronAPI['store']['getIntegrations']);
+}) as IElectronAPI['store']['getLocalIntegrations']);
 
-ipcHandler('store:setIntegrations', (async (integrations: Integration[]) => {
+ipcHandler('store:setIntegrations', (async (integrations: LocalIntegrationData[]) => {
   storeUtils.setIntegrations(integrations);
-}) as IElectronAPI['store']['setIntegrations']);
-
-ipcHandler('store:getActiveIntegrationId', (async () => {
-  return storeUtils.getActiveIntegrationId();
-}) as IElectronAPI['store']['getActiveIntegrationId']);
-
-ipcHandler('store:setActiveIntegrationId', (async (id: string | null) => {
-  storeUtils.setActiveIntegrationId(id);
-}) as IElectronAPI['store']['setActiveIntegrationId']);
+}) as IElectronAPI['store']['setLocalIntegrations']);
 
 ipcHandler('database:getProjectsAndDatasets', (async (connectionId: string) => {
   return database.getProjectsAndDatasets(connectionId);

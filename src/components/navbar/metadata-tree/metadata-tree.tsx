@@ -42,9 +42,9 @@ export function MetadataTree() {
   const {
     databaseMetadata,
     isFetchingMetadata,
-    activeIntegration,
-    integrations,
-    setActiveIntegration,
+    activeCloudIntegration,
+    localIntegrations,
+    setActiveCloudIntegration,
   } = useData();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set(),
@@ -242,22 +242,22 @@ export function MetadataTree() {
         <SidebarGroupLabel>Active Integration</SidebarGroupLabel>
 
         <div className="mb-1 px-2">
-          {integrations.length > 0 ? (
+          {localIntegrations.length > 0 ? (
             <div>
               <Select
-                value={activeIntegration?.id ?? ""}
+                value={activeCloudIntegration?.id ?? ""}
                 onValueChange={(value) => {
-                  const integration = integrations.find((i) => i.id === value);
-                  if (integration) setActiveIntegration(integration);
+                  const integration = localIntegrations.find((i) => i.id === value);
+                  if (integration) setActiveCloudIntegration(integration);
                 }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select integration">
-                    {activeIntegration?.name ?? "Select integration"}
+                    {activeCloudIntegration?.name ?? "Select integration"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {integrations.map((integration) => (
+                  {localIntegrations.map((integration) => (
                     <SelectItem
                       key={integration.id}
                       value={integration.id ?? ""}
@@ -283,7 +283,7 @@ export function MetadataTree() {
           )}
         </div>
 
-        {activeIntegration && (
+        {activeCloudIntegration && (
           <>
             <div className="mb-1 px-2">
               <div className="relative">
@@ -317,11 +317,11 @@ export function MetadataTree() {
                 <div className="flex h-32 items-center justify-center">
                   <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
                 </div>
-              ) : !databaseMetadata && activeIntegration ? (
+              ) : !databaseMetadata && activeCloudIntegration ? (
                 <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
                   <div className="text-center text-sm text-muted-foreground">
                     No metadata found for{" "}
-                    <strong>{activeIntegration.name}</strong>
+                    <strong>{activeCloudIntegration.name}</strong>
                   </div>
                 </div>
               ) : (
@@ -463,8 +463,11 @@ function DatasetItem({
   toggleTable: (id: string) => void;
   hideEmptyDatabases: boolean;
 }) {
-  const { activeIntegration, fetchTablesForDataset, loadingDatasets } =
-    useData();
+  const {
+    activeCloudIntegration: activeIntegration,
+    fetchTablesForDataset,
+    loadingDatasets,
+  } = useData();
 
   const handleToggle = async () => {
     onToggle();

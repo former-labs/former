@@ -7,21 +7,29 @@ import { PostgresConnectModal } from "@/app/(main)/integrations/_components/post
 import BigQueryLogo from "@/components/assets/bigquery.svg";
 import PostgresLogo from "@/components/assets/postgres.svg";
 import { useData } from "@/contexts/DataContext";
-import { type Integration } from "@/types/connections";
+import { IntegrationSelect } from "@/server/db/schema";
+import { DatabaseType, LocalIntegrationToSave } from "@/types/connections";
 import { useState } from "react";
 
-const integrationTypes = [
+type DatabaseIntegrationFields = {
+  name: string;
+  icon: string;
+  description: string;
+  databaseType: DatabaseType;
+};
+
+const integrationTypes: DatabaseIntegrationFields[] = [
   {
     name: "BigQuery",
     icon: BigQueryLogo,
     description: "Connect your BigQuery account to start analyzing your data.",
-    type: "bigquery" as const,
+    databaseType: "bigquery" as const,
   },
   {
     name: "Postgres",
     icon: PostgresLogo,
     description: "Connect to your Postgres database to analyze your data.",
-    type: "postgres" as const,
+    databaseType: "postgres" as const,
   },
 ];
 
@@ -29,34 +37,32 @@ export default function IntegrationsPage() {
   const [openBigQueryModal, setOpenBigQueryModal] = useState(false);
   const [openPostgresModal, setOpenPostgresModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<
-    Integration | undefined
+    IntegrationSelect | undefined
   >(undefined);
-  const { addIntegration, editIntegration } = useData();
+  const { addLocalIntegration, editLocalIntegration, getLocalIntegration } =
+    useData();
 
-  const handleCreateIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    addIntegration(integration);
+  const handleCreateIntegration = (integration: LocalIntegrationToSave) => {
+    addLocalIntegration(integration);
     handleCloseModal();
   };
 
-  const handleUpdateIntegration = (
-    id: string,
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    editIntegration(id, integration);
+  const handleUpdateIntegration = (integration: LocalIntegrationToSave) => {
+    if (!integration.id) {
+      throw new Error("Integration ID is required");
+    }
+    editLocalIntegration(integration.id, integration);
     handleCloseModal();
   };
 
   const handleOpenModal = ({
-    type,
     integration,
   }: {
-    type: "bigquery" | "postgres";
-    integration?: Integration;
+    integration?: IntegrationSelect;
   }) => {
-    setSelectedIntegration(integration);
-    if (type === "bigquery") {
+    const localIntegration = getLocalIntegration(integration?.id);
+    setSelectedIntegration(localIntegration);
+    if (localIntegration?.databaseType === "bigquery") {
       setOpenBigQueryModal(true);
     } else {
       setOpenPostgresModal(true);
@@ -70,14 +76,12 @@ export default function IntegrationsPage() {
   };
 
   const handleModalSubmit = ({
-    id,
     integration,
   }: {
-    id: string | null;
-    integration: Omit<Integration, "id" | "createdAt">;
+    integration: LocalIntegrationToSave;
   }) => {
-    if (id) {
-      handleUpdateIntegration(id, integration);
+    if (integration.id) {
+      handleUpdateIntegration(integration);
     } else {
       handleCreateIntegration(integration);
     }
@@ -104,7 +108,6 @@ export default function IntegrationsPage() {
               icon={integration.icon}
               onClick={() =>
                 handleOpenModal({
-                  type: integration.type,
                   integration: undefined,
                 })
               }

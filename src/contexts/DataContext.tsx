@@ -1,30 +1,37 @@
 "use client";
 
 import { type Driver } from "@/electron/drivers/driver";
-import { type DatabaseMetadata, type Integration } from "@/types/connections";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/trpc/react";
+import {
+  IntegrationCombined,
+  LocalIntegrationToSave,
+  type DatabaseMetadata,
+  type LocalIntegrationData,
+} from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface DataContextType {
-  activeIntegration: Integration | null;
-  setActiveIntegration: (integration: Integration | null) => void;
+  activeCloudIntegration: IntegrationCombined | null;
+  setActiveCloudIntegration: (integration: IntegrationCombined | null) => void;
+  cloudIntegrations: IntegrationCombined[];
   databaseMetadata: DatabaseMetadata | null;
   isFetchingMetadata: boolean;
   driver: Driver | null;
-  initializeDriver: (integration: Integration) => Promise<string | undefined>;
+  initializeDriver: (
+    combinedIntegration: IntegrationCombined,
+  ) => Promise<string | undefined>;
   fetchMetadataIncremental: (connectionId: string) => Promise<void>;
   fetchTablesForDataset: (
-    connectionId: string,
+    integrationId: string,
     datasetId: string,
   ) => Promise<void>;
   loadingDatasets: Set<string>;
   isLoadingDatasets: boolean;
-  integrations: Integration[];
-  addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
-  editIntegration: (
-    id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
-  ) => void;
-  removeIntegration: (id: string) => void;
+  localIntegrations: LocalIntegrationData[];
+  addLocalIntegration: (integration: LocalIntegrationToSave) => void;
+  editLocalIntegration: (id: string, updates: LocalIntegrationToSave) => void;
+  removeLocalIntegration: (id: string) => void;
   executeQuery: (query: string) => Promise<{
     jobId: string;
   }>;
@@ -54,8 +61,14 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
-  const [activeIntegration, setActiveIntegration] =
-    useState<Integration | null>(null);
+  const { toast } = useToast();
+  // Active cloud integration is what we use to keep track of the active integration, when we want to do anything with the
+  // local integration, we use the id of the activeCloudIntegration to get the local integration from the localIntegrations array
+  const [activeCloudIntegration, setActiveCloudIntegration] =
+    useState<IntegrationCombined | null>(null);
+  const [cloudIntegrations, setCloudIntegrations] = useState<
+    IntegrationCombined[]
+  >([]);
   const [databaseMetadata, setDatabaseMetadata] =
     useState<DatabaseMetadata | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
@@ -63,10 +76,32 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loadingDatasets, setLoadingDatasets] = useState<Set<string>>(
     new Set(),
   );
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [localIntegrations, setLocalIntegrations] = useState<
+    LocalIntegrationData[]
+  >([]);
   const [isStoreReady, setIsStoreReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [loadedDatasets, setLoadedDatasets] = useState<Set<string>>(new Set());
+
+  const createIntegration = api.integration.createIntegration.useMutation();
+  const deleteIntegration = api.integration.deleteIntegration.useMutation();
+  const updateIntegration = api.integration.updateIntegration.useMutation();
+
+  const { data: fetchedIntegrations } =
+    api.integration.getIntegrations.useQuery();
+
+  useEffect(() => {
+    if (fetchedIntegrations) {
+      const combinedIntegrations = fetchedIntegrations.map((integration) => ({
+        ...integration,
+        localIntegrationData:
+          localIntegrations.find((local) => local.id === integration.id) ??
+          null,
+      }));
+
+      setCloudIntegrations(combinedIntegrations);
+    }
+  }, [fetchedIntegrations, localIntegrations]);
 
   // Check if store is ready
   useEffect(() => {
@@ -80,34 +115,21 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     checkStore();
   }, []);
 
-  // Load stored data once store is ready
+  // Load stored data once store is ready and activeCloudIntegration is set
   useEffect(() => {
-    if (!isStoreReady || isInitialized) return;
+    if ((!isStoreReady || isInitialized) && activeCloudIntegration) return;
 
     const loadStoredData = async () => {
       try {
         console.log("Loading stored data...");
-        const storedIntegrations =
-          await window.electron.store.getIntegrations();
-        const activeIntegrationId =
-          await window.electron.store.getActiveIntegrationId();
+        const currentLocalIntegrations =
+          await window.electron.store.getLocalIntegrations();
 
-        console.log("Stored integrations:", storedIntegrations);
-        console.log("Active integration ID:", activeIntegrationId);
+        console.log("Stored integrations:", currentLocalIntegrations);
 
         // Only set integrations if we found some stored
-        if (storedIntegrations?.length > 0) {
-          setIntegrations(storedIntegrations);
-        }
-
-        // Only set active integration if we found a valid one
-        if (activeIntegrationId && storedIntegrations?.length) {
-          const active = storedIntegrations.find(
-            (i) => i.id === activeIntegrationId,
-          );
-          if (active) {
-            setActiveIntegration(active);
-          }
+        if (currentLocalIntegrations?.length > 0) {
+          setLocalIntegrations(currentLocalIntegrations);
         }
 
         setIsInitialized(true);
@@ -118,35 +140,21 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     void loadStoredData();
-  }, [isStoreReady, isInitialized]);
-
-  // Only set default active integration if we've initialized and none is set
-  useEffect(() => {
-    if (isInitialized && !activeIntegration && integrations[0]) {
-      setActiveIntegration(integrations[0]);
-    }
-  }, [integrations, activeIntegration, isInitialized]);
+  }, [isStoreReady, isInitialized, activeCloudIntegration]);
 
   // Persist integrations whenever they change
   useEffect(() => {
     if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    console.log("setting integrations", integrations);
-    void window.electron.store.setIntegrations(integrations);
-  }, [integrations, isStoreReady, isInitialized]);
+    console.log("setting integrations", localIntegrations);
+    void window.electron.store.setLocalIntegrations(localIntegrations);
+  }, [localIntegrations, isStoreReady, isInitialized]);
 
-  // Persist active integration whenever it changes
-  useEffect(() => {
-    if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    console.log("setting active integration", activeIntegration?.id);
-    void window.electron.store.setActiveIntegrationId(
-      activeIntegration?.id ?? null,
-    );
-  }, [activeIntegration?.id, isStoreReady, isInitialized]);
-
-  const initializeDriver = async (integration: Integration) => {
-    console.log("initializeDriver", integration);
+  const initializeDriver = async () => {
+    if (!activeCloudIntegration) return;
     try {
-      const result = await window.electron.database.connect(integration);
+      const result = await window.electron.database.connect(
+        activeCloudIntegration,
+      );
       console.log("result", result);
 
       if (!result.success) {
@@ -182,12 +190,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const fetchTablesForDataset = async (
-    connectionId: string,
+    integrationId: string,
     datasetId: string,
   ) => {
     // Skip if already loaded or currently loading
     if (
-      !connectionId ||
+      !integrationId ||
       !datasetId ||
       loadedDatasets.has(datasetId) ||
       loadingDatasets.has(datasetId)
@@ -209,7 +217,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
       const { tables, nextPageToken } =
         await window.electron.database.getTablesForDataset(
-          connectionId,
+          integrationId,
           datasetId,
         );
 
@@ -250,76 +258,117 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Initialize connection when integration changes
   useEffect(() => {
-    if (activeIntegration) {
-      console.log("activeIntegration", activeIntegration);
-      initializeDriver(activeIntegration)
-        .then((connectionId) => {
-          if (connectionId) {
-            void fetchMetadataIncremental(connectionId);
-          }
-        })
-        .catch(console.error);
-    }
+    initializeDriver()
+      .then((connectionId) => {
+        if (connectionId) {
+          void fetchMetadataIncremental(connectionId);
+        }
+      })
+      .catch(console.error);
 
     return () => {
       // Cleanup connection on unmount or integration change
-      if (activeIntegration?.id) {
-        void window.electron.database.disconnect(activeIntegration.id);
+      if (activeCloudIntegration?.id) {
+        void window.electron.database.disconnect(activeCloudIntegration.id);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIntegration?.id]);
+  }, [activeCloudIntegration?.id]);
 
-  const addIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
+  const addLocalIntegration = async (
+    localIntegrationToSave: LocalIntegrationToSave,
   ) => {
-    const newIntegration: Integration = {
-      ...integration,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    setIntegrations((prev) => [...prev, newIntegration]);
-    console.log("newIntegration", newIntegration);
-    setActiveIntegration(newIntegration);
-  };
-
-  const editIntegration = (
-    id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    setIntegrations((prev) =>
-      prev.map((integration) =>
-        integration.id === id
-          ? {
-              ...integration,
-              type: updates.type,
-              name: updates.name,
-              credentials: updates.credentials,
-            }
-          : integration,
-      ),
-    );
-  };
-
-  const removeIntegration = (id: string) => {
-    setIntegrations((prev) => {
-      const filtered = prev.filter((i) => i.id !== id);
-      if (activeIntegration?.id === id) {
-        // If removed integration was active, set new active integration
-        setActiveIntegration(filtered[0] ?? null);
-      }
-      return filtered;
+    const newIntegrationResult = await createIntegration.mutateAsync({
+      name: localIntegrationToSave.name,
+      type: "local",
+      databaseType: localIntegrationToSave.databaseType,
+      ...(localIntegrationToSave.demo && { demo: localIntegrationToSave.demo }),
     });
+
+    const combinedIntegration: IntegrationCombined = {
+      ...newIntegrationResult,
+      localIntegrationData: {
+        id: newIntegrationResult.id,
+        config: localIntegrationToSave.config,
+        credentials: localIntegrationToSave.credentials,
+      },
+    };
+
+    setActiveCloudIntegration(combinedIntegration);
+  };
+
+  const editLocalIntegration = async (
+    id: string,
+    updates: LocalIntegrationToSave,
+  ) => {
+    try {
+      // Update cloud data first
+      await updateIntegration.mutateAsync({
+        id,
+        name: updates.name,
+      });
+
+      // Then update local storage
+      setLocalIntegrations((prev) =>
+        prev.map((integration) =>
+          integration.id === id
+            ? {
+                id: integration.id,
+                credentials: updates.credentials,
+                config: updates.config,
+              }
+            : integration,
+        ),
+      );
+
+      // Update active integration if this was the active one
+      if (activeCloudIntegration?.id === id) {
+        setActiveCloudIntegration((prev) =>
+          prev ? { ...prev, name: updates.name } : prev,
+        );
+      }
+    } catch (error) {
+      console.error("Failed to update integration:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update integration",
+      });
+    }
+  };
+
+  const removeLocalIntegration = async (id: string) => {
+    try {
+      // Delete from database first
+      await deleteIntegration.mutateAsync({ id });
+
+      // Then remove from local storage
+      setLocalIntegrations((prev) => {
+        const filtered = prev.filter((i) => i.id !== id);
+        if (activeCloudIntegration?.id === id) {
+          // If removed integration was active, clear it
+          setActiveCloudIntegration(null);
+        }
+        return filtered;
+      });
+    } catch (error) {
+      console.error("Failed to remove integration:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to remove integration",
+      });
+    }
   };
 
   const executeQuery = async (query: string) => {
-    if (!activeIntegration?.id) {
+    if (!activeCloudIntegration?.id) {
       throw new Error("No active integration");
     }
 
     try {
       const result = await window.electron.database.execute(
-        activeIntegration.id,
+        activeCloudIntegration.id,
         query,
       );
       return result;
@@ -330,21 +379,21 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const cancelQuery = async (jobId: string) => {
-    if (!activeIntegration?.id) {
+    if (!activeCloudIntegration?.id) {
       throw new Error("No active integration");
     }
 
-    await window.electron.database.cancelJob(activeIntegration.id, jobId);
+    await window.electron.database.cancelJob(activeCloudIntegration.id, jobId);
   };
 
   const getQueryResult = async (jobId: string) => {
-    if (!activeIntegration?.id) {
+    if (!activeCloudIntegration?.id) {
       throw new Error("No active integration");
     }
 
     console.log("database", window.electron.database);
     const result = await window.electron.database.getJobResult(
-      activeIntegration.id,
+      activeCloudIntegration.id,
       jobId,
     );
     return result;
@@ -388,12 +437,38 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
+  const getActiveIntegrationCombined = () => {
+    if (!localIntegrations || !activeCloudIntegration) {
+      return null;
+    }
+
+    const localIntegration = localIntegrations.find(
+      (integration) => integration.id === activeCloudIntegration.id,
+    );
+
+    if (!localIntegration) {
+      return null;
+    }
+
+    const combined: IntegrationCombined = {
+      ...localIntegration,
+      ...activeCloudIntegration,
+    };
+
+    return combined;
+  };
+
+  const getLocalIntegration = (id: string) => {
+    return localIntegrations.find((integration) => integration.id === id);
+  };
+
   return (
     <DataContext.Provider
       value={{
-        activeIntegration,
-        setActiveIntegration,
-        integrations,
+        activeCloudIntegration,
+        setActiveCloudIntegration,
+        cloudIntegrations,
+        localIntegrations,
         databaseMetadata,
         isFetchingMetadata,
         driver: null,
@@ -403,13 +478,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         loadingDatasets,
         isLoadingDatasets,
         loadedDatasets,
-        addIntegration,
-        editIntegration,
-        removeIntegration,
+        addLocalIntegration,
+        editLocalIntegration,
+        removeLocalIntegration,
         executeQuery,
         cancelQuery,
         getQueryResult,
         setTableIncludedInAIContext,
+        getLocalIntegration,
       }}
     >
       {children}

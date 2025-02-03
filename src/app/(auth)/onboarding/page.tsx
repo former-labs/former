@@ -21,7 +21,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-
 // Comment
 const getErrorDetails = (error: string) => {
   switch (error) {
@@ -46,7 +45,7 @@ export default function OnboardingPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { handleWorkspaceSwitch } = useAuth();
-  const { addIntegration } = useData();
+  const { addLocalIntegration } = useData();
 
   const formSchema = z.object({
     workspaceName: z.string().min(3, "Must be at least 3 characters"),
@@ -109,7 +108,7 @@ export default function OnboardingPage() {
       // Only fetch demo integration after workspace is created
       const { data: demoIntegration } = await fetchDemoIntegration();
       if (demoIntegration) {
-        addIntegration(demoIntegration);
+        addLocalIntegration(demoIntegration);
       }
 
       router.push("/");
