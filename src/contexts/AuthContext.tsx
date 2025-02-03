@@ -61,6 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
   const { toast } = useToast();
   const router = useRouter();
+  const utils = api.useUtils();
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
@@ -157,6 +158,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         workspaceId: role.workspaceId,
         roleId: role.id,
       });
+
+      await fetchAuthUser();
+
+      // Invaliate all routes when workspace changes
+      // This is just a safe way to ensure we refetch everything
+      await utils.invalidate();
     }
   };
 
