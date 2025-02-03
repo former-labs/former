@@ -55,116 +55,116 @@ ORDER BY c.table_schema, c.table_name, c.ordinal_position`,
       columnDescription: "column_description",
     },
   },
-//   mysql: {
-//     type: "mysql",
-//     query: `
-// SELECT 
-//   table_schema as project_id,
-//   table_schema as dataset_id,
-//   c.table_name,
-//   t.table_comment as table_description,
-//   column_name,
-//   data_type,
-//   column_comment as column_description
-// FROM information_schema.columns c
-// JOIN information_schema.tables t 
-//   ON c.table_schema = t.table_schema 
-//   AND c.table_name = t.table_name
-// WHERE c.table_schema NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
-// ORDER BY c.table_schema, c.table_name, c.ordinal_position`,
-//     description:
-//       "Run this query in MySQL and export the results as CSV. This will fetch all column information along with table comments and column comments from your MySQL database.",
-//     columnMappings: {
-//       projectId: "project_id",
-//       datasetId: "dataset_id",
-//       tableName: "table_name",
-//       tableDescription: "table_description",
-//       columnName: "column_name",
-//       columnType: "data_type",
-//       columnDescription: "column_description",
-//     },
-//   },
-//   sqlserver: {
-//     type: "sqlserver",
-//     query: `
-// SELECT 
-//   DB_NAME() as project_id,
-//   SCHEMA_NAME(t.schema_id) as dataset_id,
-//   t.name as table_name,
-//   CAST(p.value AS NVARCHAR(MAX)) as table_description,
-//   c.name as column_name,
-//   typ.name as data_type,
-//   CAST(ep.value AS NVARCHAR(MAX)) as column_description
-// FROM sys.tables t
-// INNER JOIN sys.columns c ON c.object_id = t.object_id
-// INNER JOIN sys.types typ ON typ.user_type_id = c.user_type_id
-// LEFT JOIN sys.extended_properties p ON p.major_id = t.object_id AND p.minor_id = 0 AND p.class = 1
-// LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id AND ep.class = 1
-// ORDER BY SCHEMA_NAME(t.schema_id), t.name, c.column_id`,
-//     description:
-//       "Run this query in SQL Server and export the results as CSV. This will fetch all column information along with extended properties for table and column descriptions.",
-//     columnMappings: {
-//       projectId: "project_id",
-//       datasetId: "dataset_id",
-//       tableName: "table_name",
-//       tableDescription: "table_description",
-//       columnName: "column_name",
-//       columnType: "data_type",
-//       columnDescription: "column_description",
-//     },
-//   },
-//   snowflake: {
-//     type: "snowflake",
-//     query: `
-// SELECT 
-//   current_database() as project_id,
-//   table_schema as dataset_id,
-//   table_name,
-//   comment as table_description,
-//   column_name,
-//   data_type,
-//   column_comment as column_description
-// FROM information_schema.columns
-// NATURAL LEFT JOIN information_schema.tables
-// WHERE table_schema NOT IN ('INFORMATION_SCHEMA')
-// ORDER BY table_schema, table_name, ordinal_position`,
-//     description:
-//       "Run this query in Snowflake and export the results as CSV. This will fetch all column information along with table and column comments from your Snowflake database.",
-//     columnMappings: {
-//       projectId: "project_id",
-//       datasetId: "dataset_id",
-//       tableName: "table_name",
-//       tableDescription: "table_description",
-//       columnName: "column_name",
-//       columnType: "data_type",
-//       columnDescription: "column_description",
-//     },
-//   },
-//   databricks: {
-//     type: "databricks",
-//     query: `
-// SELECT 
-//   current_database() as project_id,
-//   table_schema as dataset_id,
-//   table_name,
-//   comment as table_description,
-//   column_name,
-//   data_type,
-//   comment as column_description
-// FROM information_schema.columns
-// NATURAL LEFT JOIN information_schema.tables
-// WHERE table_schema NOT IN ('information_schema')
-// ORDER BY table_schema, table_name, ordinal_position`,
-//     description:
-//       "Run this query in Databricks and export the results as CSV. This will fetch all column information along with table and column comments from your Databricks database.",
-//     columnMappings: {
-//       projectId: "project_id",
-//       datasetId: "dataset_id",
-//       tableName: "table_name",
-//       tableDescription: "table_description",
-//       columnName: "column_name",
-//       columnType: "data_type",
-//       columnDescription: "column_description",
-//     },
-//   },
+  mysql: {
+    type: "mysql",
+    query: `
+SELECT 
+  table_schema as project_id,
+  table_schema as dataset_id,
+  c.table_name,
+  t.table_comment as table_description,
+  column_name,
+  data_type,
+  column_comment as column_description
+FROM information_schema.columns c
+JOIN information_schema.tables t 
+  ON c.table_schema = t.table_schema 
+  AND c.table_name = t.table_name
+WHERE c.table_schema NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
+ORDER BY c.table_schema, c.table_name, c.ordinal_position`,
+    description:
+      "Run this query in MySQL and export the results as CSV. This will fetch all column information along with table comments and column comments from your MySQL database.",
+    columnMappings: {
+      projectId: "project_id",
+      datasetId: "dataset_id",
+      tableName: "table_name",
+      tableDescription: "table_description",
+      columnName: "column_name",
+      columnType: "data_type",
+      columnDescription: "column_description",
+    },
+  },
+  sqlserver: {
+    type: "sqlserver",
+    query: `
+SELECT 
+  DB_NAME() as project_id,
+  SCHEMA_NAME(t.schema_id) as dataset_id,
+  t.name as table_name,
+  CAST(p.value AS NVARCHAR(MAX)) as table_description,
+  c.name as column_name,
+  typ.name as data_type,
+  CAST(ep.value AS NVARCHAR(MAX)) as column_description
+FROM sys.tables t
+INNER JOIN sys.columns c ON c.object_id = t.object_id
+INNER JOIN sys.types typ ON typ.user_type_id = c.user_type_id
+LEFT JOIN sys.extended_properties p ON p.major_id = t.object_id AND p.minor_id = 0 AND p.class = 1
+LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id AND ep.class = 1
+ORDER BY SCHEMA_NAME(t.schema_id), t.name, c.column_id`,
+    description:
+      "Run this query in SQL Server and export the results as CSV. This will fetch all column information along with extended properties for table and column descriptions.",
+    columnMappings: {
+      projectId: "project_id",
+      datasetId: "dataset_id",
+      tableName: "table_name",
+      tableDescription: "table_description",
+      columnName: "column_name",
+      columnType: "data_type",
+      columnDescription: "column_description",
+    },
+  },
+  snowflake: {
+    type: "snowflake",
+    query: `
+SELECT 
+  current_database() as project_id,
+  table_schema as dataset_id,
+  table_name,
+  comment as table_description,
+  column_name,
+  data_type,
+  column_comment as column_description
+FROM information_schema.columns
+NATURAL LEFT JOIN information_schema.tables
+WHERE table_schema NOT IN ('INFORMATION_SCHEMA')
+ORDER BY table_schema, table_name, ordinal_position`,
+    description:
+      "Run this query in Snowflake and export the results as CSV. This will fetch all column information along with table and column comments from your Snowflake database.",
+    columnMappings: {
+      projectId: "project_id",
+      datasetId: "dataset_id",
+      tableName: "table_name",
+      tableDescription: "table_description",
+      columnName: "column_name",
+      columnType: "data_type",
+      columnDescription: "column_description",
+    },
+  },
+  databricks: {
+    type: "databricks",
+    query: `
+SELECT 
+  current_database() as project_id,
+  table_schema as dataset_id,
+  table_name,
+  comment as table_description,
+  column_name,
+  data_type,
+  comment as column_description
+FROM information_schema.columns
+NATURAL LEFT JOIN information_schema.tables
+WHERE table_schema NOT IN ('information_schema')
+ORDER BY table_schema, table_name, ordinal_position`,
+    description:
+      "Run this query in Databricks and export the results as CSV. This will fetch all column information along with table and column comments from your Databricks database.",
+    columnMappings: {
+      projectId: "project_id",
+      datasetId: "dataset_id",
+      tableName: "table_name",
+      tableDescription: "table_description",
+      columnName: "column_name",
+      columnType: "data_type",
+      columnDescription: "column_description",
+    },
+  },
 }; 

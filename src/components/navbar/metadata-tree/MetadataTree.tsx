@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { useIntegrations } from "@/contexts/DataContext";
+import { env } from "@/env";
 import { PATH_INTEGRATIONS } from "@/lib/paths";
 import {
   ArrowRight,
@@ -119,14 +120,21 @@ export function MetadataTree() {
     }
   }, [searchQuery, expandedFromSearch]);
 
+  const shouldShowContent =
+    env.NEXT_PUBLIC_PLATFORM === "web" || activeIntegration;
+
   return (
     <TooltipProvider>
       <SidebarGroup className="flex h-full flex-col">
-        <SidebarGroupLabel>Active Integration</SidebarGroupLabel>
+        <SidebarGroupLabel>
+          {env.NEXT_PUBLIC_PLATFORM === "web"
+            ? "Database Schema"
+            : "Active Integration"}
+        </SidebarGroupLabel>
 
-        <IntegrationDropdown />
+        {env.NEXT_PUBLIC_PLATFORM === "desktop" && <IntegrationDropdown />}
 
-        {activeIntegration && (
+        {shouldShowContent && (
           <>
             <div className="mb-1 px-2">
               <div className="relative">
@@ -160,11 +168,17 @@ export function MetadataTree() {
                 <div className="flex h-32 items-center justify-center">
                   <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
                 </div>
-              ) : !databaseMetadata && activeIntegration ? (
+              ) : !databaseMetadata ? (
                 <div className="flex h-32 flex-col items-center justify-center rounded-md bg-muted p-4">
                   <div className="text-center text-sm text-muted-foreground">
-                    No metadata found for{" "}
-                    <strong>{activeIntegration.name}</strong>
+                    {env.NEXT_PUBLIC_PLATFORM === "web" ? (
+                      <>No metadata found</>
+                    ) : (
+                      <>
+                        No metadata found for{" "}
+                        <strong>{activeIntegration?.name}</strong>
+                      </>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -188,6 +202,53 @@ export function MetadataTree() {
         )}
       </SidebarGroup>
     </TooltipProvider>
+  );
+}
+
+function IntegrationDropdown() {
+  const router = useRouter();
+  const { activeIntegration, integrations, setActiveIntegration } =
+    useIntegrations();
+
+  return (
+    <div className="mb-1 px-2">
+      {integrations.length > 0 ? (
+        <div>
+          <Select
+            value={activeIntegration?.id ?? ""}
+            onValueChange={(value) => {
+              const integration = integrations.find((i) => i.id === value);
+              if (integration) setActiveIntegration(integration);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select integration">
+                {activeIntegration?.name ?? "Select integration"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {integrations.map((integration) => (
+                <SelectItem key={integration.id} value={integration.id ?? ""}>
+                  {integration.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <div>
+          <Button
+            variant="outline"
+            className="w-full justify-start text-muted-foreground"
+            size="sm"
+            onClick={() => router.push(PATH_INTEGRATIONS)}
+          >
+            <span className="truncate">Configure integrations</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -280,53 +341,6 @@ function ProjectItem({
               hideEmptyDatabases={hideEmptyDatabases}
             />
           ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function IntegrationDropdown() {
-  const router = useRouter();
-  const { activeIntegration, integrations, setActiveIntegration } =
-    useIntegrations();
-
-  return (
-    <div className="mb-1 px-2">
-      {integrations.length > 0 ? (
-        <div>
-          <Select
-            value={activeIntegration?.id ?? ""}
-            onValueChange={(value) => {
-              const integration = integrations.find((i) => i.id === value);
-              if (integration) setActiveIntegration(integration);
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select integration">
-                {activeIntegration?.name ?? "Select integration"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {integrations.map((integration) => (
-                <SelectItem key={integration.id} value={integration.id ?? ""}>
-                  {integration.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : (
-        <div>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-muted-foreground"
-            size="sm"
-            onClick={() => router.push(PATH_INTEGRATIONS)}
-          >
-            <span className="truncate">Configure integrations</span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
         </div>
       )}
     </div>

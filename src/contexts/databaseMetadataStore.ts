@@ -1,3 +1,5 @@
+import { env } from "@/env";
+import { api } from "@/trpc/react";
 import type { DatabaseMetadata } from "@/types/connections";
 import { create } from "zustand";
 
@@ -157,16 +159,103 @@ const useDatabaseMetadataStore = create<DatabaseMetadataStore>((set, get) => ({
   },
 }));
 
+const useDatabaseMetadataWeb = () => {
+  const utils = api.useUtils();
+  const { data: databaseMetadata, isLoading } =
+    api.databaseMetadata.getDatabaseMetadata.useQuery();
+
+  const { mutate: setDatabaseMetadataMutation } =
+    api.databaseMetadata.setDatabaseMetadata.useMutation({
+      onSuccess: () => {
+        // void utils.databaseMetadata.getDatabaseMetadata.invalidate();
+      },
+    });
+
+  const setTableIncludedInAIContext = ({
+    projectId,
+    datasetId,
+    tableId,
+    value,
+  }: {
+    projectId: string;
+    datasetId: string;
+    tableId: string;
+    value: boolean;
+  }) => {
+    if (!databaseMetadata) return;
+
+    const updatedMetadata = {
+      dialect: databaseMetadata.dialect,
+      projects: databaseMetadata.projects.map((project) => {
+        if (project.id !== projectId) return project;
+        return {
+          ...project,
+          datasets: project.datasets.map((dataset) => {
+            if (dataset.id !== datasetId) return dataset;
+            return {
+              ...dataset,
+              tables: dataset.tables.map((table) => {
+                if (table.id !== tableId) return table;
+                return {
+                  ...table,
+                  includedInAIContext: value,
+                };
+              }),
+            };
+          }),
+        };
+      }),
+    };
+
+    // Optimistically update the cache
+    void utils.databaseMetadata.getDatabaseMetadata.cancel();
+    utils.databaseMetadata.getDatabaseMetadata.setData(
+      undefined,
+      updatedMetadata,
+    );
+
+    setDatabaseMetadataMutation({
+      databaseMetadata: updatedMetadata,
+    });
+  };
+
+  // Stub functions for web version
+  const fetchMetadataIncremental = async () => {
+    // No-op for web version
+  };
+
+  const fetchTablesForDataset = async () => {
+    // No-op for web version  
+  };
+
+  return {
+    databaseMetadata: databaseMetadata ?? null,
+    isFetchingMetadata: isLoading,
+    isLoadingDatasets: false,
+    loadingDatasets: new Set<string>(),
+    loadedDatasets: new Set<string>(),
+    setTableIncludedInAIContext,
+    fetchMetadataIncremental,
+    fetchTablesForDataset,
+  };
+};
+
 export const useDatabaseMetadata = () => {
   const store = useDatabaseMetadataStore();
-  return {
-    databaseMetadata: store.databaseMetadata,
-    isFetchingMetadata: store.isFetchingMetadata,
-    isLoadingDatasets: store.isLoadingDatasets,
-    loadingDatasets: store.loadingDatasets,
-    loadedDatasets: store.loadedDatasets,
-    setTableIncludedInAIContext: store.setTableIncludedInAIContext,
-    fetchMetadataIncremental: store.fetchMetadataIncremental,
-    fetchTablesForDataset: store.fetchTablesForDataset,
-  };
+  const web = useDatabaseMetadataWeb();
+
+  if (env.NEXT_PUBLIC_PLATFORM === "desktop") {
+    return {
+      databaseMetadata: store.databaseMetadata,
+      isFetchingMetadata: store.isFetchingMetadata,
+      isLoadingDatasets: store.isLoadingDatasets,
+      loadingDatasets: store.loadingDatasets,
+      loadedDatasets: store.loadedDatasets,
+      setTableIncludedInAIContext: store.setTableIncludedInAIContext,
+      fetchMetadataIncremental: store.fetchMetadataIncremental,
+      fetchTablesForDataset: store.fetchTablesForDataset,
+    };
+  } else {
+    return web;
+  }
 };
