@@ -1,6 +1,5 @@
 "use client";
 
-import { type Driver } from "@/electron/drivers/driver";
 import type { Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useDatabaseMetadata } from "./databaseMetadataStore";
@@ -8,8 +7,6 @@ import { useDatabaseMetadata } from "./databaseMetadataStore";
 interface DataContextType {
   activeIntegration: Integration | null;
   setActiveIntegration: (integration: Integration | null) => void;
-  driver: Driver | null;
-  initializeDriver: (integration: Integration) => Promise<string | undefined>;
   integrations: Integration[];
   addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
   editIntegration: (
@@ -191,8 +188,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         activeIntegration,
         setActiveIntegration,
         integrations,
-        driver: null,
-        initializeDriver,
         addIntegration,
         editIntegration,
         removeIntegration,
