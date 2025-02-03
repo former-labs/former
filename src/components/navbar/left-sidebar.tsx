@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { env } from "@/env";
 import {
+  PATH_DATABASE_METADATA,
   PATH_EDITOR,
   PATH_HELP,
   PATH_INSTRUCTIONS,
@@ -24,6 +25,7 @@ import {
   Bot,
   Code,
   Command,
+  Database,
   FileText,
   GalleryVerticalEnd,
   HelpCircle,
@@ -158,6 +160,15 @@ const data = {
             name: "Integrations",
             url: PATH_INTEGRATIONS,
             icon: Plug,
+          },
+        ]
+      : []),
+    ...(env.NEXT_PUBLIC_PLATFORM === "web"
+      ? [
+          {
+            name: "Database Schema",
+            url: PATH_DATABASE_METADATA,
+            icon: Database,
           },
         ]
       : []),
