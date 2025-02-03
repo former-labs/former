@@ -1,23 +1,15 @@
 "use client";
 
 import { type Driver } from "@/electron/drivers/driver";
-import { type DatabaseMetadata, type Integration } from "@/types/connections";
+import type { Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useDatabaseMetadata } from "./databaseMetadataStore";
 
 interface DataContextType {
   activeIntegration: Integration | null;
   setActiveIntegration: (integration: Integration | null) => void;
-  databaseMetadata: DatabaseMetadata | null;
-  isFetchingMetadata: boolean;
   driver: Driver | null;
   initializeDriver: (integration: Integration) => Promise<string | undefined>;
-  fetchMetadataIncremental: (connectionId: string) => Promise<void>;
-  fetchTablesForDataset: (
-    connectionId: string,
-    datasetId: string,
-  ) => Promise<void>;
-  loadingDatasets: Set<string>;
-  isLoadingDatasets: boolean;
   integrations: Integration[];
   addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
   editIntegration: (
@@ -25,13 +17,6 @@ interface DataContextType {
     updates: Omit<Integration, "id" | "createdAt">,
   ) => void;
   removeIntegration: (id: string) => void;
-  loadedDatasets: Set<string>;
-  setTableIncludedInAIContext: (params: {
-    projectId: string;
-    datasetId: string;
-    tableId: string;
-    value: boolean;
-  }) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -39,17 +24,10 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeIntegration, setActiveIntegration] =
     useState<Integration | null>(null);
-  const [databaseMetadata, setDatabaseMetadata] =
-    useState<DatabaseMetadata | null>(null);
-  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
-  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
-  const [loadingDatasets, setLoadingDatasets] = useState<Set<string>>(
-    new Set(),
-  );
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isStoreReady, setIsStoreReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [loadedDatasets, setLoadedDatasets] = useState<Set<string>>(new Set());
+  const { fetchMetadataIncremental } = useDatabaseMetadata();
 
   // Check if store is ready
   useEffect(() => {
@@ -143,94 +121,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchMetadataIncremental = async (connectionId: string) => {
-    if (!connectionId || isFetchingMetadata) return;
-
-    try {
-      setIsFetchingMetadata(true);
-      setIsLoadingDatasets(true);
-      setDatabaseMetadata(null);
-
-      // First fetch projects and datasets
-      const metadata =
-        await window.electron.database.getProjectsAndDatasets(connectionId);
-      setDatabaseMetadata(metadata);
-    } catch (error) {
-      console.error("Error fetching metadata:", error);
-      throw error;
-    } finally {
-      setIsFetchingMetadata(false);
-      setIsLoadingDatasets(false);
-    }
-  };
-
-  const fetchTablesForDataset = async (
-    connectionId: string,
-    datasetId: string,
-  ) => {
-    // Skip if already loaded or currently loading
-    if (
-      !connectionId ||
-      !datasetId ||
-      loadedDatasets.has(datasetId) ||
-      loadingDatasets.has(datasetId)
-    )
-      return;
-
-    try {
-      setLoadingDatasets((prev) => new Set([...prev, datasetId]));
-
-      // Check if we already have tables for this dataset
-      const existingTables = databaseMetadata?.projects
-        .flatMap((p) => p.datasets)
-        .find((d) => d.id === datasetId)?.tables;
-
-      if (existingTables && existingTables.length > 0) {
-        setLoadedDatasets((prev) => new Set([...prev, datasetId]));
-        return;
-      }
-
-      const { tables, nextPageToken } =
-        await window.electron.database.getTablesForDataset(
-          connectionId,
-          datasetId,
-        );
-
-      setDatabaseMetadata((prev) => {
-        if (!prev) return prev;
-        return {
-          dialect: prev.dialect,
-          projects: prev.projects.map((project) => ({
-            ...project,
-            datasets: project.datasets.map((dataset) => {
-              if (dataset.id === datasetId) {
-                return {
-                  ...dataset,
-                  tables: tables,
-                };
-              }
-              return dataset;
-            }),
-          })),
-        };
-      });
-
-      // Mark dataset as loaded only if we've loaded all pages
-      if (!nextPageToken) {
-        setLoadedDatasets((prev) => new Set([...prev, datasetId]));
-      }
-    } catch (error) {
-      console.error("Error fetching tables:", error);
-      throw error;
-    } finally {
-      setLoadingDatasets((prev) => {
-        const next = new Set(prev);
-        next.delete(datasetId);
-        return next;
-      });
-    }
-  };
-
   // Initialize connection when integration changes
   useEffect(() => {
     if (activeIntegration) {
@@ -295,63 +185,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const setTableIncludedInAIContext = ({
-    projectId,
-    datasetId,
-    tableId,
-    value,
-  }: {
-    projectId: string;
-    datasetId: string;
-    tableId: string;
-    value: boolean;
-  }) => {
-    setDatabaseMetadata((prev) => {
-      if (!prev) return prev;
-      return {
-        dialect: prev.dialect,
-        projects: prev.projects.map((project) => {
-          if (project.id !== projectId) return project;
-          return {
-            ...project,
-            datasets: project.datasets.map((dataset) => {
-              if (dataset.id !== datasetId) return dataset;
-              return {
-                ...dataset,
-                tables: dataset.tables.map((table) => {
-                  if (table.id !== tableId) return table;
-                  return {
-                    ...table,
-                    includedInAIContext: value,
-                  };
-                }),
-              };
-            }),
-          };
-        }),
-      };
-    });
-  };
-
   return (
     <DataContext.Provider
       value={{
         activeIntegration,
         setActiveIntegration,
         integrations,
-        databaseMetadata,
-        isFetchingMetadata,
         driver: null,
         initializeDriver,
-        fetchMetadataIncremental,
-        fetchTablesForDataset,
-        loadingDatasets,
-        isLoadingDatasets,
-        loadedDatasets,
         addIntegration,
         editIntegration,
         removeIntegration,
-        setTableIncludedInAIContext,
       }}
     >
       {children}
@@ -361,8 +205,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useData = () => {
   const context = useContext(DataContext);
+  const databaseMetadata = useDatabaseMetadata();
   if (context === undefined) {
     throw new Error("useData must be used within a DataProvider");
   }
-  return context;
+  return {
+    ...context,
+    ...databaseMetadata,
+  };
 };
