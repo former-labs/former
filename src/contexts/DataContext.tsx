@@ -25,23 +25,6 @@ interface DataContextType {
     updates: Omit<Integration, "id" | "createdAt">,
   ) => void;
   removeIntegration: (id: string) => void;
-  executeQuery: (query: string) => Promise<{
-    jobId: string;
-  }>;
-  cancelQuery: (jobId: string) => Promise<void>;
-  getQueryResult: (jobId: string) => Promise<
-    | {
-        status: "complete";
-        result: any[];
-      }
-    | {
-        status: "error";
-        error: string;
-      }
-    | {
-        status: "canceled";
-      }
-  >;
   loadedDatasets: Set<string>;
   setTableIncludedInAIContext: (params: {
     projectId: string;
@@ -312,44 +295,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const executeQuery = async (query: string) => {
-    if (!activeIntegration?.id) {
-      throw new Error("No active integration");
-    }
-
-    try {
-      const result = await window.electron.database.execute(
-        activeIntegration.id,
-        query,
-      );
-      return result;
-    } catch (error) {
-      console.error("Error executing query:", error);
-      throw error;
-    }
-  };
-
-  const cancelQuery = async (jobId: string) => {
-    if (!activeIntegration?.id) {
-      throw new Error("No active integration");
-    }
-
-    await window.electron.database.cancelJob(activeIntegration.id, jobId);
-  };
-
-  const getQueryResult = async (jobId: string) => {
-    if (!activeIntegration?.id) {
-      throw new Error("No active integration");
-    }
-
-    console.log("database", window.electron.database);
-    const result = await window.electron.database.getJobResult(
-      activeIntegration.id,
-      jobId,
-    );
-    return result;
-  };
-
   const setTableIncludedInAIContext = ({
     projectId,
     datasetId,
@@ -406,9 +351,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addIntegration,
         editIntegration,
         removeIntegration,
-        executeQuery,
-        cancelQuery,
-        getQueryResult,
         setTableIncludedInAIContext,
       }}
     >
