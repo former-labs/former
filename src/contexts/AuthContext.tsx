@@ -1,5 +1,6 @@
 "use client";
 
+import { env } from "@/env";
 import { useToast } from "@/hooks/use-toast";
 import { PATH_LOGIN } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/client";
@@ -36,8 +37,6 @@ type AuthContextType = {
   handleWorkspaceSwitch: (role: RoleSelectWithRelations) => Promise<void>;
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  authError: string | null;
-  setAuthError: React.Dispatch<React.SetStateAction<string | null>>;
   resetAuthState: () => void;
 };
 
@@ -52,8 +51,6 @@ export const AuthContext = createContext<AuthContextType>({
   handleWorkspaceSwitch: () => Promise.resolve(),
   login: () => Promise.resolve(),
   logout: () => Promise.resolve(),
-  authError: null,
-  setAuthError: () => null,
   resetAuthState: () => null,
 });
 
@@ -62,75 +59,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
   const utils = api.useUtils();
-  const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
-  const [user, setUser] = useState<UserSelect | null>(null);
   const [activeRole, setActiveRole] = useState<RoleSelectWithRelations | null>(
     null,
   );
   const setActiveRoleMutation = api.user.setActiveRole.useMutation();
-  const [isElectron, setIsElectron] = useState(false);
 
   const { data: roles = [], isLoading: isWorkspaceLoading } =
     api.user.getRoles.useQuery(undefined, {
       enabled: !!authUser,
     });
 
-  useEffect(() => {
-    // Initial check
-    const isElectronAvailable =
-      typeof window !== "undefined" && window.electron !== undefined;
-    setIsElectron(isElectronAvailable);
-
-    // Only start polling if electron is not already available
-    if (!isElectronAvailable) {
-      const startTime = Date.now();
-      const checkInterval = setInterval(() => {
-        if (typeof window !== "undefined" && window.electron !== undefined) {
-          setIsElectron(true);
-          clearInterval(checkInterval);
-        } else if (Date.now() - startTime > 2000) {
-          // 2 second timeout
-          clearInterval(checkInterval);
-        }
-      }, 100);
-
-      return () => clearInterval(checkInterval);
-    }
-  }, []);
+  const refreshAuthUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    setAuthUser(data?.user ?? null);
+    setAuthLoading(false);
+  };
 
   useEffect(() => {
-    const initializeAuth = async (rolesList: RoleSelectWithRelations[]) => {
-      const activeRoleMetadata = authUser?.app_metadata?.activeRole;
-      const activeWorkspaceRole = activeRoleMetadata
-        ? rolesList.find((role) => role.id === activeRoleMetadata.id)
-        : null;
-
-      if (activeWorkspaceRole) {
-        setActiveRole(activeWorkspaceRole);
-        setUser(activeWorkspaceRole.user ?? null);
-      } else {
-        // If no active role is set or it's invalid, use the first role
-        const firstRole = rolesList[0];
-        if (firstRole) {
-          await handleWorkspaceSwitch(firstRole);
-        }
-        setUser(rolesList[0]?.user ?? null);
-      }
-    };
-    if (roles.length > 0) {
-      void initializeAuth(roles);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roles]);
-
-  useEffect(() => {
-    const initializeAuth = async () => {
-      await fetchAuthUser();
-    };
-
-    void initializeAuth();
+    void refreshAuthUser();
 
     const {
       data: { subscription },
@@ -151,6 +99,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (authUser && roles.length > 0) {
+      const initializeAuth = async () => {
+        const activeRoleMetadata: ActiveRole | undefined =
+          authUser.app_metadata?.activeRole;
+        const activeWorkspaceRole = activeRoleMetadata
+          ? roles.find((role) => role.id === activeRoleMetadata.id)
+          : null;
+
+        if (activeWorkspaceRole) {
+          setActiveRole(activeWorkspaceRole);
+        } else {
+          // If no active role is set or it's invalid, use the first role
+          const firstRole = roles[0];
+          if (firstRole) {
+            await handleWorkspaceSwitch(firstRole);
+          }
+        }
+      };
+      void initializeAuth();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roles, authUser]);
+
   const handleWorkspaceSwitch = async (role: RoleSelectWithRelations) => {
     setActiveRole(role);
     if (role?.workspaceId) {
@@ -159,7 +131,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         roleId: role.id,
       });
 
-      await fetchAuthUser();
+      await refreshAuthUser();
 
       // Invaliate all routes when workspace changes
       // This is just a safe way to ensure we refetch everything
@@ -167,13 +139,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchAuthUser = async () => {
-    const { data } = await supabase.auth.getUser();
-    setAuthUser(data?.user ?? null);
-  };
-
   const login = async () => {
-    if (isElectron) {
+    if (env.NEXT_PUBLIC_PLATFORM === "desktop") {
       const result = await loginWithProviderElectron({
         provider: "google",
       });
@@ -198,9 +165,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const resetAuthState = () => {
     setActiveRole(null);
-    setUser(null);
     setAuthUser(null);
-    setAuthError(null);
   };
 
   return (
@@ -208,16 +173,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         authUser,
         authLoading,
-        user,
+        user: activeRole?.user ?? null,
         roles,
         activeRole,
         setActiveRole,
         handleWorkspaceSwitch,
         isWorkspaceLoading,
-        authError,
         login,
         logout,
-        setAuthError,
         resetAuthState,
       }}
     >
