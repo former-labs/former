@@ -2,6 +2,7 @@ import { env } from "@/env";
 import { api } from "@/trpc/react";
 import type { DatabaseMetadata } from "@/types/connections";
 import { create } from "zustand";
+import { useAuth } from "./AuthContext";
 
 interface DatabaseMetadataStore {
   databaseMetadata: DatabaseMetadata | null;
@@ -161,8 +162,11 @@ const useDatabaseMetadataStore = create<DatabaseMetadataStore>((set, get) => ({
 
 const useDatabaseMetadataWeb = () => {
   const utils = api.useUtils();
+  const { authUser } = useAuth();
   const { data: databaseMetadata, isLoading } =
-    api.databaseMetadata.getDatabaseMetadata.useQuery();
+    api.databaseMetadata.getDatabaseMetadata.useQuery(undefined, {
+      enabled: !!authUser,
+    });
 
   const { mutate: setDatabaseMetadataMutation } =
     api.databaseMetadata.setDatabaseMetadata.useMutation({
