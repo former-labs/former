@@ -108,16 +108,29 @@ export const onboardingRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        // Start a transaction for all our database operations
-        const result = await db.transaction(async (tx) => {
-          // Create the main workspace
-          const mainRole = await createWorkspaceAndRole({
+        const role = await db.transaction(async (tx) => {
+          return await createWorkspaceAndRole({
             workspaceName: input.workspaceName,
             userId: ctx.user.id,
             tx
           });
+        });
 
-          // Create the demo workspace
+        return { role };
+      } catch (error) {
+        console.error('Onboarding error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to create workspace',
+          cause: error,
+        });
+      }
+    }),
+
+  createDemoWorkspace: userProtectedProcedure
+    .mutation(async ({ ctx }) => {
+      try {
+        const role = await db.transaction(async (tx) => {
           const demoRole = await createWorkspaceAndRole({
             workspaceName: "Demo Workspace",
             userId: ctx.user.id,
@@ -125,24 +138,21 @@ export const onboardingRouter = createTRPCRouter({
             isDemoWorkspace: true
           });
 
-          // Create the Supabase client and update auth metadata
-          const supabase = await createClient();
-          await supabase.auth.updateUser({
-            data: { onboarding_complete: true }
-          });
-
-          return {
-            role: demoRole,
-            // role: mainRole,
-          };
+          return demoRole;
         });
 
-        return result;
+        // Create the Supabase client and update auth metadata
+        const supabase = await createClient();
+        await supabase.auth.updateUser({
+          data: { onboarding_complete: true }
+        });
+
+        return { role };
       } catch (error) {
-        console.error('Onboarding error:', error);
+        console.error('Demo workspace creation error:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to complete onboarding',
+          message: error instanceof Error ? error.message : 'Failed to create demo workspace',
           cause: error,
         });
       }
@@ -150,7 +160,7 @@ export const onboardingRouter = createTRPCRouter({
 
   retrieveDemoIntegration: userProtectedProcedure
     .query(async () => {
-      const demoIntegration: Omit<Integration, "id" | "createdAt"> = {
+      const demoIntegration: Omit<Integration, "id" | "createdAt" | "workspaceId"> = {
         type: "bigquery",
         name: "Demo BigQuery Integration",
         credentials: DEMO_CREDENTIALS,

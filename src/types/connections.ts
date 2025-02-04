@@ -51,6 +51,7 @@ export interface DatabaseInstructions {
 
 export type Integration = {
   id: string;
+  workspaceId: string;
   type: DatabaseType;
   name: string;
   credentials: DatabaseCredentials;

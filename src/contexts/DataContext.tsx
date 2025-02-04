@@ -8,11 +8,18 @@ interface DataContextType {
   activeIntegration: Integration | null;
   setActiveIntegration: (integration: Integration | null) => void;
   integrations: Integration[];
-  addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
-  editIntegration: (
-    id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
-  ) => void;
+  addIntegration: ({
+    integration,
+  }: {
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => void;
+  editIntegration: ({
+    id,
+    updates,
+  }: {
+    id: string;
+    updates: Omit<Integration, "id" | "createdAt">;
+  }) => void;
   removeIntegration: (id: string) => void;
 }
 
@@ -22,36 +29,19 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeIntegration, setActiveIntegration] =
     useState<Integration | null>(null);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [isStoreReady, setIsStoreReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const { fetchMetadataIncremental } = useDatabaseMetadata();
-
-  // Check if store is ready
-  useEffect(() => {
-    const checkStore = () => {
-      if (window.electron?.store) {
-        setIsStoreReady(true);
-      } else {
-        setTimeout(checkStore, 100);
-      }
-    };
-    checkStore();
-  }, []);
+  const electronStore = useElectronStore();
 
   // Load stored data once store is ready
   useEffect(() => {
-    if (!isStoreReady || isInitialized) return;
+    if (!electronStore || isInitialized) return;
 
     const loadStoredData = async () => {
       try {
-        // console.log("Loading stored data...");
-        const storedIntegrations =
-          await window.electron.store.getIntegrations();
+        const storedIntegrations = await electronStore.getIntegrations();
         const activeIntegrationId =
-          await window.electron.store.getActiveIntegrationId();
-
-        // console.log("Stored integrations:", storedIntegrations);
-        // console.log("Active integration ID:", activeIntegrationId);
+          await electronStore.getActiveIntegrationId();
 
         // Only set integrations if we found some stored
         if (storedIntegrations?.length > 0) {
@@ -76,7 +66,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     void loadStoredData();
-  }, [isStoreReady, isInitialized]);
+  }, [electronStore, isInitialized]);
 
   // Only set default active integration if we've initialized and none is set
   useEffect(() => {
@@ -87,25 +77,19 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Persist integrations whenever they change
   useEffect(() => {
-    if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    // console.log("setting integrations", integrations);
-    void window.electron.store.setIntegrations(integrations);
-  }, [integrations, isStoreReady, isInitialized]);
+    if (!electronStore || !isInitialized) return;
+    void electronStore.setIntegrations(integrations);
+  }, [integrations, electronStore, isInitialized]);
 
   // Persist active integration whenever it changes
   useEffect(() => {
-    if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    // console.log("setting active integration", activeIntegration?.id);
-    void window.electron.store.setActiveIntegrationId(
-      activeIntegration?.id ?? null,
-    );
-  }, [activeIntegration?.id, isStoreReady, isInitialized]);
+    if (!electronStore || !isInitialized) return;
+    void electronStore.setActiveIntegrationId(activeIntegration?.id ?? null);
+  }, [activeIntegration?.id, electronStore, isInitialized]);
 
   const initializeDriver = async (integration: Integration) => {
-    // console.log("initializeDriver", integration);
     try {
       const result = await window.electron.database.connect(integration);
-      // console.log("result", result);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -121,7 +105,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Initialize connection when integration changes
   useEffect(() => {
     if (activeIntegration) {
-      // console.log("activeIntegration", activeIntegration);
       initializeDriver(activeIntegration)
         .then((connectionId) => {
           if (connectionId) {
@@ -140,23 +123,27 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
 
-  const addIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
+  const addIntegration = ({
+    integration,
+  }: {
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => {
     const newIntegration: Integration = {
       ...integration,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     };
     setIntegrations((prev) => [...prev, newIntegration]);
-    // console.log("newIntegration", newIntegration);
     setActiveIntegration(newIntegration);
   };
 
-  const editIntegration = (
-    id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
-  ) => {
+  const editIntegration = ({
+    id,
+    updates,
+  }: {
+    id: string;
+    updates: Omit<Integration, "id" | "createdAt">;
+  }) => {
     setIntegrations((prev) =>
       prev.map((integration) =>
         integration.id === id
@@ -204,4 +191,21 @@ export const useIntegrations = () => {
     throw new Error("useData must be used within a DataProvider");
   }
   return context;
+};
+
+const useElectronStore = () => {
+  const [store, setStore] = useState<typeof window.electron.store | null>(null);
+
+  useEffect(() => {
+    const checkStore = () => {
+      if (window.electron?.store) {
+        setStore(window.electron.store);
+      } else {
+        setTimeout(checkStore, 100);
+      }
+    };
+    checkStore();
+  }, []);
+
+  return store;
 };

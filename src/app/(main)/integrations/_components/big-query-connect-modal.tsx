@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { BigQueryCredentials, Integration } from "@/types/connections";
@@ -38,23 +39,25 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export interface BigQueryConnectModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  integration?: Integration;
-  onSubmit: (params: {
-    id: string | null;
-    integration: Omit<Integration, "id" | "createdAt">;
-  }) => void;
-}
-
 export function BigQueryConnectModal({
   open,
   onOpenChange,
   integration,
   onSubmit,
-}: BigQueryConnectModalProps) {
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  integration?: Integration;
+  onSubmit: ({
+    id,
+    integration,
+  }: {
+    id: string | null;
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => void;
+}) {
   const { toast } = useToast();
+  const { activeRole } = useAuth();
   const [uploadedFile, setUploadedFile] = useState<{
     name: string;
     size: number;
@@ -110,9 +113,15 @@ export function BigQueryConnectModal({
       // Validate JSON
       const credentials = JSON.parse(values.credentials);
 
+      const workspaceId = activeRole?.workspace.id;
+      if (!workspaceId) {
+        throw new Error("No active workspace found");
+      }
+
       onSubmit({
         id: integration?.id ?? null,
         integration: {
+          workspaceId,
           type: "bigquery",
           credentials,
           name: values.name,

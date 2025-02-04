@@ -59,46 +59,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
   const utils = api.useUtils();
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authUser, setAuthUser] = useState<User | null>(null);
+  const { authUser, authLoading, refreshAuthUser, onboardingComplete } =
+    useAuthUser();
   const [activeRole, setActiveRole] = useState<RoleSelectWithRelations | null>(
     null,
   );
-  const setActiveRoleMutation = api.user.setActiveRole.useMutation();
+  const setActiveRoleMutation = api.user.setActiveRole.useMutation({
+    onSuccess: async () => {
+      await refreshAuthUser();
+    },
+  });
+
+  console.log("onboardingComplete", onboardingComplete);
 
   const { data: roles = [], isLoading: isWorkspaceLoading } =
     api.user.getRoles.useQuery(undefined, {
-      enabled: !!authUser,
+      enabled: !!authUser && onboardingComplete,
     });
-
-  const refreshAuthUser = async () => {
-    const { data } = await supabase.auth.getUser();
-    setAuthUser(data?.user ?? null);
-    setAuthLoading(false);
-  };
-
-  useEffect(() => {
-    void refreshAuthUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event);
-      if (event === "SIGNED_IN") {
-        if (!authUser && !authLoading) {
-          setAuthUser(session?.user ?? null);
-          setAuthLoading(false);
-        }
-      } else if (event === "SIGNED_OUT") {
-        resetAuthState();
-      }
-    });
-
-    return () => {
-      console.log("Unsubscribing from auth state change");
-      subscription.unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     if (authUser && roles.length > 0) {
@@ -125,14 +102,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [roles, authUser]);
 
   const handleWorkspaceSwitch = async (role: RoleSelectWithRelations) => {
-    setActiveRole(role);
     if (role?.workspaceId) {
       await setActiveRoleMutation.mutateAsync({
         workspaceId: role.workspaceId,
         roleId: role.id,
       });
 
-      await refreshAuthUser();
+      // TODO: This should just call initialiseAuth or something like it
+      setActiveRole(role);
 
       // Invaliate all routes when workspace changes
       // This is just a safe way to ensure we refetch everything
@@ -204,7 +181,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const resetAuthState = () => {
     setActiveRole(null);
-    setAuthUser(null);
   };
 
   return (
@@ -229,3 +205,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+export const useAuthUser = () => {
+  const supabase = createClient();
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const refreshAuthUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    setAuthUser(data?.user ?? null);
+    setAuthLoading(false);
+  };
+
+  useEffect(() => {
+    void refreshAuthUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      if (event === "SIGNED_IN") {
+        if (!authUser && !authLoading) {
+          setAuthUser(session?.user ?? null);
+          setAuthLoading(false);
+        }
+      } else if (event === "SIGNED_OUT") {
+        setAuthUser(null);
+      }
+    });
+
+    return () => {
+      console.log("Unsubscribing from auth state change");
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const onboardingComplete: boolean =
+    authUser?.user_metadata?.onboarding_complete ?? false;
+
+  return {
+    authUser,
+    authLoading,
+    refreshAuthUser,
+    onboardingComplete,
+  };
+};

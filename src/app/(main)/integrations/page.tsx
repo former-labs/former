@@ -33,18 +33,23 @@ export default function IntegrationsPage() {
   >(undefined);
   const { addIntegration, editIntegration } = useIntegrations();
 
-  const handleCreateIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    addIntegration(integration);
+  const handleCreateIntegration = ({
+    integration,
+  }: {
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => {
+    addIntegration({ integration });
     handleCloseModal();
   };
 
-  const handleUpdateIntegration = (
-    id: string,
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    editIntegration(id, integration);
+  const handleUpdateIntegration = ({
+    id,
+    integration,
+  }: {
+    id: string;
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => {
+    editIntegration({ id, updates: integration });
     handleCloseModal();
   };
 
@@ -77,9 +82,9 @@ export default function IntegrationsPage() {
     integration: Omit<Integration, "id" | "createdAt">;
   }) => {
     if (id) {
-      handleUpdateIntegration(id, integration);
+      handleUpdateIntegration({ id, integration });
     } else {
-      handleCreateIntegration(integration);
+      handleCreateIntegration({ integration });
     }
   };
 

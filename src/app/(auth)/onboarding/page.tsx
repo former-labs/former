@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntegrations } from "@/contexts/DataContext";
+import { env } from "@/env";
 import { useToast } from "@/hooks/use-toast";
 import { PATH_HOME } from "@/lib/paths";
 import { api } from "@/trpc/react";
@@ -59,7 +60,7 @@ export default function OnboardingPage() {
     },
   });
 
-  const createWorkspace = api.onboarding.createWorkspace.useMutation();
+  const createDemoWorkspace = api.onboarding.createDemoWorkspace.useMutation();
   const createUser = api.user.createUser.useMutation();
   const { refetch: fetchDemoIntegration } =
     api.onboarding.retrieveDemoIntegration.useQuery(
@@ -95,9 +96,8 @@ export default function OnboardingPage() {
       // Ensure user exists first
       await createUser.mutateAsync();
 
-      const { role } = await createWorkspace.mutateAsync({
-        workspaceName: values.workspaceName,
-      });
+      const { role } = await createDemoWorkspace.mutateAsync();
+      // workspaceName: values.workspaceName,
 
       if (!role) {
         setError("Failed to create workspace");
@@ -107,9 +107,16 @@ export default function OnboardingPage() {
       await handleWorkspaceSwitch(role);
 
       // Only fetch demo integration after workspace is created
-      const { data: demoIntegration } = await fetchDemoIntegration();
-      if (demoIntegration) {
-        addIntegration(demoIntegration);
+      if (env.NEXT_PUBLIC_PLATFORM === "desktop") {
+        const { data: demoIntegration } = await fetchDemoIntegration();
+        if (demoIntegration) {
+          addIntegration({
+            integration: {
+              ...demoIntegration,
+              workspaceId: role.workspace.id,
+            },
+          });
+        }
       }
 
       router.push(PATH_HOME);

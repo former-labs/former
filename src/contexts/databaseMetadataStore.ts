@@ -162,10 +162,10 @@ const useDatabaseMetadataStore = create<DatabaseMetadataStore>((set, get) => ({
 
 const useDatabaseMetadataWeb = () => {
   const utils = api.useUtils();
-  const { authUser } = useAuth();
+  const { authUser, activeRole } = useAuth();
   const { data: databaseMetadata, isLoading } =
     api.databaseMetadata.getDatabaseMetadata.useQuery(undefined, {
-      enabled: !!authUser,
+      enabled: !!authUser && !!activeRole?.workspace.id,
     });
 
   const { mutate: setDatabaseMetadataMutation } =
