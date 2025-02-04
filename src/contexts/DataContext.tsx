@@ -44,14 +44,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     const loadStoredData = async () => {
       try {
-        console.log("Loading stored data...");
+        // console.log("Loading stored data...");
         const storedIntegrations =
           await window.electron.store.getIntegrations();
         const activeIntegrationId =
           await window.electron.store.getActiveIntegrationId();
 
-        console.log("Stored integrations:", storedIntegrations);
-        console.log("Active integration ID:", activeIntegrationId);
+        // console.log("Stored integrations:", storedIntegrations);
+        // console.log("Active integration ID:", activeIntegrationId);
 
         // Only set integrations if we found some stored
         if (storedIntegrations?.length > 0) {
@@ -88,24 +88,24 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Persist integrations whenever they change
   useEffect(() => {
     if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    console.log("setting integrations", integrations);
+    // console.log("setting integrations", integrations);
     void window.electron.store.setIntegrations(integrations);
   }, [integrations, isStoreReady, isInitialized]);
 
   // Persist active integration whenever it changes
   useEffect(() => {
     if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    console.log("setting active integration", activeIntegration?.id);
+    // console.log("setting active integration", activeIntegration?.id);
     void window.electron.store.setActiveIntegrationId(
       activeIntegration?.id ?? null,
     );
   }, [activeIntegration?.id, isStoreReady, isInitialized]);
 
   const initializeDriver = async (integration: Integration) => {
-    console.log("initializeDriver", integration);
+    // console.log("initializeDriver", integration);
     try {
       const result = await window.electron.database.connect(integration);
-      console.log("result", result);
+      // console.log("result", result);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -121,7 +121,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Initialize connection when integration changes
   useEffect(() => {
     if (activeIntegration) {
-      console.log("activeIntegration", activeIntegration);
+      // console.log("activeIntegration", activeIntegration);
       initializeDriver(activeIntegration)
         .then((connectionId) => {
           if (connectionId) {
@@ -149,7 +149,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       createdAt: new Date().toISOString(),
     };
     setIntegrations((prev) => [...prev, newIntegration]);
-    console.log("newIntegration", newIntegration);
+    // console.log("newIntegration", newIntegration);
     setActiveIntegration(newIntegration);
   };
 

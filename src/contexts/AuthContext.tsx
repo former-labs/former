@@ -95,6 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => {
+      console.log("Unsubscribing from auth state change");
       subscription.unsubscribe();
     };
   }, []);
