@@ -3,25 +3,14 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntegrations } from "@/contexts/DataContext";
 import { env } from "@/env";
 import { useToast } from "@/hooks/use-toast";
 import { PATH_HOME } from "@/lib/paths";
 import { api } from "@/trpc/react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 // Comment
 const getErrorDetails = (error: string) => {
@@ -48,17 +37,6 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { handleWorkspaceSwitch } = useAuth();
   const { addIntegration } = useIntegrations();
-
-  const formSchema = z.object({
-    workspaceName: z.string().min(3, "Must be at least 3 characters"),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      workspaceName: "",
-    },
-  });
 
   const createDemoWorkspace = api.onboarding.createDemoWorkspace.useMutation();
   const createUser = api.user.createUser.useMutation();
@@ -88,7 +66,7 @@ export default function OnboardingPage() {
     }
   }, [toast]);
 
-  const handleCreateWorkspace = async (values: z.infer<typeof formSchema>) => {
+  const handleCreateWorkspace = async () => {
     setError("");
     setIsLoading(true);
 
@@ -97,7 +75,6 @@ export default function OnboardingPage() {
       await createUser.mutateAsync();
 
       const { role } = await createDemoWorkspace.mutateAsync();
-      // workspaceName: values.workspaceName,
 
       if (!role) {
         setError("Failed to create workspace");
@@ -110,7 +87,7 @@ export default function OnboardingPage() {
       if (env.NEXT_PUBLIC_PLATFORM === "desktop") {
         const { data: demoIntegration } = await fetchDemoIntegration();
         if (demoIntegration) {
-          addIntegration({
+          await addIntegration({
             integration: {
               ...demoIntegration,
               workspaceId: role.workspace.id,
@@ -129,50 +106,25 @@ export default function OnboardingPage() {
 
   return (
     <div className="z-10 flex w-full max-w-sm flex-col rounded-lg border-2 border-border bg-background p-8 shadow-sm">
-      <div>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleCreateWorkspace)}
-            className="flex h-full flex-col justify-between space-y-4"
-          >
-            <div>
-              <h1 className="mb-4 text-center text-xl font-semibold">
-                Create a workspace
-              </h1>
-              <FormField
-                control={form.control}
-                name="workspaceName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter your workspace name..."
-                      />
-                    </FormControl>
-                    <FormMessage className="text-error-500" />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex gap-x-2">
-              <Button
-                type="submit"
-                disabled={isLoading}
-                size="lg"
-                variant="secondary"
-                className="flex w-full items-center justify-center"
-              >
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                )}
-                Create Workspace
-              </Button>
-            </div>
-          </form>
-        </Form>
+      <div className="flex flex-col items-center space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold">Welcome to Former!</h1>
+        </div>
+
+        <Button
+          onClick={handleCreateWorkspace}
+          disabled={isLoading}
+          size="lg"
+          variant="secondary"
+          className="flex w-full items-center justify-center"
+        >
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <PlusCircle className="mr-2 h-4 w-4" />
+          )}
+          Create Demo Workspace
+        </Button>
       </div>
       {error && (
         <p className="self-center pt-2 text-center text-red-500">{error}</p>

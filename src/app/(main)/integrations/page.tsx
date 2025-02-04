@@ -38,7 +38,7 @@ export default function IntegrationsPage() {
   }: {
     integration: Omit<Integration, "id" | "createdAt">;
   }) => {
-    addIntegration({ integration });
+    void addIntegration({ integration });
     handleCloseModal();
   };
 
