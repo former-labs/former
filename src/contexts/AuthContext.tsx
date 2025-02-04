@@ -70,8 +70,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     },
   });
 
-  console.log("onboardingComplete", onboardingComplete);
-
   const { data: roles = [], isLoading: isWorkspaceLoading } =
     api.user.getRoles.useQuery(undefined, {
       enabled: !!authUser && onboardingComplete,

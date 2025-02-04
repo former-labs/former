@@ -6,9 +6,10 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
+import { useIntegrations } from "@/contexts/DataContext";
 import { env } from "@/env";
 import { PATH_INTEGRATIONS } from "@/lib/paths";
+import { useRouter } from "next/navigation";
 import { useEventListener } from "usehooks-ts";
 import { ChatSidebar } from "./_components/chat/Chat";
 import { useChat } from "./_components/chat/chatStore";
@@ -17,8 +18,9 @@ import { getActiveEditor } from "./_components/editor/editorStore";
 import { QueryResultPane } from "./_components/resultPane/QueryResultPane";
 
 export default function EditorPage() {
-  const { databaseMetadata } = useDatabaseMetadata();
+  const { activeIntegration } = useIntegrations();
   const { createChat } = useChat();
+  const router = useRouter();
 
   useEventListener("keydown", (e) => {
     // Check for Cmd+L (Mac) or Ctrl+L (Windows/Linux)
@@ -30,7 +32,7 @@ export default function EditorPage() {
     }
   });
 
-  if (env.NEXT_PUBLIC_PLATFORM === "desktop" && !databaseMetadata) {
+  if (env.NEXT_PUBLIC_PLATFORM === "desktop" && !activeIntegration) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <div className="text-lg text-gray-500">
@@ -38,7 +40,7 @@ export default function EditorPage() {
         </div>
         <Button
           variant="outline"
-          onClick={() => (window.location.href = PATH_INTEGRATIONS)}
+          onClick={() => router.push(PATH_INTEGRATIONS)}
           className="mt-4"
         >
           Connect Database

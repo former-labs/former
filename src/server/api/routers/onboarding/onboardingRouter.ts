@@ -108,12 +108,18 @@ export const onboardingRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const role = await db.transaction(async (tx) => {
-          return await createWorkspaceAndRole({
-            workspaceName: input.workspaceName,
-            userId: ctx.user.id,
-            tx
-          });
+        // const role = await db.transaction(async (tx) => {
+        //   return await createWorkspaceAndRole({
+        //     workspaceName: input.workspaceName,
+        //     userId: ctx.user.id,
+        //     tx
+        //   });
+        // });
+
+        const role = await createWorkspaceAndRole({
+          workspaceName: input.workspaceName,
+          userId: ctx.user.id,
+          tx: db
         });
 
         return { role };
@@ -129,33 +135,48 @@ export const onboardingRouter = createTRPCRouter({
 
   createDemoWorkspace: userProtectedProcedure
     .mutation(async ({ ctx }) => {
-      try {
-        const role = await db.transaction(async (tx) => {
-          const demoRole = await createWorkspaceAndRole({
-            workspaceName: "Demo Workspace",
-            userId: ctx.user.id,
-            tx,
-            isDemoWorkspace: true
-          });
+      const demoRole = await createWorkspaceAndRole({
+        workspaceName: "Demo Workspace",
+        userId: ctx.user.id,
+        tx: db,
+        isDemoWorkspace: true
+      });
 
-          return demoRole;
-        });
+      // Create the Supabase client and update auth metadata
+      const supabase = await createClient();
+      await supabase.auth.updateUser({
+        data: { onboarding_complete: true }
+      });
 
-        // Create the Supabase client and update auth metadata
-        const supabase = await createClient();
-        await supabase.auth.updateUser({
-          data: { onboarding_complete: true }
-        });
+      return { role: demoRole };
 
-        return { role };
-      } catch (error) {
-        console.error('Demo workspace creation error:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to create demo workspace',
-          cause: error,
-        });
-      }
+      // try {
+      //   const role = await db.transaction(async (tx) => {
+      //     const demoRole = await createWorkspaceAndRole({
+      //       workspaceName: "Demo Workspace",
+      //       userId: ctx.user.id,
+      //       tx,
+      //       isDemoWorkspace: true
+      //     });
+
+      //     return demoRole;
+      //   });
+
+      //   // Create the Supabase client and update auth metadata
+      //   const supabase = await createClient();
+      //   await supabase.auth.updateUser({
+      //     data: { onboarding_complete: true }
+      //   });
+
+      //   return { role };
+      // } catch (error) {
+      //   console.error('Demo workspace creation error:', error);
+      //   throw new TRPCError({
+      //     code: 'INTERNAL_SERVER_ERROR',
+      //     message: error instanceof Error ? error.message : 'Failed to create demo workspace',
+      //     cause: error,
+      //   });
+      // }
     }),
 
   retrieveDemoIntegration: userProtectedProcedure
