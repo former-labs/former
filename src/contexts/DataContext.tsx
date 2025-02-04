@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@/contexts/AuthContext";
 import type { Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useDatabaseMetadata } from "./databaseMetadataStore";
@@ -32,10 +33,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const { fetchMetadataIncremental } = useDatabaseMetadata();
   const electronStore = useElectronStore();
+  const { activeRole } = useAuth();
+
+  const workspaceId = activeRole?.workspace.id;
 
   // Load stored data once store is ready
   useEffect(() => {
-    if (!electronStore || isInitialized) return;
+    if (!electronStore || isInitialized || !workspaceId) return;
 
     const loadStoredData = async () => {
       try {
@@ -43,14 +47,19 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         const activeIntegrationId =
           await electronStore.getActiveIntegrationId();
 
-        // Only set integrations if we found some stored
-        if (storedIntegrations?.length > 0) {
-          setIntegrations(storedIntegrations);
+        // Filter integrations by workspace and only set if we found some stored
+        // const workspaceIntegrations = storedIntegrations;
+        const workspaceIntegrations = storedIntegrations?.filter(
+          (integration) => integration.workspaceId === workspaceId,
+        );
+
+        if (workspaceIntegrations?.length > 0) {
+          setIntegrations(workspaceIntegrations);
         }
 
-        // Only set active integration if we found a valid one
-        if (activeIntegrationId && storedIntegrations?.length) {
-          const active = storedIntegrations.find(
+        // Only set active integration if we found a valid one for this workspace
+        if (activeIntegrationId && workspaceIntegrations?.length) {
+          const active = workspaceIntegrations.find(
             (i) => i.id === activeIntegrationId,
           );
           if (active) {
@@ -66,7 +75,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     void loadStoredData();
-  }, [electronStore, isInitialized]);
+  }, [electronStore, isInitialized, workspaceId]);
 
   // Only set default active integration if we've initialized and none is set
   useEffect(() => {
