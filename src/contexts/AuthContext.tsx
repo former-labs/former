@@ -31,13 +31,9 @@ type AuthContextType = {
   roles: RoleSelectWithRelations[];
   activeRole: RoleSelectWithRelations | null;
   isWorkspaceLoading: boolean;
-  setActiveRole: React.Dispatch<
-    React.SetStateAction<RoleSelectWithRelations | null>
-  >;
   handleWorkspaceSwitch: (role: RoleSelectWithRelations) => Promise<void>;
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  resetAuthState: () => void;
 };
 
 export const AuthContext = createContext<AuthContextType>({
@@ -47,11 +43,9 @@ export const AuthContext = createContext<AuthContextType>({
   roles: [],
   activeRole: null,
   isWorkspaceLoading: true,
-  setActiveRole: () => null,
   handleWorkspaceSwitch: () => Promise.resolve(),
   login: () => Promise.resolve(),
   logout: () => Promise.resolve(),
-  resetAuthState: () => null,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -61,9 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const utils = api.useUtils();
   const { authUser, authLoading, refreshAuthUser, onboardingComplete } =
     useAuthUser();
-  const [activeRole, setActiveRole] = useState<RoleSelectWithRelations | null>(
-    null,
-  );
+
   const setActiveRoleMutation = api.user.setActiveRole.useMutation({
     onSuccess: async () => {
       await refreshAuthUser();
@@ -75,29 +67,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       enabled: !!authUser && onboardingComplete,
     });
 
-  useEffect(() => {
-    if (authUser && roles.length > 0) {
-      const initializeAuth = async () => {
-        const activeRoleMetadata: ActiveRole | undefined =
-          authUser.app_metadata?.activeRole;
-        const activeWorkspaceRole = activeRoleMetadata
-          ? roles.find((role) => role.id === activeRoleMetadata.id)
-          : null;
-
-        if (activeWorkspaceRole) {
-          setActiveRole(activeWorkspaceRole);
-        } else {
-          // If no active role is set or it's invalid, use the first role
-          const firstRole = roles[0];
-          if (firstRole) {
-            await handleWorkspaceSwitch(firstRole);
-          }
-        }
-      };
-      void initializeAuth();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roles, authUser]);
+  const activeRole = (() => {
+    if (!authUser || roles.length === 0) return null;
+    const activeRoleMetadata = authUser.app_metadata?.activeRole as
+      | ActiveRole
+      | undefined;
+    return roles.find((role) => role.id === activeRoleMetadata?.id) ?? null;
+  })();
 
   const handleWorkspaceSwitch = async (role: RoleSelectWithRelations) => {
     if (role?.workspaceId) {
@@ -105,9 +81,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         workspaceId: role.workspaceId,
         roleId: role.id,
       });
-
-      // TODO: This should just call initialiseAuth or something like it
-      setActiveRole(role);
 
       // Invaliate all routes when workspace changes
       // This is just a safe way to ensure we refetch everything
@@ -177,10 +150,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     router.push(PATH_LOGIN);
   };
 
-  const resetAuthState = () => {
-    setActiveRole(null);
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -189,12 +158,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user: activeRole?.user ?? null,
         roles,
         activeRole,
-        setActiveRole,
         handleWorkspaceSwitch,
         isWorkspaceLoading,
         login,
         logout,
-        resetAuthState,
       }}
     >
       {children}
