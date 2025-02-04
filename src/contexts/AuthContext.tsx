@@ -2,12 +2,12 @@
 
 import { env } from "@/env";
 import { useToast } from "@/hooks/use-toast";
-import { PATH_LOGIN } from "@/lib/paths";
-import { createClient } from "@/lib/supabase/client";
 import {
-  loginWithProvider,
-  loginWithProviderElectron,
-} from "@/server/auth/actions";
+  PATH_ELECTRON_CALLBACK,
+  PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK,
+  PATH_LOGIN,
+} from "@/lib/paths";
+import { createClient } from "@/lib/supabase/client";
 import {
   type ROLE_VALUES,
   type RoleSelectWithRelations,
@@ -142,20 +142,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async () => {
     if (env.NEXT_PUBLIC_PLATFORM === "desktop") {
-      const result = await loginWithProviderElectron({
-        provider: "google",
-      });
-      if (!result.url) {
+      try {
+        const { error, data } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}${PATH_ELECTRON_CALLBACK}`,
+            skipBrowserRedirect: true,
+          },
+        });
+
+        if (error || !data.url) {
+          toast({
+            title: "Error",
+            description:
+              error?.message ?? "Failed to authenticate with service",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        window.electron.send("open-external", data.url);
+      } catch (error) {
+        console.error("Error signing in:", error);
         toast({
           title: "Error",
-          description: result.error ?? "Failed to authenticate with service",
+          description: "Failed to authenticate with service",
           variant: "destructive",
         });
-      } else {
-        window.electron.send("open-external", result.url);
       }
     } else {
-      await loginWithProvider({ provider: "google" });
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}${PATH_GOOGLE_INTEGRATION_OAUTH_CALLBACK}`,
+          },
+        });
+
+        if (error) {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error signing in:", error);
+        toast({
+          title: "Error",
+          description: "Failed to authenticate with service",
+          variant: "destructive",
+        });
+      }
     }
   };
 
