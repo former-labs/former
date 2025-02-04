@@ -3,7 +3,7 @@ import { databaseMetadataRouter } from "./routers/databaseMetadata/databaseMetad
 import { editorRouter } from "./routers/editor/editorRouter";
 import { instructionsRouter } from "./routers/instructions/instructionsRouter";
 import { knowledgeRouter } from "./routers/knowledge/knowledgeRouter";
-import { onboardingRouter } from "./routers/onboardingRouter";
+import { onboardingRouter } from "./routers/onboarding/onboardingRouter";
 import { userRouter } from "./routers/userRouter";
 
 /**

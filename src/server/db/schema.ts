@@ -1,4 +1,4 @@
-import { DatabaseMetadata } from "@/types/connections";
+import { type DatabaseMetadata } from "@/types/connections";
 import { relations } from "drizzle-orm";
 import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
@@ -20,7 +20,9 @@ const updatedAtField = timestamp("updated_at", { withTimezone: true })
   .$onUpdate(() => new Date());
 
 const workspaceIdField = uuid("workspace_id")
-    .references(() => workspaceTable.id)
+    .references(() => workspaceTable.id, {
+      onDelete: "cascade",
+    })
     .notNull();
 
 // User
