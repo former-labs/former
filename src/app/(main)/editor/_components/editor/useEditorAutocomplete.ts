@@ -1,6 +1,6 @@
 "use client";
 
-import { useData } from "@/contexts/DataContext";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { type Monaco } from "@monaco-editor/react";
@@ -9,7 +9,7 @@ import { filterDatabaseMetadataContext } from "../chat/chatStore";
 import { useActiveEditor } from "./editorStore";
 
 export const useEditorAutocomplete = (monaco: Monaco | null) => {
-  const { databaseMetadata } = useData();
+  const { databaseMetadata } = useDatabaseMetadata();
 
   const { editorContent } = useActiveEditor();
   const getAutocompleteMutation = api.editor.getAutocomplete.useMutation();

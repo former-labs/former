@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Integration, PostgresCredentials } from "@/types/connections";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,24 +44,26 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export interface PostgresConnectModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  integration?: Integration;
-  onSubmit: (params: {
-    id: string | null;
-    integration: Omit<Integration, "id" | "createdAt">;
-  }) => void;
-}
-
 export function PostgresConnectModal({
   open,
   onOpenChange,
   integration,
   onSubmit,
-}: PostgresConnectModalProps) {
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  integration?: Integration;
+  onSubmit: ({
+    id,
+    integration,
+  }: {
+    id: string | null;
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => void;
+}) {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const { activeRole } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -163,9 +166,15 @@ export function PostgresConnectModal({
       };
     }
 
+    const workspaceId = activeRole?.workspace.id;
+    if (!workspaceId) {
+      throw new Error("No active workspace found");
+    }
+
     onSubmit({
       id: integration?.id ?? null,
       integration: {
+        workspaceId,
         type: "postgres",
         credentials,
         name: values.name,

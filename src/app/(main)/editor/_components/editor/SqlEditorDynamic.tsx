@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
 /*
@@ -14,6 +15,10 @@ export const SqlEditorDynamic = dynamic(
   () => import("./SqlEditor").then((mod) => mod.SqlEditor),
   {
     ssr: false,
-    loading: () => <div>Loading editor...</div>,
+    loading: () => (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    ),
   },
 );

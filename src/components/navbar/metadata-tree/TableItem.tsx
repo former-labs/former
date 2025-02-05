@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useData } from "@/contexts/DataContext";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { ChevronDown, ChevronRight, Table as TableIcon } from "lucide-react";
 import { FieldItem } from "./FieldItem";
 import { HighlightedText, type TableExtended } from "./common";
@@ -29,7 +29,7 @@ export function TableItem({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  const { setTableIncludedInAIContext } = useData();
+  const { setTableIncludedInAIContext } = useDatabaseMetadata();
 
   return (
     <div className="space-y-0.5">

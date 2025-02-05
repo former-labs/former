@@ -6,7 +6,7 @@ import { IntegrationCard } from "@/app/(main)/integrations/_components/integrati
 import { PostgresConnectModal } from "@/app/(main)/integrations/_components/postgres-connect-modal";
 import BigQueryLogo from "@/components/assets/bigquery.svg";
 import PostgresLogo from "@/components/assets/postgres.svg";
-import { useData } from "@/contexts/DataContext";
+import { useIntegrations } from "@/contexts/DataContext";
 import { type Integration } from "@/types/connections";
 import { useState } from "react";
 
@@ -31,20 +31,25 @@ export default function IntegrationsPage() {
   const [selectedIntegration, setSelectedIntegration] = useState<
     Integration | undefined
   >(undefined);
-  const { addIntegration, editIntegration } = useData();
+  const { addIntegration, editIntegration } = useIntegrations();
 
-  const handleCreateIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    addIntegration(integration);
+  const handleCreateIntegration = ({
+    integration,
+  }: {
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => {
+    void addIntegration({ integration });
     handleCloseModal();
   };
 
-  const handleUpdateIntegration = (
-    id: string,
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    editIntegration(id, integration);
+  const handleUpdateIntegration = ({
+    id,
+    integration,
+  }: {
+    id: string;
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => {
+    editIntegration({ id, updates: integration });
     handleCloseModal();
   };
 
@@ -77,9 +82,9 @@ export default function IntegrationsPage() {
     integration: Omit<Integration, "id" | "createdAt">;
   }) => {
     if (id) {
-      handleUpdateIntegration(id, integration);
+      handleUpdateIntegration({ id, integration });
     } else {
-      handleCreateIntegration(integration);
+      handleCreateIntegration({ integration });
     }
   };
 

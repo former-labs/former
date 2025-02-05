@@ -19,6 +19,7 @@ export const PATH_ONBOARDING = "/onboarding";
 
 export const PATH_EDITOR = "/editor";
 export const PATH_INTEGRATIONS = "/integrations";
+export const PATH_DATABASE_METADATA = "/database-metadata";
 export const PATH_KNOWLEDGE = "/knowledge";
 export const PATH_INSTRUCTIONS = "/instructions";
 export const PATH_HELP = "/help";

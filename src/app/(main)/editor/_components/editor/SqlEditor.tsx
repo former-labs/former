@@ -35,8 +35,6 @@ export const SqlEditor = () => {
     setShouldFocus,
   } = useActiveEditor();
 
-  const { executeQuery, resultLoading } = useQueryResult();
-
   const [monaco, setMonaco] = useState<Monaco | null>(null);
 
   const [diffEditor, setDiffEditor] =
@@ -223,14 +221,6 @@ export const SqlEditor = () => {
     codeEditor,
   });
 
-  // Add Cmd+Enter binding to execute query
-  useEditorKeybind({
-    id: "execute-query",
-    callback: () => executeQuery({ editorSelectionContent, editorContent }),
-    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
-    codeEditor,
-  });
-
   // Add Cmd+L binding to simulate original keybinding
   useEditorKeybind({
     id: "open-chat",
@@ -337,19 +327,14 @@ export const SqlEditor = () => {
     <div className="flex h-full w-full flex-col">
       <div className="flex flex-shrink-0 items-center justify-between bg-gray-50 px-2 py-1">
         <div className="flex gap-2 overflow-x-auto">
-          <Button
-            variant="ghost"
-            onClick={() =>
-              executeQuery({ editorSelectionContent, editorContent })
-            }
-            disabled={resultLoading}
-          >
-            {resultLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-          </Button>
+          {env.NEXT_PUBLIC_PLATFORM === "desktop" && (
+            <QueryExecutionButton
+              editorSelectionContent={editorSelectionContent}
+              editorContent={editorContent}
+              monaco={monaco}
+              codeEditor={codeEditor}
+            />
+          )}
           {env.NEXT_PUBLIC_NODE_ENV === "development" && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -465,5 +450,42 @@ export const SqlEditor = () => {
         return renderViewZone(widget.id, <InlinePromptWidget id={widget.id} />);
       })}
     </div>
+  );
+};
+
+const QueryExecutionButton = ({
+  editorSelectionContent,
+  editorContent,
+  monaco,
+  codeEditor,
+}: {
+  editorSelectionContent: string | null;
+  editorContent: string;
+  monaco: Monaco | null;
+  codeEditor: editor.IStandaloneCodeEditor | null;
+}) => {
+  const { executeQuery, resultLoading } = useQueryResult();
+
+  useEditorKeybind({
+    id: "execute-query",
+    callback: async () => {
+      await executeQuery({ editorSelectionContent, editorContent });
+    },
+    keybinding: monaco ? monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter : null,
+    codeEditor,
+  });
+
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => executeQuery({ editorSelectionContent, editorContent })}
+      disabled={resultLoading}
+    >
+      {resultLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Play className="h-4 w-4" />
+      )}
+    </Button>
   );
 };

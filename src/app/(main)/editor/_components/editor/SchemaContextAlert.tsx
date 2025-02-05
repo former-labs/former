@@ -1,11 +1,11 @@
 "use client";
 
-import { useData } from "@/contexts/DataContext";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { AlertCircle } from "lucide-react";
 import { filterDatabaseMetadataContext } from "../chat/chatStore";
 
 export const SchemaContextAlert = () => {
-  const { databaseMetadata } = useData();
+  const { databaseMetadata } = useDatabaseMetadata();
 
   if (!databaseMetadata) return null;
 

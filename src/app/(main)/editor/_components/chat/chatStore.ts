@@ -1,4 +1,4 @@
-import { useData } from "@/contexts/DataContext";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { api } from "@/trpc/react";
 import type { DatabaseMetadata } from "@/types/connections";
 import { v4 as uuidv4 } from "uuid";
@@ -61,7 +61,7 @@ const useChatStore = create<ChatStore>((set) => ({
 }));
 
 export const useChat = () => {
-  const { databaseMetadata } = useData();
+  const { databaseMetadata } = useDatabaseMetadata();
   const chatStore = useChatStore();
   
   const activeChat = chatStore.chats.find(

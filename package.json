@@ -1,6 +1,6 @@
 {
   "name": "former-labs",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "The AI SQL Editor. Built to make data analysts extraordinarily productive, Former Labs is the best way to write SQL with AI.",
   "author": {
     "name": "Former Labs",
@@ -76,6 +76,7 @@
     "lucide-react": "^0.460.0",
     "next": "^15.0.1",
     "openai": "^4.73.0",
+    "papaparse": "^5.5.2",
     "pg": "^8.13.1",
     "postgres": "^3.4.4",
     "react": "^18.3.1",
@@ -111,6 +112,7 @@
     "@types/eslint": "^8.56.10",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.14.10",
+    "@types/papaparse": "^5.3.15",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/react-plotly.js": "^2.6.3",

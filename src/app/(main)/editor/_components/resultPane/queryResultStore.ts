@@ -1,4 +1,4 @@
-import { useData } from "@/contexts/DataContext";
+import { useQueryExecution } from "@/app/(main)/editor/_components/resultPane/useQueryExecution";
 import { z } from "zod";
 import { create } from "zustand";
 
@@ -41,7 +41,7 @@ const useQueryResultStore = create<QueryResultStore>((set) => ({
 
 export const useQueryResult = () => {
   const store = useQueryResultStore();
-  const { executeQuery, cancelQuery, getQueryResult } = useData();
+  const { executeQuery, cancelQuery, getQueryResult } = useQueryExecution();
 
   const handleExecuteQuery = async ({
     editorSelectionContent,
