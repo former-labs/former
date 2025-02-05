@@ -1,24 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoFormer } from "@/components/utils/LogoFormer";
-import { useAuth } from "@/contexts/AuthContext";
 import { PATH_LOGIN } from "@/lib/paths";
-import { Loader2 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { AuthFormComponent } from "../_components/AuthFormComponent";
 
 export default function SignupPage() {
-  const { login } = useAuth();
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  const handleSignup = async () => {
-    setIsAuthenticating(true);
-    await login();
-  };
-
   return (
     <div className="flex h-full flex-col items-center justify-center">
       {/* Logo */}
@@ -39,25 +27,7 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full"
-            onClick={handleSignup}
-            disabled={isAuthenticating}
-          >
-            {isAuthenticating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Image
-                src="https://www.google.com/favicon.ico"
-                alt="Google"
-                width={20}
-                height={20}
-              />
-            )}
-            Continue with Google
-          </Button>
+          <AuthFormComponent />
 
           <div className="text-center text-sm text-gray-500">
             Already have an account?{" "}
