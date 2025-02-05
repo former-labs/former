@@ -18,7 +18,7 @@ const HelpDesktop = () => {
             1. Connect your database
           </h2>
           <p className="text-muted-foreground">
-            Use the Integrations tab to connect your database. This gives the AI
+            Use the Connections tab to connect your database. This gives the AI
             access to your database schema (but not data) so it can generate
             accurate SQL queries. It also allows you to execute queries in the
             editor.

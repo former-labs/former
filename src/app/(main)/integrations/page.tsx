@@ -93,7 +93,7 @@ export default function IntegrationsPage() {
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="mb-1 text-[22px] font-semibold leading-7">
-            Integrations
+            Connections
           </h1>
           <p className="text-[14px] text-muted-foreground">
             Connect your data sources and manage existing connections.
