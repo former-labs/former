@@ -21,6 +21,11 @@ interface DatabaseMetadataStore {
     tableId: string;
     value: boolean;
   }) => void;
+  setDatasetIncludedInAIContext: (params: {
+    projectId: string;
+    datasetId: string;
+    value: boolean;
+  }) => void;
   fetchMetadataIncremental: (connectionId: string) => Promise<void>;
   fetchTablesForDataset: (
     connectionId: string,
@@ -62,6 +67,34 @@ const useDatabaseMetadataStore = create<DatabaseMetadataStore>((set, get) => ({
                       includedInAIContext: value,
                     };
                   }),
+                };
+              }),
+            };
+          }),
+        },
+      };
+    });
+  },
+
+  setDatasetIncludedInAIContext: ({ projectId, datasetId, value }) => {
+    set((state) => {
+      if (!state.databaseMetadata) return state;
+      return {
+        databaseMetadata: {
+          dialect: state.databaseMetadata.dialect,
+          projects: state.databaseMetadata.projects.map((project) => {
+            if (project.id !== projectId) return project;
+            return {
+              ...project,
+              datasets: project.datasets.map((dataset) => {
+                if (dataset.id !== datasetId) return dataset;
+                return {
+                  ...dataset,
+                  includedInAIContext: value,
+                  tables: dataset.tables.map((table) => ({
+                    ...table,
+                    includedInAIContext: value,
+                  })),
                 };
               }),
             };
@@ -222,6 +255,50 @@ const useDatabaseMetadataWeb = () => {
       databaseMetadata: updatedMetadata,
     });
   };
+  
+  const setDatasetIncludedInAIContext = ({
+    projectId,
+    datasetId,
+    value,
+  }: {
+    projectId: string;
+    datasetId: string;
+    value: boolean;
+  }) => {
+    if (!databaseMetadata) return;
+
+    const updatedMetadata = {
+      dialect: databaseMetadata.dialect,
+      projects: databaseMetadata.projects.map((project) => {
+        if (project.id !== projectId) return project;
+        return {
+          ...project,
+          datasets: project.datasets.map((dataset) => {
+            if (dataset.id !== datasetId) return dataset;
+            return {
+              ...dataset,
+              includedInAIContext: value,
+              tables: dataset.tables.map((table) => ({
+                ...table,
+                includedInAIContext: value,
+              })),
+            };
+          }),
+        };
+      }),
+    };
+
+    // Optimistically update the cache
+    void utils.databaseMetadata.getDatabaseMetadata.cancel();
+    utils.databaseMetadata.getDatabaseMetadata.setData(
+      undefined,
+      updatedMetadata,
+    );
+
+    setDatabaseMetadataMutation({
+      databaseMetadata: updatedMetadata,
+    });
+  };
 
   // Stub functions for web version
   const fetchMetadataIncremental = async () => {
@@ -239,6 +316,7 @@ const useDatabaseMetadataWeb = () => {
     loadingDatasets: new Set<string>(),
     loadedDatasets: new Set<string>(),
     setTableIncludedInAIContext,
+    setDatasetIncludedInAIContext,
     fetchMetadataIncremental,
     fetchTablesForDataset,
   };
@@ -256,6 +334,7 @@ export const useDatabaseMetadata = () => {
       loadingDatasets: store.loadingDatasets,
       loadedDatasets: store.loadedDatasets,
       setTableIncludedInAIContext: store.setTableIncludedInAIContext,
+      setDatasetIncludedInAIContext: store.setDatasetIncludedInAIContext,
       fetchMetadataIncremental: store.fetchMetadataIncremental,
       fetchTablesForDataset: store.fetchTablesForDataset,
     };

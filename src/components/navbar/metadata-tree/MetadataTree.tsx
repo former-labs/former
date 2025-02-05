@@ -123,6 +123,15 @@ export function MetadataTree() {
   const shouldShowContent =
     env.NEXT_PUBLIC_PLATFORM === "web" || activeIntegration;
 
+  const handleSearchChange = (newSearchTerm: string) => {
+    if (newSearchTerm === "" && searchQuery !== "") {
+      // setExpandedProjects(new Set());
+      setExpandedDatasets(new Set());
+      setExpandedTables(new Set());
+    }
+    setSearchQuery(newSearchTerm);
+  };
+
   return (
     <TooltipProvider>
       <SidebarGroup className="flex h-full flex-col">
@@ -143,7 +152,7 @@ export function MetadataTree() {
                   placeholder="Search..."
                   className="pl-8"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                 />
               </div>
               <div className="my-4 flex items-center space-x-2">
