@@ -1,11 +1,11 @@
 import "@/styles/globals.css";
 
-import { GeistSans } from "geist/font/sans";
-import { type Metadata } from "next";
-
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/contexts/DataContext";
+import { env } from "@/env";
 import { TRPCReactProvider } from "@/trpc/react";
+import { GeistSans } from "geist/font/sans";
+import { type Metadata } from "next";
 import Script from "next/script";
 import { ElectronAuthHandler } from "./(auth)/_components/ElectronAuthHandler";
 
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <head>
-        {process.env.NODE_ENV === "production" && (
+        {env.NODE_ENV === "production" && env.SEND_ANALYTICS && (
           <>
             {/* Google Tag Manager */}
             <Script
@@ -41,7 +41,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         )}
       </head>
       <body>
-        {process.env.NODE_ENV === "production" && (
+        {env.NODE_ENV === "production" && env.SEND_ANALYTICS && (
           <>
             {/* Google Tag Manager (noscript) */}
             <noscript>
@@ -55,9 +55,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {/* End Google Tag Manager (noscript) */}
           </>
         )}
-        {process.env.NEXT_PUBLIC_PLATFORM === "desktop" && (
-          <ElectronAuthHandler />
-        )}
+        {env.NEXT_PUBLIC_PLATFORM === "desktop" && <ElectronAuthHandler />}
         <TRPCReactProvider>
           <AuthProvider>
             <DataProvider>{children}</DataProvider>
