@@ -18,10 +18,10 @@ export default {
       /^\/src/,
       /^\/node_modules\/(pg|postgres|@google-cloud\/bigquery)\/build\/Release/,
     ],
-    osxSign: {},
-    osxNotarize: {
-      keychainProfile: "FormerLabs-Keychain-Profile",
-    },
+    // osxSign: {},
+    // osxNotarize: {
+    //   keychainProfile: "FormerLabs-Keychain-Profile",
+    // },
   },
   rebuildConfig: {},
   makers: [
