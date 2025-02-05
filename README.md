@@ -15,9 +15,9 @@ Instead of using an external AI that knows nothing about your database, Former p
 
 The fastest way to get started with Former is by visting [Former Labs](https://formerlabs.com/products) to download the desktop client. This package will use a cloud hosted instance of Former for account and workspace management, but all database connections and query results will remain local and secure.
 
-Former Cloud offers a generous free tier with a 14 day trial period. After the trial period ends, you are welcome to start paying for Former Pro or switch to the self hosted option.
+Former Cloud offers a generous free tier with a 14 day trial period of Former Pro. After the trial period ends, you are welcome to start paying for Former Pro, continue on the free tier, or switch to the self hosted option.
 
-Former Cloud also hosts a web alternative to the desktop client that does not support query execution or database connections for security reasons. You can access the web hosted alternative on our [website](https://formerlabs.com/products).
+Former Cloud also hosts a web alternative to the desktop client that does not support query execution or database connections for security reasons, this is mainly at large enterprises where there is sometimes a long process to approve software to download. You can access the web hosted alternative on our [website](https://formerlabs.com/products).
 
 ### Self-hosting
 
