@@ -3,17 +3,22 @@ import type { DatabaseInstructions, DatabaseType } from "@/types/connections";
 export const DATABASE_INSTRUCTIONS: Record<DatabaseType, DatabaseInstructions> = {
   bigquery: {
     type: "bigquery",
-    query: `
+    query: `\
 SELECT 
-  table_catalog as project_id,
-  table_schema as dataset_id,
-  table_name,
-  '' as table_description, -- BigQuery doesn't store table descriptions in INFORMATION_SCHEMA
-  column_name,
-  data_type,
-  description as column_description
-FROM \`<YOUR_PROJECT_ID>.<YOUR_DATASET_ID>.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS\`
-ORDER BY table_schema, table_name, ordinal_position`,
+  cp.table_catalog AS project_id,
+  cp.table_schema AS dataset_id,
+  cp.table_name,
+  '' AS table_description,
+  cp.column_name,
+  cp.data_type,
+  cp.description AS column_description
+FROM \`<YOUR_PROJECT_ID>.<YOUR_DATASET_ID>.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS\` AS cp
+JOIN \`<YOUR_PROJECT_ID>.<YOUR_DATASET_ID>.INFORMATION_SCHEMA.COLUMNS\` AS c
+  ON cp.table_catalog = c.table_catalog
+ AND cp.table_schema  = c.table_schema
+ AND cp.table_name    = c.table_name
+ AND cp.column_name   = c.column_name
+ORDER BY cp.table_schema, cp.table_name, c.ordinal_position;`,
     description:
       "Run this query in BigQuery and export the results as CSV. This will fetch all column information from your BigQuery project. Note that descriptions are not available through INFORMATION_SCHEMA and will need to be added manually.",
     columnMappings: {
@@ -28,7 +33,7 @@ ORDER BY table_schema, table_name, ordinal_position`,
   },
   postgres: {
     type: "postgres",
-    query: `
+    query: `\
 SELECT 
   c.table_catalog as project_id,
   c.table_schema as dataset_id,
@@ -57,21 +62,21 @@ ORDER BY c.table_schema, c.table_name, c.ordinal_position`,
   },
   mysql: {
     type: "mysql",
-    query: `
+    query: `\
 SELECT 
-  table_schema as project_id,
-  table_schema as dataset_id,
+  c.table_schema AS project_id,
+  c.table_schema AS dataset_id,
   c.table_name,
-  t.table_comment as table_description,
-  column_name,
-  data_type,
-  column_comment as column_description
-FROM information_schema.columns c
-JOIN information_schema.tables t 
+  t.table_comment AS table_description,
+  c.column_name,
+  c.data_type,
+  c.column_comment AS column_description
+FROM information_schema.columns AS c
+JOIN information_schema.tables AS t
   ON c.table_schema = t.table_schema 
   AND c.table_name = t.table_name
 WHERE c.table_schema NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
-ORDER BY c.table_schema, c.table_name, c.ordinal_position`,
+ORDER BY c.table_schema, c.table_name, c.ordinal_position;`,
     description:
       "Run this query in MySQL and export the results as CSV. This will fetch all column information along with table comments and column comments from your MySQL database.",
     columnMappings: {
@@ -86,7 +91,7 @@ ORDER BY c.table_schema, c.table_name, c.ordinal_position`,
   },
   sqlserver: {
     type: "sqlserver",
-    query: `
+    query: `\
 SELECT 
   DB_NAME() as project_id,
   SCHEMA_NAME(t.schema_id) as dataset_id,
@@ -115,7 +120,7 @@ ORDER BY SCHEMA_NAME(t.schema_id), t.name, c.column_id`,
   },
   snowflake: {
     type: "snowflake",
-    query: `
+    query: `\
 SELECT 
   current_database() as project_id,
   table_schema as dataset_id,
@@ -142,7 +147,7 @@ ORDER BY table_schema, table_name, ordinal_position`,
   },
   databricks: {
     type: "databricks",
-    query: `
+    query: `\
 SELECT 
   current_database() as project_id,
   table_schema as dataset_id,

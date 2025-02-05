@@ -50,6 +50,7 @@ export const transformToMetadata = ({
         description: null,
         tableCount: 0,
         tables: [],
+        includedInAIContext: false,
       };
       project.datasets.push(dataset);
     }
@@ -64,7 +65,7 @@ export const transformToMetadata = ({
         name: tableId,
         description: tableDescription || null,
         fields: [],
-        includedInAIContext: true,
+        includedInAIContext: false,
       };
       dataset.tables.push(table);
       dataset.tableCount++;
