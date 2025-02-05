@@ -48,6 +48,22 @@ export function DatasetItem({
     }
   };
 
+  const handleCheckboxClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // If not expanded and we need to load tables, do that first
+    if (!isExpanded && activeIntegration?.id) {
+      await handleToggle();
+    }
+
+    // Now we can safely toggle the AI context inclusion
+    setDatasetIncludedInAIContext({
+      projectId,
+      datasetId: dataset.id,
+      value: !dataset.includedInAIContext,
+    });
+  };
+
   const isLoading = loadingDatasets.has(dataset.id);
 
   if (
@@ -64,14 +80,7 @@ export function DatasetItem({
       <div className="flex w-full items-center">
         <Checkbox
           checked={dataset.includedInAIContext}
-          onClick={(e) => {
-            e.stopPropagation();
-            setDatasetIncludedInAIContext({
-              projectId,
-              datasetId: dataset.id,
-              value: !dataset.includedInAIContext,
-            });
-          }}
+          onClick={handleCheckboxClick}
           className="ml-2"
         />
         <Button
