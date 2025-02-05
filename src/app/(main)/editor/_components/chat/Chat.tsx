@@ -8,7 +8,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CornerDownLeft, History, Loader2, Plus } from "lucide-react";
+import { useIntegrations } from "@/contexts/DataContext";
+import {
+  ArrowRight,
+  CornerDownLeft,
+  History,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { getActiveEditor } from "../editor/editorStore";
 import { ChatMessage } from "./ChatMessage";
@@ -79,8 +86,43 @@ const CreateChatButton = () => {
   );
 };
 
+const DemoQuestions = ({
+  onSubmit,
+}: {
+  onSubmit: (message: string) => Promise<void>;
+}) => {
+  const suggestedQuestions = [
+    "Show me the top selling products by revenue in the last 30 days",
+    "What's the average order value by user location?",
+    "Which distribution centers have the lowest inventory levels?",
+    "What's the daily order fulfillment rate across distribution centers?",
+  ];
+
+  return (
+    <div className="space-y-4 pb-4 pt-8">
+      <div className="text-sm font-medium text-gray-700">
+        Suggested Questions
+      </div>
+      <div className="grid gap-2">
+        {suggestedQuestions.map((question, i) => (
+          <Button
+            key={i}
+            variant="outline"
+            className="h-auto w-full justify-between text-wrap border py-3 text-left text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow dark:hover:bg-gray-800"
+            onClick={() => onSubmit(question)}
+          >
+            <span className="text-xs">{question}</span>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ActiveChat = () => {
   const { activeChat, submitMessage } = useChat();
+  const { activeIntegration } = useIntegrations();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -130,6 +172,9 @@ const ActiveChat = () => {
         </div>
       </div>
       <ChatInputBox onSubmit={handleSubmit} />
+      {!hasMessages && activeIntegration?.demo && (
+        <DemoQuestions onSubmit={handleSubmit} />
+      )}
     </div>
   );
 };

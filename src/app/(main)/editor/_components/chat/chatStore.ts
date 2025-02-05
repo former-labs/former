@@ -38,27 +38,36 @@ type ChatStore = {
   setShouldFocusActiveChatTextarea: (value: boolean) => void;
 }
 
-const useChatStore = create<ChatStore>((set) => ({
-  chats: [],
-  activeChatId: null,
-  shouldFocusActiveChatTextarea: false,
-  setActiveChatId: (chatId) => {
-    set({ activeChatId: chatId });
-  },
-  setChats: (chats) => {
-    set({ chats });
-  },
-  addMessage: (chatId, message) => {
-    set((state) => ({
-      chats: state.chats.map((chat) =>
-        chat.chatId === chatId
-          ? { ...chat, messages: [...chat.messages, message] }
-          : chat
-      ),
-    }));
-  },
-  setShouldFocusActiveChatTextarea: (value) => set({ shouldFocusActiveChatTextarea: value }),
-}));
+const useChatStore = create<ChatStore>((set) => {
+  const createEmptyChat = () => ({
+    chatId: uuidv4(),
+    messages: [],
+    createdAt: new Date(),
+    pendingEditorSelectionContent: null,
+  });
+
+  return {
+    chats: [createEmptyChat()], // Initialize with an empty chat
+    activeChatId: null,
+    shouldFocusActiveChatTextarea: false,
+    setActiveChatId: (chatId) => {
+      set({ activeChatId: chatId });
+    },
+    setChats: (chats) => {
+      set({ chats });
+    },
+    addMessage: (chatId, message) => {
+      set((state) => ({
+        chats: state.chats.map((chat) =>
+          chat.chatId === chatId
+            ? { ...chat, messages: [...chat.messages, message] }
+            : chat
+        ),
+      }));
+    },
+    setShouldFocusActiveChatTextarea: (value) => set({ shouldFocusActiveChatTextarea: value }),
+  };
+});
 
 export const useChat = () => {
   const { databaseMetadata } = useDatabaseMetadata();
@@ -67,6 +76,25 @@ export const useChat = () => {
   const activeChat = chatStore.chats.find(
     (chat) => chat.chatId === chatStore.activeChatId
   );
+
+  // Ensure there's always an active chat
+  if (!activeChat) {
+    // Find an empty chat if one exists
+    const emptyChat = chatStore.chats.find(chat => chat.messages.length === 0);
+    if (emptyChat) {
+      chatStore.setActiveChatId(emptyChat.chatId);
+    } else {
+      // Create a new empty chat if none exists
+      const newChat = { 
+        chatId: uuidv4(), 
+        messages: [],
+        createdAt: new Date(),
+        pendingEditorSelectionContent: null
+      };
+      chatStore.setChats([newChat, ...chatStore.chats]);
+      chatStore.setActiveChatId(newChat.chatId);
+    }
+  }
 
   const submitMessageMutation = api.editor.submitMessage.useMutation();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
