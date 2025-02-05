@@ -152,7 +152,7 @@ export default function Page() {
           </div>
         </div>
 
-        <Tabs defaultValue="csv" className="w-full">
+        <Tabs defaultValue="csv" className="min-h-96 w-full">
           <TabsList>
             <TabsTrigger value="csv">CSV Upload (Recommended)</TabsTrigger>
             <TabsTrigger value="ai">Parse with AI</TabsTrigger>
