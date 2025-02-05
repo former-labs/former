@@ -94,7 +94,6 @@ const DemoQuestions = ({
   const suggestedQuestions = [
     "Show me the top selling products by revenue in the last 30 days",
     "What's the average order value by user location?",
-    "Which distribution centers have the lowest inventory levels?",
     "What's the daily order fulfillment rate across distribution centers?",
   ];
 
