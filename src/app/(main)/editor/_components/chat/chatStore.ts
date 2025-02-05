@@ -105,7 +105,7 @@ export const useChat = () => {
     message: string;
     editorContent: string;
   }) => {
-    if (!chatStore.activeChatId || !activeChat || !databaseMetadata) return;
+    if (!chatStore.activeChatId || !activeChat) return;
     if (instructionsLoading) return;
 
     const newMessage: UserChatMessageType = {
@@ -114,9 +114,7 @@ export const useChat = () => {
       editorSelectionContent: activeChat.pendingEditorSelectionContent,
     };
 
-    console.log("original metadata", databaseMetadata);
-    const filteredDatabaseMetadata = filterDatabaseMetadataContext(databaseMetadata);
-    console.log("filtered metadata", filteredDatabaseMetadata);
+    const filteredDatabaseMetadata = databaseMetadata ? filterDatabaseMetadataContext(databaseMetadata) : null;
 
     const responsePromise = submitMessageMutation.mutateAsync({
       messages: [...activeChat.messages, newMessage],

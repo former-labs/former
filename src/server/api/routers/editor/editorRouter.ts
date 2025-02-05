@@ -27,7 +27,7 @@ export const editorRouter = createTRPCRouter({
       ])).min(1),
       editorContent: z.string(),
       editorSelectionContent: z.string().nullable(),
-      databaseMetadata: databaseMetadataSchema,
+      databaseMetadata: databaseMetadataSchema.nullable(),
       knowledge: z.array(z.object({
         id: z.string(),
         name: z.string(),
@@ -336,7 +336,7 @@ to guide how you should insert the SQL, but do not include that comment in your 
         startLineNumber: z.number(),
         endLineNumber: z.number(),
       }),
-      databaseMetadata: databaseMetadataSchema,
+      databaseMetadata: databaseMetadataSchema.nullable(),
       knowledge: z.array(z.object({
         id: z.string(),
         name: z.string(),
@@ -699,7 +699,16 @@ Phrase it as a description of the new query. Keep it relatively short, 1-2 sente
 
 });
 
-const formatDatabaseMetadata = (metadata: DatabaseMetadata): string => {
+const formatDatabaseMetadata = (metadata: DatabaseMetadata | null): string => {
+
+  if (metadata === null) {
+    return `\
+<DATABASE_SCHEMA>
+No database schema provided.
+</DATABASE_SCHEMA>\
+`;
+  }
+
   // TODO: Probs just get the CREATE statements for everything? Bc we need foreign keys and stuff like that.
   // SQL just works as a schema definition language.
 

@@ -72,7 +72,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
   useEventListener("keydown", handleKeyDown);
 
   const handleSubmit = async () => {
-    if (!text.trim() || !databaseMetadata || instructionsLoading) return;
+    if (!text.trim() || instructionsLoading) return;
 
     const response = await inlineEditMutation.mutateAsync({
       userMessage: text,
@@ -81,7 +81,9 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
         startLineNumber: lineNumberStart,
         endLineNumber: lineNumberEnd,
       },
-      databaseMetadata: filterDatabaseMetadataContext(databaseMetadata),
+      databaseMetadata: databaseMetadata
+        ? filterDatabaseMetadataContext(databaseMetadata)
+        : null,
       knowledge: knowledgeList,
       instructions: instructions ?? "",
     });
