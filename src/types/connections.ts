@@ -24,10 +24,34 @@ export interface PostgresCredentials {
 
 export type DatabaseCredentials = BigQueryCredentials | PostgresCredentials;
 
-export type DatabaseType = 'bigquery' | 'postgres';
+export const DATABASE_TYPES = [
+  "bigquery",
+  "postgres",
+  "mysql",
+  "sqlserver",
+  "snowflake",
+  "databricks",
+] as const;
+export type DatabaseType = (typeof DATABASE_TYPES)[number];
+
+export interface DatabaseInstructions {
+  type: DatabaseType;
+  query: string;
+  description: string;
+  columnMappings: {
+    projectId: string;
+    datasetId: string;
+    tableName: string;
+    tableDescription: string;
+    columnName: string;
+    columnType: string;
+    columnDescription: string;
+  };
+}
 
 export type Integration = {
   id: string;
+  workspaceId: string;
   type: DatabaseType;
   name: string;
   credentials: DatabaseCredentials;
@@ -67,7 +91,8 @@ const datasetSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   tableCount: z.number(),
-  tables: z.array(tableSchema)
+  tables: z.array(tableSchema),
+  includedInAIContext: z.boolean().optional()
 });
 
 const projectSchema = z.object({
@@ -78,7 +103,7 @@ const projectSchema = z.object({
 });
 
 export const databaseMetadataSchema = z.object({
-  dialect: z.enum(["postgres", "bigquery"]),
+  dialect: z.enum(DATABASE_TYPES),
   projects: z.array(projectSchema)
 });
 

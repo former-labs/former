@@ -76,7 +76,7 @@ const QueryTimer = ({ startTime }: { startTime: Date }) => {
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const TableDataView = ({ data }: { data: ResultRow[] }) => {
+export const TableDataView = ({ data }: { data: ResultRow[] }) => {
   const columnDefs = useMemo<ColDef[]>(() => {
     if (!data?.[0]) return [];
     return Object.keys(data[0]).map((key) => ({

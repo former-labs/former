@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { TextareaAutoResize } from "@/components/ui/custom/textarea-auto-resize";
-import { useData } from "@/contexts/DataContext";
+import { useDatabaseMetadata } from "@/contexts/databaseMetadataStore";
 import { getEditorSelectionContent } from "@/lib/editorHelpers";
 import { api } from "@/trpc/react";
 import { X } from "lucide-react";
@@ -32,7 +32,7 @@ export const InlinePromptWidget = ({ id }: { id: string }) => {
     setShouldFocus,
   } = useActiveEditorInlinePromptWidget(id);
 
-  const { databaseMetadata } = useData();
+  const { databaseMetadata } = useDatabaseMetadata();
   const { data: knowledgeList = [] } = api.knowledge.listKnowledge.useQuery();
   const { data: instructions, isLoading: instructionsLoading } =
     api.instructions.getInstructions.useQuery();

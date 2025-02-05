@@ -7,11 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useData } from "@/contexts/DataContext";
-import { Integration } from "@/types/connections";
+import { useIntegrations } from "@/contexts/DataContext";
+import { type Integration } from "@/types/connections";
 import { EditIcon, Trash2 } from "lucide-react";
 
-interface ExistingIntegrationsProps {
+export function ExistingIntegrations({
+  onEditIntegration,
+}: {
   onEditIntegration: ({
     type,
     integration,
@@ -19,12 +21,8 @@ interface ExistingIntegrationsProps {
     type: "bigquery" | "postgres";
     integration: Integration;
   }) => void;
-}
-
-export function ExistingIntegrations({
-  onEditIntegration,
-}: ExistingIntegrationsProps) {
-  const { integrations, removeIntegration } = useData();
+}) {
+  const { integrations, removeIntegration } = useIntegrations();
 
   const handleDelete = (id: string) => {
     removeIntegration(id);
@@ -87,12 +85,19 @@ export function ExistingIntegrations({
                       size="icon"
                       className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
                       disabled={integration.demo}
-                      onClick={() =>
+                      onClick={() => {
+                        if (
+                          integration.type !== "bigquery" &&
+                          integration.type !== "postgres"
+                        ) {
+                          throw new Error("Invalid integration type");
+                        }
+
                         onEditIntegration({
                           type: integration.type,
                           integration,
-                        })
-                      }
+                        });
+                      }}
                     >
                       <EditIcon className="h-4 w-4" />
                     </Button>
@@ -100,7 +105,7 @@ export function ExistingIntegrations({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
-                      disabled={integration.demo}
+                      // disabled={integration.demo}
                       onClick={() => handleDelete(integration.id)}
                     >
                       <Trash2 className="h-4 w-4" />

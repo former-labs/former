@@ -28,6 +28,7 @@ export const env = createEnv({
     NEXT_PUBLIC_NODE_ENV: z.string().default("development"),
     NEXT_PUBLIC_SUPABASE_URL: z.string(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
+    NEXT_PUBLIC_PLATFORM: z.enum(["web", "desktop"]),
   },
 
   /**
@@ -46,6 +47,7 @@ export const env = createEnv({
     GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
     DASHBOARD_URI: process.env.DASHBOARD_URI,
+    NEXT_PUBLIC_PLATFORM: process.env.NEXT_PUBLIC_PLATFORM,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

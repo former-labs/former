@@ -55,7 +55,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {/* End Google Tag Manager (noscript) */}
           </>
         )}
-        <ElectronAuthHandler />
+        {process.env.NEXT_PUBLIC_PLATFORM === "desktop" && (
+          <ElectronAuthHandler />
+        )}
         <TRPCReactProvider>
           <AuthProvider>
             <DataProvider>{children}</DataProvider>

@@ -1,54 +1,27 @@
 "use client";
 
-import { type Driver } from "@/electron/drivers/driver";
-import { type DatabaseMetadata, type Integration } from "@/types/connections";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Integration } from "@/types/connections";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useDatabaseMetadata } from "./databaseMetadataStore";
 
 interface DataContextType {
   activeIntegration: Integration | null;
   setActiveIntegration: (integration: Integration | null) => void;
-  databaseMetadata: DatabaseMetadata | null;
-  isFetchingMetadata: boolean;
-  driver: Driver | null;
-  initializeDriver: (integration: Integration) => Promise<string | undefined>;
-  fetchMetadataIncremental: (connectionId: string) => Promise<void>;
-  fetchTablesForDataset: (
-    connectionId: string,
-    datasetId: string,
-  ) => Promise<void>;
-  loadingDatasets: Set<string>;
-  isLoadingDatasets: boolean;
   integrations: Integration[];
-  addIntegration: (integration: Omit<Integration, "id" | "createdAt">) => void;
-  editIntegration: (
-    id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
-  ) => void;
-  removeIntegration: (id: string) => void;
-  executeQuery: (query: string) => Promise<{
-    jobId: string;
-  }>;
-  cancelQuery: (jobId: string) => Promise<void>;
-  getQueryResult: (jobId: string) => Promise<
-    | {
-        status: "complete";
-        result: any[];
-      }
-    | {
-        status: "error";
-        error: string;
-      }
-    | {
-        status: "canceled";
-      }
-  >;
-  loadedDatasets: Set<string>;
-  setTableIncludedInAIContext: (params: {
-    projectId: string;
-    datasetId: string;
-    tableId: string;
-    value: boolean;
+  addIntegration: ({
+    integration,
+  }: {
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => Promise<Integration>;
+  editIntegration: ({
+    id,
+    updates,
+  }: {
+    id: string;
+    updates: Omit<Integration, "id" | "createdAt">;
   }) => void;
+  removeIntegration: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -56,98 +29,43 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeIntegration, setActiveIntegration] =
     useState<Integration | null>(null);
-  const [databaseMetadata, setDatabaseMetadata] =
-    useState<DatabaseMetadata | null>(null);
-  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
-  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
-  const [loadingDatasets, setLoadingDatasets] = useState<Set<string>>(
-    new Set(),
+  const { fetchMetadataIncremental } = useDatabaseMetadata();
+  const { activeRole } = useAuth();
+  const {
+    integrations,
+    addIntegration,
+    editIntegration,
+    removeIntegration,
+    isInitialized,
+  } = useElectronIntegrations();
+
+  const workspaceId = activeRole?.workspace.id;
+
+  const filteredIntegrations = integrations.filter(
+    (integration) => integration.workspaceId === workspaceId,
   );
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [isStoreReady, setIsStoreReady] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [loadedDatasets, setLoadedDatasets] = useState<Set<string>>(new Set());
 
-  // Check if store is ready
+  // Clear active integration if workspace changes and integration doesn't belong to new workspace
   useEffect(() => {
-    const checkStore = () => {
-      if (window.electron?.store) {
-        setIsStoreReady(true);
-      } else {
-        setTimeout(checkStore, 100);
-      }
-    };
-    checkStore();
-  }, []);
-
-  // Load stored data once store is ready
-  useEffect(() => {
-    if (!isStoreReady || isInitialized) return;
-
-    const loadStoredData = async () => {
-      try {
-        console.log("Loading stored data...");
-        const storedIntegrations =
-          await window.electron.store.getIntegrations();
-        const activeIntegrationId =
-          await window.electron.store.getActiveIntegrationId();
-
-        console.log("Stored integrations:", storedIntegrations);
-        console.log("Active integration ID:", activeIntegrationId);
-
-        // Only set integrations if we found some stored
-        if (storedIntegrations?.length > 0) {
-          setIntegrations(storedIntegrations);
-        }
-
-        // Only set active integration if we found a valid one
-        if (activeIntegrationId && storedIntegrations?.length) {
-          const active = storedIntegrations.find(
-            (i) => i.id === activeIntegrationId,
-          );
-          if (active) {
-            setActiveIntegration(active);
-          }
-        }
-
-        setIsInitialized(true);
-      } catch (error) {
-        console.error("Error loading stored data:", error);
-        setIsInitialized(true);
-      }
-    };
-
-    void loadStoredData();
-  }, [isStoreReady, isInitialized]);
+    if (
+      activeIntegration &&
+      workspaceId &&
+      activeIntegration.workspaceId !== workspaceId
+    ) {
+      setActiveIntegration(null);
+    }
+  }, [workspaceId, activeIntegration]);
 
   // Only set default active integration if we've initialized and none is set
   useEffect(() => {
-    if (isInitialized && !activeIntegration && integrations[0]) {
-      setActiveIntegration(integrations[0]);
+    if (isInitialized && !activeIntegration && filteredIntegrations[0]) {
+      setActiveIntegration(filteredIntegrations[0]);
     }
-  }, [integrations, activeIntegration, isInitialized]);
-
-  // Persist integrations whenever they change
-  useEffect(() => {
-    if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    console.log("setting integrations", integrations);
-    void window.electron.store.setIntegrations(integrations);
-  }, [integrations, isStoreReady, isInitialized]);
-
-  // Persist active integration whenever it changes
-  useEffect(() => {
-    if (!window.electron?.store || !isStoreReady || !isInitialized) return;
-    console.log("setting active integration", activeIntegration?.id);
-    void window.electron.store.setActiveIntegrationId(
-      activeIntegration?.id ?? null,
-    );
-  }, [activeIntegration?.id, isStoreReady, isInitialized]);
+  }, [filteredIntegrations, activeIntegration, isInitialized]);
 
   const initializeDriver = async (integration: Integration) => {
-    console.log("initializeDriver", integration);
     try {
       const result = await window.electron.database.connect(integration);
-      console.log("result", result);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -160,98 +78,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchMetadataIncremental = async (connectionId: string) => {
-    if (!connectionId || isFetchingMetadata) return;
-
-    try {
-      setIsFetchingMetadata(true);
-      setIsLoadingDatasets(true);
-      setDatabaseMetadata(null);
-
-      // First fetch projects and datasets
-      const metadata =
-        await window.electron.database.getProjectsAndDatasets(connectionId);
-      setDatabaseMetadata(metadata);
-    } catch (error) {
-      console.error("Error fetching metadata:", error);
-      throw error;
-    } finally {
-      setIsFetchingMetadata(false);
-      setIsLoadingDatasets(false);
-    }
-  };
-
-  const fetchTablesForDataset = async (
-    connectionId: string,
-    datasetId: string,
-  ) => {
-    // Skip if already loaded or currently loading
-    if (
-      !connectionId ||
-      !datasetId ||
-      loadedDatasets.has(datasetId) ||
-      loadingDatasets.has(datasetId)
-    )
-      return;
-
-    try {
-      setLoadingDatasets((prev) => new Set([...prev, datasetId]));
-
-      // Check if we already have tables for this dataset
-      const existingTables = databaseMetadata?.projects
-        .flatMap((p) => p.datasets)
-        .find((d) => d.id === datasetId)?.tables;
-
-      if (existingTables && existingTables.length > 0) {
-        setLoadedDatasets((prev) => new Set([...prev, datasetId]));
-        return;
-      }
-
-      const { tables, nextPageToken } =
-        await window.electron.database.getTablesForDataset(
-          connectionId,
-          datasetId,
-        );
-
-      setDatabaseMetadata((prev) => {
-        if (!prev) return prev;
-        return {
-          dialect: prev.dialect,
-          projects: prev.projects.map((project) => ({
-            ...project,
-            datasets: project.datasets.map((dataset) => {
-              if (dataset.id === datasetId) {
-                return {
-                  ...dataset,
-                  tables: tables,
-                };
-              }
-              return dataset;
-            }),
-          })),
-        };
-      });
-
-      // Mark dataset as loaded only if we've loaded all pages
-      if (!nextPageToken) {
-        setLoadedDatasets((prev) => new Set([...prev, datasetId]));
-      }
-    } catch (error) {
-      console.error("Error fetching tables:", error);
-      throw error;
-    } finally {
-      setLoadingDatasets((prev) => {
-        const next = new Set(prev);
-        next.delete(datasetId);
-        return next;
-      });
-    }
-  };
-
   // Initialize connection when integration changes
   useEffect(() => {
     if (activeIntegration) {
-      console.log("activeIntegration", activeIntegration);
       initializeDriver(activeIntegration)
         .then((connectionId) => {
           if (connectionId) {
@@ -270,146 +99,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntegration?.id]);
 
-  const addIntegration = (
-    integration: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    const newIntegration: Integration = {
-      ...integration,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    setIntegrations((prev) => [...prev, newIntegration]);
-    console.log("newIntegration", newIntegration);
-    setActiveIntegration(newIntegration);
-  };
-
-  const editIntegration = (
-    id: string,
-    updates: Omit<Integration, "id" | "createdAt">,
-  ) => {
-    setIntegrations((prev) =>
-      prev.map((integration) =>
-        integration.id === id
-          ? {
-              ...integration,
-              type: updates.type,
-              name: updates.name,
-              credentials: updates.credentials,
-            }
-          : integration,
-      ),
-    );
-  };
-
-  const removeIntegration = (id: string) => {
-    setIntegrations((prev) => {
-      const filtered = prev.filter((i) => i.id !== id);
-      if (activeIntegration?.id === id) {
-        // If removed integration was active, set new active integration
-        setActiveIntegration(filtered[0] ?? null);
-      }
-      return filtered;
-    });
-  };
-
-  const executeQuery = async (query: string) => {
-    if (!activeIntegration?.id) {
-      throw new Error("No active integration");
-    }
-
-    try {
-      const result = await window.electron.database.execute(
-        activeIntegration.id,
-        query,
-      );
-      return result;
-    } catch (error) {
-      console.error("Error executing query:", error);
-      throw error;
-    }
-  };
-
-  const cancelQuery = async (jobId: string) => {
-    if (!activeIntegration?.id) {
-      throw new Error("No active integration");
-    }
-
-    await window.electron.database.cancelJob(activeIntegration.id, jobId);
-  };
-
-  const getQueryResult = async (jobId: string) => {
-    if (!activeIntegration?.id) {
-      throw new Error("No active integration");
-    }
-
-    console.log("database", window.electron.database);
-    const result = await window.electron.database.getJobResult(
-      activeIntegration.id,
-      jobId,
-    );
-    return result;
-  };
-
-  const setTableIncludedInAIContext = ({
-    projectId,
-    datasetId,
-    tableId,
-    value,
-  }: {
-    projectId: string;
-    datasetId: string;
-    tableId: string;
-    value: boolean;
-  }) => {
-    setDatabaseMetadata((prev) => {
-      if (!prev) return prev;
-      return {
-        dialect: prev.dialect,
-        projects: prev.projects.map((project) => {
-          if (project.id !== projectId) return project;
-          return {
-            ...project,
-            datasets: project.datasets.map((dataset) => {
-              if (dataset.id !== datasetId) return dataset;
-              return {
-                ...dataset,
-                tables: dataset.tables.map((table) => {
-                  if (table.id !== tableId) return table;
-                  return {
-                    ...table,
-                    includedInAIContext: value,
-                  };
-                }),
-              };
-            }),
-          };
-        }),
-      };
-    });
-  };
-
   return (
     <DataContext.Provider
       value={{
         activeIntegration,
         setActiveIntegration,
-        integrations,
-        databaseMetadata,
-        isFetchingMetadata,
-        driver: null,
-        initializeDriver,
-        fetchMetadataIncremental,
-        fetchTablesForDataset,
-        loadingDatasets,
-        isLoadingDatasets,
-        loadedDatasets,
+        integrations: filteredIntegrations,
         addIntegration,
         editIntegration,
         removeIntegration,
-        executeQuery,
-        cancelQuery,
-        getQueryResult,
-        setTableIncludedInAIContext,
       }}
     >
       {children}
@@ -417,10 +115,116 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useData = () => {
+export const useIntegrations = () => {
   const context = useContext(DataContext);
   if (context === undefined) {
     throw new Error("useData must be used within a DataProvider");
   }
   return context;
+};
+
+const useElectronStore = () => {
+  const [store, setStore] = useState<typeof window.electron.store | null>(null);
+
+  useEffect(() => {
+    const checkStore = () => {
+      if (window.electron?.store) {
+        setStore(window.electron.store);
+      } else {
+        setTimeout(checkStore, 100);
+      }
+    };
+    checkStore();
+  }, []);
+
+  return store;
+};
+
+const useElectronIntegrations = () => {
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const electronStore = useElectronStore();
+
+  // Load stored data once store is ready
+  useEffect(() => {
+    if (!electronStore || isInitialized) return;
+
+    const loadStoredData = async () => {
+      try {
+        const storedIntegrations = await electronStore.getIntegrations();
+
+        if (storedIntegrations?.length > 0) {
+          setIntegrations(storedIntegrations);
+        }
+
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error loading stored data:", error);
+        setIsInitialized(true);
+      }
+    };
+
+    void loadStoredData();
+  }, [electronStore, isInitialized]);
+
+  const addIntegration = async ({
+    integration,
+  }: {
+    integration: Omit<Integration, "id" | "createdAt">;
+  }) => {
+    const newIntegration: Integration = {
+      ...integration,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    setIntegrations((prev) => [...prev, newIntegration]);
+
+    if (electronStore) {
+      void electronStore.setIntegrations([...integrations, newIntegration]);
+    }
+
+    return newIntegration;
+  };
+
+  const editIntegration = ({
+    id,
+    updates,
+  }: {
+    id: string;
+    updates: Omit<Integration, "id" | "createdAt">;
+  }) => {
+    const updatedIntegrations = integrations.map((integration) =>
+      integration.id === id
+        ? {
+            ...integration,
+            type: updates.type,
+            name: updates.name,
+            credentials: updates.credentials,
+          }
+        : integration,
+    );
+
+    setIntegrations(updatedIntegrations);
+
+    if (electronStore) {
+      void electronStore.setIntegrations(updatedIntegrations);
+    }
+  };
+
+  const removeIntegration = (id: string) => {
+    const filteredIntegrations = integrations.filter((i) => i.id !== id);
+    setIntegrations(filteredIntegrations);
+
+    if (electronStore) {
+      void electronStore.setIntegrations(filteredIntegrations);
+    }
+  };
+
+  return {
+    integrations,
+    addIntegration,
+    editIntegration,
+    removeIntegration,
+    isInitialized,
+  };
 };
