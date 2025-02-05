@@ -53,7 +53,7 @@ export default function EditorPage() {
     <div className="h-full max-h-[100vh]">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={70} minSize={15}>
-          <div className="h-full pt-12">
+          <div className="h-full pt-4">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel defaultSize={70} minSize={30}>
                 <EditorSection />
