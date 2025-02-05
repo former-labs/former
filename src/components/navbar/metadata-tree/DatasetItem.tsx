@@ -75,11 +75,24 @@ export function DatasetItem({
     return null;
   }
 
+  const getCheckboxState = (dataset: DatasetExtended) => {
+    const includedTables = dataset.tables.filter(
+      (t) => t.includedInAIContext,
+    ).length;
+    const totalTables = dataset.tables.length;
+
+    return {
+      checked: includedTables === totalTables && totalTables > 0,
+      indeterminate: includedTables > 0 && includedTables < totalTables,
+    };
+  };
+
   return (
     <div className="space-y-0.5">
       <div className="flex w-full items-center">
         <Checkbox
-          checked={dataset.includedInAIContext}
+          checked={getCheckboxState(dataset).checked}
+          indeterminate={getCheckboxState(dataset).indeterminate}
           onClick={handleCheckboxClick}
           className="ml-2"
         />
