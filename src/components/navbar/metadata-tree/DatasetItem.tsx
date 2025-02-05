@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Tooltip,
   TooltipContent,
@@ -34,7 +35,11 @@ export function DatasetItem({
   hideEmptyDatabases: boolean;
 }) {
   const { activeIntegration } = useIntegrations();
-  const { fetchTablesForDataset, loadingDatasets } = useDatabaseMetadata();
+  const {
+    fetchTablesForDataset,
+    loadingDatasets,
+    setDatasetIncludedInAIContext,
+  } = useDatabaseMetadata();
 
   const handleToggle = async () => {
     onToggle();
@@ -56,60 +61,74 @@ export function DatasetItem({
 
   return (
     <div className="space-y-0.5">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-full justify-start gap-2"
-        onClick={handleToggle}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex w-full items-center gap-2">
-              <Database className="h-4 w-4" />
-              <span className="truncate">
-                <HighlightedText text={dataset.name} query={searchQuery} />
-              </span>
-              <span className="ml-auto flex items-center gap-2">
-                <Badge variant="secondary">
-                  {dataset.tableCount ??
-                    dataset._originalTableCount ??
-                    dataset.tables.length}
-                </Badge>
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">
+      <div className="flex w-full items-center">
+        <Checkbox
+          checked={dataset.includedInAIContext}
+          onClick={(e) => {
+            e.stopPropagation();
+            setDatasetIncludedInAIContext({
+              projectId,
+              datasetId: dataset.id,
+              value: !dataset.includedInAIContext,
+            });
+          }}
+          className="ml-2"
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-full justify-start gap-2"
+          onClick={handleToggle}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex w-full items-center gap-2">
+                <Database className="h-4 w-4" />
+                <span className="truncate">
                   <HighlightedText text={dataset.name} query={searchQuery} />
                 </span>
-                <Badge variant="secondary">
-                  {dataset.tableCount ??
-                    dataset._originalTableCount ??
-                    dataset.tables.length}{" "}
-                  tables
-                </Badge>
+                <span className="ml-auto flex items-center gap-2">
+                  <Badge variant="secondary">
+                    {dataset.tableCount ??
+                      dataset._originalTableCount ??
+                      dataset.tables.length}
+                  </Badge>
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </span>
               </div>
-              <div>
-                {dataset.description ? (
-                  <HighlightedText
-                    text={dataset.description}
-                    query={searchQuery}
-                  />
-                ) : (
-                  "No description available"
-                )}
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">
+                    <HighlightedText text={dataset.name} query={searchQuery} />
+                  </span>
+                  <Badge variant="secondary">
+                    {dataset.tableCount ??
+                      dataset._originalTableCount ??
+                      dataset.tables.length}{" "}
+                    tables
+                  </Badge>
+                </div>
+                <div>
+                  {dataset.description ? (
+                    <HighlightedText
+                      text={dataset.description}
+                      query={searchQuery}
+                    />
+                  ) : (
+                    "No description available"
+                  )}
+                </div>
               </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </Button>
+            </TooltipContent>
+          </Tooltip>
+        </Button>
+      </div>
       {isExpanded && (
         <div className="pl-4">
           {isLoading ? (
