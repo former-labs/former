@@ -17,7 +17,12 @@ export const DemoWorkspaceWarning = () => {
         <span>This is a demo workspace.</span>
       </div>
       <div className="text-xs">
-        Please create a workspace using the above selector to use your own data.
+        Use this workspace to test AI features like Cmd+K and Cmd+L on mock
+        data.
+      </div>
+      <div className="text-xs">
+        When ready, create a new workspace using the above selector to use your
+        own data.
       </div>
     </div>
   );
