@@ -39,8 +39,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     isInitialized,
   } = useElectronIntegrations();
 
-  console.log("ALL INTEGRATIONS", integrations);
-
   const workspaceId = activeRole?.workspace.id;
 
   const filteredIntegrations = integrations.filter(

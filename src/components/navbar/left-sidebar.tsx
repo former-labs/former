@@ -28,6 +28,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import * as React from "react";
+import { DemoWorkspaceWarning } from "./DemoWorkspaceWarning";
 import { MetadataTree } from "./metadata-tree/MetadataTree";
 
 const data = {
@@ -80,6 +81,7 @@ export function LeftSidebar({
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <WorkspaceSwitcher />
+        <DemoWorkspaceWarning />
       </SidebarHeader>
       <SidebarContent className="flex flex-col">
         <NavPages pages={data.sections} />

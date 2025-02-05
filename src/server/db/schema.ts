@@ -1,6 +1,6 @@
 import { type DatabaseMetadata } from "@/types/connections";
 import { relations } from "drizzle-orm";
-import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // /**
 //  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -47,6 +47,7 @@ export const workspaceTable = pgTable("workspace", {
   createdAt: createdAtField,
   updatedAt: updatedAtField,
   name: text("name").notNull(),
+  demo: boolean("demo").notNull().default(false),
 });
 
 export const workspaceRelations = relations(workspaceTable, ({ many }) => ({

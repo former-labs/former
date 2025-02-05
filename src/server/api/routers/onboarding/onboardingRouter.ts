@@ -24,6 +24,7 @@ const createWorkspaceAndRole = async ({
     .insert(workspaceTable)
     .values({
       name: workspaceName,
+      demo: isDemoWorkspace,
     })
     .returning();
 

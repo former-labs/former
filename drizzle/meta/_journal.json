@@ -169,6 +169,20 @@
       "when": 1738627202000,
       "tag": "0023_misty_chamber",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1738713334089,
+      "tag": "0024_free_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1738713409890,
+      "tag": "0025_blue_sue_storm",
+      "breakpoints": true
     }
   ]
 }
