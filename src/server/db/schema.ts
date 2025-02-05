@@ -86,45 +86,6 @@ export const roleRelations = relations(roleTable, ({ one }) => ({
   }),
 }));
 
-
-// Conversation
-/*
-  TODO: Make this reference a workspace
-*/
-export const conversationTable = pgTable("conversation", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-  name: text("name").notNull(),
-});
-
-/*
-  TODO: Add a "type" to this instead of "user" or "assistant" probably.
-  For now we store "user-message" and "assistant-google-analytics-report".
-*/
-export const messageTable = pgTable("message", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-  conversationId: uuid("conversation_id")
-    .notNull()
-    .references(() => conversationTable.id),
-  role: text("role", { enum: ["user", "assistant"] }).notNull(),
-  text: text("text"),
-});
-
-export const messageItemsTable = pgTable("message_item", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  createdAt: createdAtField,
-  updatedAt: updatedAtField,
-  workspaceId: workspaceIdField,
-  messageId: uuid("message_id")
-    .notNull()
-    .references(() => messageTable.id),
-});
-
 export const knowledgeTable = pgTable("knowledge", {
   id: uuid("id").defaultRandom().primaryKey(),
   createdAt: createdAtField,
@@ -151,9 +112,6 @@ export const databaseMetadataTable = pgTable("database_metadata", {
   databaseMetadata: jsonb("database_metadata").$type<DatabaseMetadata>().notNull(),
 });
 
-export type ConversationSelect = typeof conversationTable.$inferSelect;
-export type MessageSelect = typeof messageTable.$inferSelect;
-export type MessageItemSelect = typeof messageItemsTable.$inferSelect;
 export type WorkspaceSelect = typeof workspaceTable.$inferSelect;
 export type UserSelect = typeof userTable.$inferSelect;
 export type RoleSelect = typeof roleTable.$inferSelect;
