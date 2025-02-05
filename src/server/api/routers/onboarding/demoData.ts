@@ -141,7 +141,8 @@ export const DEMO_DATABASE_METADATA = {
             }
           ],
           tableCount: 7,
-          description: "E-commerce dataset containing orders, products, users, and related data"
+          description: "E-commerce dataset containing orders, products, users, and related data",
+          includedInAIContext: true,
         }
       ],
       description: "Demo project containing e-commerce sample data"

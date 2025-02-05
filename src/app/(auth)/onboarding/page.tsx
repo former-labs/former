@@ -109,6 +109,10 @@ export default function OnboardingPage() {
       <div className="flex flex-col items-center space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold">Welcome to Former!</h1>
+          <p className="mt-3 text-muted-foreground">
+            Get started by creating a demo workspace with mock data to explore
+            our AI features.
+          </p>
         </div>
 
         <Button
