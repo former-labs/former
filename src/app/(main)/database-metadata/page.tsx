@@ -52,7 +52,6 @@ export default function Page() {
         databaseMetadata: parsedMetadata,
       });
     } catch (e) {
-      console.error(e);
       toast({
         variant: "destructive",
         title: "Invalid JSON",

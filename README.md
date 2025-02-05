@@ -28,7 +28,7 @@ You can build the app for your local machine with:
 npm run electron:make
 ```
 
-To host the server, follow typical instructions for a NextJS deployment (we recommend [Vercel](https://vercel.com/) free tier). You will also need to modify the server domain pointed to by the [Electron app](https://github.com/former-labs/former/blob/dev/src/electron/env.electron.js) and spin up a PostgreSQL database (we recommend [Supabase](https://supabase.com/) free tier).
+To host the server, follow typical instructions for a NextJS deployment (we recommend [Vercel](https://vercel.com/) free tier). You will also need to modify the server domain pointed to by the [Electron app](https://github.com/former-labs/former/blob/dev/src/electron/env.electron.js) and spin up a free (hobby) [Supabase](https://supabase.com/) instance for account and database management.
 
 
 To make changes to your local instance or self hosted server, see the [Contributing](#contributing) section.
