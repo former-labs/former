@@ -1,5 +1,6 @@
 import "@/styles/globals.css";
 
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/contexts/DataContext";
 import { env } from "@/env";
@@ -60,6 +61,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <AuthProvider>
             <DataProvider>{children}</DataProvider>
           </AuthProvider>
+          <Toaster />
         </TRPCReactProvider>
       </body>
     </html>
