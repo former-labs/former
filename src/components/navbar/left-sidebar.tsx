@@ -41,7 +41,7 @@ const data = {
     ...(env.NEXT_PUBLIC_PLATFORM === "desktop"
       ? [
           {
-            name: "Integrations",
+            name: "Connections",
             url: PATH_INTEGRATIONS,
             icon: Plug,
           },

@@ -125,10 +125,10 @@ SELECT
   current_database() as project_id,
   table_schema as dataset_id,
   table_name,
-  comment as table_description,
+  \'\' as table_description,
   column_name,
   data_type,
-  column_comment as column_description
+  comment as column_description
 FROM information_schema.columns
 NATURAL LEFT JOIN information_schema.tables
 WHERE table_schema NOT IN ('INFORMATION_SCHEMA')
@@ -152,7 +152,7 @@ SELECT
   current_database() as project_id,
   table_schema as dataset_id,
   table_name,
-  comment as table_description,
+  \'\' as table_description,
   column_name,
   data_type,
   comment as column_description
