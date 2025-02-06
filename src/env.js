@@ -21,6 +21,9 @@ export const env = createEnv({
       .string()
       .transform((val) => val === "true")
       .default("false"),
+    DEMO_CREDENTIALS: z
+      .string()
+      .transform((val) => JSON.parse(Buffer.from(val, "base64").toString())),
   },
 
   /**
@@ -53,6 +56,7 @@ export const env = createEnv({
     DASHBOARD_URI: process.env.DASHBOARD_URI,
     NEXT_PUBLIC_PLATFORM: process.env.NEXT_PUBLIC_PLATFORM,
     SEND_ANALYTICS: process.env.SEND_ANALYTICS,
+    DEMO_CREDENTIALS: process.env.DEMO_CREDENTIALS,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

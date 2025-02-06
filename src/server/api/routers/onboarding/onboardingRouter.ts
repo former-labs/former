@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { createClient } from "@/lib/supabase/server";
 import { createTRPCRouter, userProtectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
@@ -5,7 +6,6 @@ import { databaseMetadataTable, knowledgeTable, roleTable, RoleType, workspaceTa
 import type { Integration } from "@/types/connections";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { DEMO_CREDENTIALS } from "./demoCredentials";
 import { DEMO_DATABASE_METADATA, DEMO_QUERIES } from "./demoData";
 
 const createWorkspaceAndRole = async ({
@@ -185,7 +185,7 @@ export const onboardingRouter = createTRPCRouter({
       const demoIntegration: Omit<Integration, "id" | "createdAt" | "workspaceId"> = {
         type: "bigquery",
         name: "Demo BigQuery Integration",
-        credentials: DEMO_CREDENTIALS,
+        credentials: env.DEMO_CREDENTIALS,
         config: {
           projectId: "former-prod"
         },

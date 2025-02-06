@@ -84,7 +84,7 @@ export function ExistingIntegrations({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
-                      disabled={integration.demo}
+                      // disabled={integration.demo}
                       onClick={() => {
                         if (
                           integration.type !== "bigquery" &&
