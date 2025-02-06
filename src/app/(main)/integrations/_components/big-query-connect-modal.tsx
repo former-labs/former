@@ -337,11 +337,7 @@ export function BigQueryConnectModal({
               )}
             />
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={!form.formState.isValid}
-            >
+            <Button type="submit" className="w-full">
               {integration ? "Save Changes" : "Connect BigQuery"}
             </Button>
           </form>

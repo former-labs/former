@@ -142,8 +142,9 @@ select
 from my_table_2;
 \`\`\`
 
-Make sure you use "--- existing SQL for" in the comment if you leave one.
-Make sure the "--- existing SQL for" comment is include inside the SQL code block, not outside of it.
+Notice how the "--- existing SQL for" comment is included inside the SQL code block, not outside of it.
+Do NOT put a "--- existing SQL for" comment outside of the SQL code block.
+Make sure you use "--- existing SQL for" in the SQL code comment if you leave one.
 </EXAMPLE>
 
           `),
