@@ -1,8 +1,6 @@
 # Former
 
-[Former](https://formerlabs.com/) is simply the best way to write SQL with AI.
-
-Former is a desktop/web SQL editor with a copilot experience designed specifically for writing SQL. It was created as a 10x better alternative to the workflow of copy pasting database context and SQL into and out of ChatGPT.
+[Former](https://formerlabs.com/) is a desktop/web SQL editor with a copilot experience designed specifically for writing SQL. It was created as a 10x better alternative to the workflow of copy pasting database context and SQL into and out of ChatGPT.
 
 Instead of using an external AI that knows nothing about your database, Former provides you with AI assistance embedded in your SQL editor, with an AI that knows everything about your database and the nuances of working with your schema.
 
